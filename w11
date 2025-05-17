@@ -1,0 +1,1680 @@
+
+
+-- Core Services
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local TextService = game:GetService("TextService")
+local ContentProvider = game:GetService("ContentProvider")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- Main Library
+local Windows11 = {}
+Windows11.__index = Windows11
+
+-- Utility Functions
+local Utility = {}
+
+-- Constants: Windows 11 Design Specifications
+local CONSTANTS = {
+    CORNER_RADIUS = UDim.new(0, 9), -- Windows 11's standard corner radius (9px)
+    ANIMATION_DURATION = 0.2, -- Standard animation duration in seconds
+    FONT = Enum.Font.GothamSemibold, -- Closest font to Segoe UI Variable
+    
+    -- Windows 11 Color Palette (Light Mode)
+    COLORS_LIGHT = {
+        BACKGROUND = Color3.fromRGB(243, 243, 243),
+        MICA = Color3.fromRGB(238, 238, 238), -- Base Mica material color
+        ACRYLIC = Color3.fromRGB(252, 252, 252), -- Base Acrylic material color
+        PRIMARY_TEXT = Color3.fromRGB(0, 0, 0),
+        SECONDARY_TEXT = Color3.fromRGB(96, 96, 96),
+        ACCENT = Color3.fromRGB(0, 120, 212), -- Default Windows 11 accent color
+        CONTROL_FILL = Color3.fromRGB(255, 255, 255),
+        CONTROL_BORDER = Color3.fromRGB(229, 229, 229),
+        CONTROL_HOVER = Color3.fromRGB(249, 249, 249),
+        CONTROL_PRESSED = Color3.fromRGB(230, 230, 230)
+    },
+    
+    -- Windows 11 Color Palette (Dark Mode)
+    COLORS_DARK = {
+        BACKGROUND = Color3.fromRGB(32, 32, 32),
+        MICA = Color3.fromRGB(44, 44, 44), -- Base Mica material color
+        ACRYLIC = Color3.fromRGB(48, 48, 48), -- Base Acrylic material color
+        PRIMARY_TEXT = Color3.fromRGB(255, 255, 255),
+        SECONDARY_TEXT = Color3.fromRGB(153, 153, 153),
+        ACCENT = Color3.fromRGB(10, 132, 255), -- Default Windows 11 accent color in dark mode
+        CONTROL_FILL = Color3.fromRGB(56, 56, 56),
+        CONTROL_BORDER = Color3.fromRGB(80, 80, 80),
+        CONTROL_HOVER = Color3.fromRGB(70, 70, 70),
+        CONTROL_PRESSED = Color3.fromRGB(85, 85, 85)
+    },
+    
+    -- Z-Index Layers
+    Z_INDEX = {
+        BACKGROUND = 1,
+        WINDOW = 10,
+        CONTROLS = 100,
+        DROPDOWN = 200,
+        TOOLTIP = 300,
+        MODAL = 400,
+        CONTEXT_MENU = 500,
+        NOTIFICATION = 600
+    },
+    
+    -- Shadow Properties
+    SHADOW = {
+        BLUR_SIZE = 15,
+        TRANSPARENCY = 0.7,
+        COLOR = Color3.fromRGB(0, 0, 0)
+    },
+    
+    -- Typography Scale
+    TYPOGRAPHY = {
+        CAPTION = 10,
+        BODY_SMALL = 12,
+        BODY = 14,
+        SUBTITLE = 16,
+        TITLE = 20,
+        TITLE_LARGE = 24,
+        DISPLAY = 28,
+        DISPLAY_LARGE = 40
+    },
+    
+    -- Standard Animations (Easing Styles)
+    EASING = {
+        STANDARD = Enum.EasingStyle.Cubic,
+        EMPHASIZED = Enum.EasingStyle.Quint,
+        DECELERATED = Enum.EasingStyle.Sine,
+        ACCELERATED = Enum.EasingStyle.Back
+    }
+}
+
+-- Textures and Effects
+local TEXTURES = {
+    NOISE = "rbxassetid://8284567496", -- Noise texture for acrylic effect
+    SHADOW = "rbxassetid://7546056157", -- Shadow texture
+    GLOW = "rbxassetid://5944857621", -- Glow effect
+}
+
+-- Visual Foundation --
+
+-- Create Mica material effect with variable transparency
+function Utility:CreateMicaMaterial(parent, properties)
+    properties = properties or {}
+    
+    local frame = Instance.new("Frame")
+    frame.Name = "MicaMaterial"
+    frame.BackgroundColor3 = properties.BackgroundColor3 or CONSTANTS.COLORS_LIGHT.MICA
+    frame.BorderSizePixel = 0
+    frame.Size = properties.Size or UDim2.new(1, 0, 1, 0)
+    frame.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+    frame.ZIndex = properties.ZIndex or CONSTANTS.Z_INDEX.BACKGROUND
+    frame.BackgroundTransparency = properties.Transparency or 0
+    
+    -- Add corner radius
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = properties.CornerRadius or CONSTANTS.CORNER_RADIUS
+    corner.Parent = frame
+    
+    -- Add subtle gradient to simulate Mica's light reflection effect
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = 90
+    gradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.03),
+        NumberSequenceKeypoint.new(1, 0.15)
+    })
+    gradient.Parent = frame
+    
+    -- Add noise texture overlay at very subtle level
+    local noise = Instance.new("ImageLabel")
+    noise.Name = "MicaNoise"
+    noise.BackgroundTransparency = 1
+    noise.Image = TEXTURES.NOISE
+    noise.ImageTransparency = 0.9
+    noise.Size = UDim2.new(1, 0, 1, 0)
+    noise.ZIndex = frame.ZIndex
+    noise.Parent = frame
+    
+    if parent then
+        frame.Parent = parent
+    end
+    
+    return frame
+end
+
+-- Create Acrylic blur effect with 3-layer compositing
+function Utility:CreateAcrylicEffect(parent, properties)
+    properties = properties or {}
+    
+    local frame = Instance.new("Frame")
+    frame.Name = "AcrylicMaterial"
+    frame.BackgroundColor3 = properties.BackgroundColor3 or CONSTANTS.COLORS_LIGHT.ACRYLIC
+    frame.BorderSizePixel = 0
+    frame.Size = properties.Size or UDim2.new(1, 0, 1, 0)
+    frame.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+    frame.ZIndex = properties.ZIndex or CONSTANTS.Z_INDEX.BACKGROUND
+    frame.BackgroundTransparency = properties.Transparency or 0.2
+    
+    -- Add corner radius
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = properties.CornerRadius or CONSTANTS.CORNER_RADIUS
+    corner.Parent = frame
+    
+    -- Add blur effect (simulated with translucency)
+    local blur = Instance.new("Frame")
+    blur.Name = "AcrylicBlur"
+    blur.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    blur.BackgroundTransparency = 0.7
+    blur.BorderSizePixel = 0
+    blur.Size = UDim2.new(1, 0, 1, 0)
+    blur.ZIndex = frame.ZIndex
+    blur.Parent = frame
+    
+    -- Corner radius for blur layer
+    local blurCorner = Instance.new("UICorner")
+    blurCorner.CornerRadius = properties.CornerRadius or CONSTANTS.CORNER_RADIUS
+    blurCorner.Parent = blur
+    
+    -- Add noise texture overlay
+    local noise = Instance.new("ImageLabel")
+    noise.Name = "AcrylicNoise"
+    noise.BackgroundTransparency = 1
+    noise.Image = TEXTURES.NOISE
+    noise.ImageTransparency = 0.85
+    noise.Size = UDim2.new(1, 0, 1, 0)
+    noise.ZIndex = frame.ZIndex + 1
+    noise.Parent = frame
+    
+    if parent then
+        frame.Parent = parent
+    end
+    
+    return frame
+end
+
+-- Create Windows 11 shadow with precise blur radius, opacity, and offset
+function Utility:CreateShadow(parent, properties)
+    properties = properties or {}
+    
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.BackgroundTransparency = 1
+    shadow.Image = TEXTURES.SHADOW
+    shadow.ImageColor3 = properties.Color or CONSTANTS.SHADOW.COLOR
+    shadow.ImageTransparency = properties.Transparency or CONSTANTS.SHADOW.TRANSPARENCY
+    shadow.Size = UDim2.new(1, properties.BlurSize or CONSTANTS.SHADOW.BLUR_SIZE * 2, 1, properties.BlurSize or CONSTANTS.SHADOW.BLUR_SIZE * 2)
+    shadow.Position = UDim2.new(0, -(properties.BlurSize or CONSTANTS.SHADOW.BLUR_SIZE), 0, -(properties.BlurSize or CONSTANTS.SHADOW.BLUR_SIZE))
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(20, 20, 280, 280)
+    shadow.ZIndex = (parent.ZIndex or 1) - 1
+    
+    shadow.Parent = parent
+    
+    return shadow
+end
+
+-- Create Windows 11 style text with proper rendering
+function Utility:CreateText(parent, properties)
+    properties = properties or {}
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Name = properties.Name or "Text"
+    textLabel.BackgroundTransparency = 1
+    textLabel.Size = properties.Size or UDim2.new(1, 0, 1, 0)
+    textLabel.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+    textLabel.Font = properties.Font or CONSTANTS.FONT
+    textLabel.Text = properties.Text or ""
+    textLabel.TextColor3 = properties.TextColor3 or CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT
+    textLabel.TextSize = properties.TextSize or CONSTANTS.TYPOGRAPHY.BODY
+    textLabel.TextXAlignment = properties.TextXAlignment or Enum.TextXAlignment.Left
+    textLabel.TextYAlignment = properties.TextYAlignment or Enum.TextYAlignment.Center
+    textLabel.RichText = true
+    textLabel.TextWrapped = properties.TextWrapped or false
+    textLabel.TextTransparency = properties.TextTransparency or 0
+    textLabel.ZIndex = properties.ZIndex or CONSTANTS.Z_INDEX.CONTROLS
+    
+    if parent then
+        textLabel.Parent = parent
+    end
+    
+    return textLabel
+end
+
+-- Component Library --
+
+-- Create Windows 11 style button
+function Utility:CreateButton(parent, properties)
+    properties = properties or {}
+    
+    local buttonType = properties.ButtonType or "Primary" -- Primary, Secondary, Tertiary, Text, Icon, Circular
+    
+    -- Determine button appearance based on type
+    local buttonColors = {
+        Primary = {
+            Default = CONSTANTS.COLORS_LIGHT.ACCENT,
+            Hover = Color3.fromRGB(0, 102, 204),
+            Pressed = Color3.fromRGB(0, 90, 180),
+            Text = Color3.fromRGB(255, 255, 255)
+        },
+        Secondary = {
+            Default = CONSTANTS.COLORS_LIGHT.CONTROL_FILL,
+            Hover = CONSTANTS.COLORS_LIGHT.CONTROL_HOVER,
+            Pressed = CONSTANTS.COLORS_LIGHT.CONTROL_PRESSED,
+            Text = CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT
+        },
+        Tertiary = {
+            Default = Color3.fromRGB(243, 243, 243),
+            Hover = Color3.fromRGB(233, 233, 233),
+            Pressed = Color3.fromRGB(225, 225, 225),
+            Text = CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT
+        },
+        Text = {
+            Default = Color3.fromRGB(255, 255, 255),
+            Hover = Color3.fromRGB(245, 245, 245),
+            Pressed = Color3.fromRGB(235, 235, 235),
+            Text = CONSTANTS.COLORS_LIGHT.ACCENT
+        }
+    }
+    
+    -- Create button frame
+    local button = Instance.new("TextButton")
+    button.Name = properties.Name or "Button"
+    button.Size = properties.Size or UDim2.new(0, 200, 0, 32)
+    button.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+    button.BackgroundColor3 = buttonColors[buttonType].Default
+    button.BorderSizePixel = 0
+    button.Text = ""
+    button.AutoButtonColor = false
+    button.ZIndex = properties.ZIndex or CONSTANTS.Z_INDEX.CONTROLS
+    
+    -- Add corner radius
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = properties.CornerRadius or CONSTANTS.CORNER_RADIUS
+    corner.Parent = button
+    
+    -- Add text label
+    local text = Utility:CreateText(button, {
+        Text = properties.Text or "Button",
+        TextColor3 = buttonColors[buttonType].Text,
+        TextSize = properties.TextSize or CONSTANTS.TYPOGRAPHY.BODY,
+        Font = properties.Font or CONSTANTS.FONT,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = button.ZIndex + 1
+    })
+    
+    -- Button States
+    local buttonStates = {
+        Normal = {
+            BackgroundColor3 = buttonColors[buttonType].Default,
+            TextColor3 = buttonColors[buttonType].Text
+        },
+        Hover = {
+            BackgroundColor3 = buttonColors[buttonType].Hover,
+            TextColor3 = buttonColors[buttonType].Text
+        },
+        Pressed = {
+            BackgroundColor3 = buttonColors[buttonType].Pressed,
+            TextColor3 = buttonColors[buttonType].Text
+        },
+        Disabled = {
+            BackgroundColor3 = Color3.fromRGB(230, 230, 230),
+            TextColor3 = Color3.fromRGB(150, 150, 150)
+        }
+    }
+    
+    -- Mouse enter event
+    button.MouseEnter:Connect(function()
+        if properties.Disabled then return end
+        
+        TweenService:Create(button, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = buttonStates.Hover.BackgroundColor3
+        }):Play()
+    end)
+    
+    -- Mouse leave event
+    button.MouseLeave:Connect(function()
+        if properties.Disabled then return end
+        
+        TweenService:Create(button, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = buttonStates.Normal.BackgroundColor3
+        }):Play()
+    end)
+    
+    -- Mouse button down event
+    button.MouseButton1Down:Connect(function()
+        if properties.Disabled then return end
+        
+        TweenService:Create(button, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = buttonStates.Pressed.BackgroundColor3
+        }):Play()
+    end)
+    
+    -- Mouse button up event
+    button.MouseButton1Up:Connect(function()
+        if properties.Disabled then return end
+        
+        TweenService:Create(button, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = buttonStates.Hover.BackgroundColor3
+        }):Play()
+        
+        if properties.Callback then
+            properties.Callback()
+        end
+    end)
+    
+    -- Set initial button state
+    if properties.Disabled then
+        button.BackgroundColor3 = buttonStates.Disabled.BackgroundColor3
+        text.TextColor3 = buttonStates.Disabled.TextColor3
+    end
+    
+    -- Set button parent
+    if parent then
+        button.Parent = parent
+    end
+    
+    -- Button API
+    local buttonAPI = {}
+    
+    function buttonAPI:SetText(newText)
+        text.Text = newText
+    end
+    
+    function buttonAPI:SetEnabled(enabled)
+        properties.Disabled = not enabled
+        
+        if properties.Disabled then
+            button.BackgroundColor3 = buttonStates.Disabled.BackgroundColor3
+            text.TextColor3 = buttonStates.Disabled.TextColor3
+        else
+            button.BackgroundColor3 = buttonStates.Normal.BackgroundColor3
+            text.TextColor3 = buttonStates.Normal.TextColor3
+        end
+    end
+    
+    function buttonAPI:SetCallback(callback)
+        properties.Callback = callback
+    end
+    
+    -- Return the button component
+    return buttonAPI, button
+end
+
+-- Create Windows 11 toggle switch
+function Utility:CreateToggle(parent, properties)
+    properties = properties or {}
+    
+    -- Create toggle container
+    local toggleContainer = Instance.new("Frame")
+    toggleContainer.Name = properties.Name or "Toggle"
+    toggleContainer.Size = properties.Size or UDim2.new(0, 200, 0, 32)
+    toggleContainer.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+    toggleContainer.BackgroundTransparency = 1
+    toggleContainer.BorderSizePixel = 0
+    toggleContainer.ZIndex = properties.ZIndex or CONSTANTS.Z_INDEX.CONTROLS
+    
+    -- Create text label
+    local text = Utility:CreateText(toggleContainer, {
+        Text = properties.Text or "Toggle",
+        TextColor3 = properties.TextColor3 or CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT,
+        TextSize = properties.TextSize or CONSTANTS.TYPOGRAPHY.BODY,
+        Font = properties.Font or CONSTANTS.FONT,
+        Size = UDim2.new(0, 120, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = toggleContainer.ZIndex + 1
+    })
+    
+    -- Create toggle track (background)
+    local toggleTrack = Instance.new("Frame")
+    toggleTrack.Name = "Track"
+    toggleTrack.Size = UDim2.new(0, 44, 0, 20)
+    toggleTrack.Position = UDim2.new(1, -44, 0.5, -10)
+    toggleTrack.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    toggleTrack.BorderSizePixel = 0
+    toggleTrack.ZIndex = toggleContainer.ZIndex + 1
+    toggleTrack.Parent = toggleContainer
+    
+    -- Add corner radius to track
+    local trackCorner = Instance.new("UICorner")
+    trackCorner.CornerRadius = UDim.new(1, 0) -- Fully rounded
+    trackCorner.Parent = toggleTrack
+    
+    -- Create toggle thumb (the moving part)
+    local toggleThumb = Instance.new("Frame")
+    toggleThumb.Name = "Thumb"
+    toggleThumb.Size = UDim2.new(0, 16, 0, 16)
+    toggleThumb.Position = UDim2.new(0, 2, 0.5, -8)
+    toggleThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    toggleThumb.BorderSizePixel = 0
+    toggleThumb.ZIndex = toggleTrack.ZIndex + 1
+    toggleThumb.Parent = toggleTrack
+    
+    -- Add corner radius to thumb
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(1, 0) -- Fully rounded
+    thumbCorner.Parent = toggleThumb
+    
+    -- Add shadow to thumb
+    Utility:CreateShadow(toggleThumb, {
+        BlurSize = 8,
+        Transparency = 0.8
+    })
+    
+    -- Set toggle state
+    local isEnabled = properties.DefaultState or false
+    
+    local function updateToggleVisual()
+        if isEnabled then
+            TweenService:Create(toggleTrack, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                BackgroundColor3 = CONSTANTS.COLORS_LIGHT.ACCENT
+            }):Play()
+            
+            TweenService:Create(toggleThumb, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                Position = UDim2.new(0, 26, 0.5, -8)
+            }):Play()
+        else
+            TweenService:Create(toggleTrack, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+            }):Play()
+            
+            TweenService:Create(toggleThumb, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                Position = UDim2.new(0, 2, 0.5, -8)
+            }):Play()
+        end
+    end
+    
+    -- Initialize toggle state
+    updateToggleVisual()
+    
+    -- Make toggle clickable
+    toggleTrack.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isEnabled = not isEnabled
+            updateToggleVisual()
+            
+            if properties.Callback then
+                properties.Callback(isEnabled)
+            end
+        end
+    end)
+    
+    -- Set toggle parent
+    if parent then
+        toggleContainer.Parent = parent
+    end
+    
+    -- Toggle API
+    local toggleAPI = {}
+    
+    function toggleAPI:SetState(state)
+        isEnabled = state
+        updateToggleVisual()
+    end
+    
+    function toggleAPI:GetState()
+        return isEnabled
+    end
+    
+    function toggleAPI:Toggle()
+        isEnabled = not isEnabled
+        updateToggleVisual()
+        
+        if properties.Callback then
+            properties.Callback(isEnabled)
+        end
+    end
+    
+    function toggleAPI:SetText(newText)
+        text.Text = newText
+    end
+    
+    -- Return the toggle component
+    return toggleAPI, toggleContainer
+end
+
+-- Create Windows 11 slider
+function Utility:CreateSlider(parent, properties)
+    properties = properties or {}
+    
+    -- Create slider container
+    local sliderContainer = Instance.new("Frame")
+    sliderContainer.Name = properties.Name or "Slider"
+    sliderContainer.Size = properties.Size or UDim2.new(0, 200, 0, 50)
+    sliderContainer.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+    sliderContainer.BackgroundTransparency = 1
+    sliderContainer.BorderSizePixel = 0
+    sliderContainer.ZIndex = properties.ZIndex or CONSTANTS.Z_INDEX.CONTROLS
+    
+    -- Create text label
+    local text = Utility:CreateText(sliderContainer, {
+        Text = properties.Text or "Slider",
+        TextColor3 = properties.TextColor3 or CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT,
+        TextSize = properties.TextSize or CONSTANTS.TYPOGRAPHY.BODY,
+        Font = properties.Font or CONSTANTS.FONT,
+        Size = UDim2.new(1, 0, 0, 20),
+        Position = UDim2.new(0, 0, 0, 0),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = sliderContainer.ZIndex + 1
+    })
+    
+    -- Create value text
+    local valueText = Utility:CreateText(sliderContainer, {
+        Text = tostring(properties.DefaultValue or properties.Min or 0),
+        TextColor3 = properties.ValueTextColor3 or CONSTANTS.COLORS_LIGHT.SECONDARY_TEXT,
+        TextSize = properties.ValueTextSize or CONSTANTS.TYPOGRAPHY.BODY_SMALL,
+        Font = properties.Font or CONSTANTS.FONT,
+        Size = UDim2.new(0, 50, 0, 20),
+        Position = UDim2.new(1, -50, 0, 0),
+        TextXAlignment = Enum.TextXAlignment.Right,
+        ZIndex = sliderContainer.ZIndex + 1
+    })
+    
+    -- Create slider track
+    local sliderTrack = Instance.new("Frame")
+    sliderTrack.Name = "Track"
+    sliderTrack.Size = UDim2.new(1, 0, 0, 4)
+    sliderTrack.Position = UDim2.new(0, 0, 0.8, 0)
+    sliderTrack.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    sliderTrack.BorderSizePixel = 0
+    sliderTrack.ZIndex = sliderContainer.ZIndex + 1
+    sliderTrack.Parent = sliderContainer
+    
+    -- Add corner radius to track
+    local trackCorner = Instance.new("UICorner")
+    trackCorner.CornerRadius = UDim.new(1, 0) -- Fully rounded
+    trackCorner.Parent = sliderTrack
+    
+    -- Create slider fill (the colored part)
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Name = "Fill"
+    sliderFill.Size = UDim2.new(0.5, 0, 1, 0)
+    sliderFill.Position = UDim2.new(0, 0, 0, 0)
+    sliderFill.BackgroundColor3 = CONSTANTS.COLORS_LIGHT.ACCENT
+    sliderFill.BorderSizePixel = 0
+    sliderFill.ZIndex = sliderTrack.ZIndex + 1
+    sliderFill.Parent = sliderTrack
+    
+    -- Add corner radius to fill
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0) -- Fully rounded
+    fillCorner.Parent = sliderFill
+    
+    -- Create slider thumb
+    local sliderThumb = Instance.new("Frame")
+    sliderThumb.Name = "Thumb"
+    sliderThumb.Size = UDim2.new(0, 16, 0, 16)
+    sliderThumb.Position = UDim2.new(0.5, -8, 0.5, -8)
+    sliderThumb.BackgroundColor3 = CONSTANTS.COLORS_LIGHT.ACCENT
+    sliderThumb.BorderSizePixel = 0
+    sliderThumb.ZIndex = sliderFill.ZIndex + 1
+    sliderThumb.Parent = sliderTrack
+    
+    -- Add corner radius to thumb
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(1, 0) -- Fully rounded
+    thumbCorner.Parent = sliderThumb
+    
+    -- Add shadow to thumb
+    Utility:CreateShadow(sliderThumb, {
+        BlurSize = 8,
+        Transparency = 0.8
+    })
+    
+    -- Slider properties
+    local min = properties.Min or 0
+    local max = properties.Max or 100
+    local defaultValue = properties.DefaultValue or min
+    local increment = properties.Increment or 1
+    
+    -- Clamp value to range and round to increment
+    local function roundToIncrement(value)
+        return math.floor((value - min) / increment + 0.5) * increment + min
+    end
+    
+    local function clampValue(value)
+        return math.clamp(roundToIncrement(value), min, max)
+    end
+    
+    -- Update slider visuals
+    local function setSliderValue(value)
+        value = clampValue(value)
+        
+        -- Calculate fill percentage
+        local percent = (value - min) / (max - min)
+        
+        -- Update fill and thumb position
+        sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        sliderThumb.Position = UDim2.new(percent, -8, 0.5, -8)
+        
+        -- Update value text
+        valueText.Text = tostring(value)
+        
+        -- Call callback
+        if properties.Callback then
+            properties.Callback(value)
+        end
+        
+        return value
+    end
+    
+    -- Initialize slider value
+    local currentValue = setSliderValue(defaultValue)
+    
+    -- Mouse interactions
+    local isDragging = false
+    
+    sliderTrack.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+            
+            -- Get mouse position relative to track
+            local mousePos = input.Position.X - sliderTrack.AbsolutePosition.X
+            local percent = math.clamp(mousePos / sliderTrack.AbsoluteSize.X, 0, 1)
+            local value = min + (max - min) * percent
+            
+            currentValue = setSliderValue(value)
+        end
+    end)
+    
+    sliderThumb.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            -- Get mouse position relative to track
+            local mousePos = input.Position.X - sliderTrack.AbsolutePosition.X
+            local percent = math.clamp(mousePos / sliderTrack.AbsoluteSize.X, 0, 1)
+            local value = min + (max - min) * percent
+            
+            currentValue = setSliderValue(value)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = false
+        end
+    end)
+    
+    -- Set slider parent
+    if parent then
+        sliderContainer.Parent = parent
+    end
+    
+    -- Slider API
+    local sliderAPI = {}
+    
+    function sliderAPI:SetValue(value)
+        currentValue = setSliderValue(value)
+        return currentValue
+    end
+    
+    function sliderAPI:GetValue()
+        return currentValue
+    end
+    
+    function sliderAPI:SetText(newText)
+        text.Text = newText
+    end
+    
+    function sliderAPI:SetRange(newMin, newMax)
+        min = newMin
+        max = newMax
+        currentValue = setSliderValue(currentValue) -- Ensure value is within new range
+    end
+    
+    -- Return the slider component
+    return sliderAPI, sliderContainer
+end
+
+-- Create Windows 11 style checkbox
+function Utility:CreateCheckbox(parent, properties)
+    properties = properties or {}
+    
+    -- Create checkbox container
+    local checkboxContainer = Instance.new("Frame")
+    checkboxContainer.Name = properties.Name or "Checkbox"
+    checkboxContainer.Size = properties.Size or UDim2.new(0, 200, 0, 32)
+    checkboxContainer.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+    checkboxContainer.BackgroundTransparency = 1
+    checkboxContainer.BorderSizePixel = 0
+    checkboxContainer.ZIndex = properties.ZIndex or CONSTANTS.Z_INDEX.CONTROLS
+    
+    -- Create text label
+    local text = Utility:CreateText(checkboxContainer, {
+        Text = properties.Text or "Checkbox",
+        TextColor3 = properties.TextColor3 or CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT,
+        TextSize = properties.TextSize or CONSTANTS.TYPOGRAPHY.BODY,
+        Font = properties.Font or CONSTANTS.FONT,
+        Size = UDim2.new(1, -32, 1, 0),
+        Position = UDim2.new(0, 32, 0, 0),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = checkboxContainer.ZIndex + 1
+    })
+    
+    -- Create checkbox box
+    local checkboxBox = Instance.new("Frame")
+    checkboxBox.Name = "Box"
+    checkboxBox.Size = UDim2.new(0, 20, 0, 20)
+    checkboxBox.Position = UDim2.new(0, 0, 0.5, -10)
+    checkboxBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    checkboxBox.BorderSizePixel = 0
+    checkboxBox.ZIndex = checkboxContainer.ZIndex + 1
+    checkboxBox.Parent = checkboxContainer
+    
+    -- Add border to checkbox
+    local border = Instance.new("UIStroke")
+    border.Color = Color3.fromRGB(200, 200, 200)
+    border.Thickness = 1
+    border.Parent = checkboxBox
+    
+    -- Add corner radius to checkbox
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 4) -- Slightly rounded
+    boxCorner.Parent = checkboxBox
+    
+    -- Create checkmark
+    local checkmark = Instance.new("ImageLabel")
+    checkmark.Name = "Checkmark"
+    checkmark.Size = UDim2.new(0.8, 0, 0.8, 0)
+    checkmark.Position = UDim2.new(0.1, 0, 0.1, 0)
+    checkmark.BackgroundTransparency = 1
+    checkmark.Image = "rbxassetid://6031094667" -- Checkmark icon
+    checkmark.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    checkmark.Visible = false
+    checkmark.ZIndex = checkboxBox.ZIndex + 1
+    checkmark.Parent = checkboxBox
+    
+    -- Set checkbox state
+    local isChecked = properties.DefaultState or false
+    
+    local function updateCheckboxVisual()
+        if isChecked then
+            TweenService:Create(checkboxBox, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                BackgroundColor3 = CONSTANTS.COLORS_LIGHT.ACCENT
+            }):Play()
+            
+            TweenService:Create(border, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                Color = CONSTANTS.COLORS_LIGHT.ACCENT
+            }):Play()
+            
+            checkmark.Visible = true
+        else
+            TweenService:Create(checkboxBox, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            }):Play()
+            
+            TweenService:Create(border, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                Color = Color3.fromRGB(200, 200, 200)
+            }):Play()
+            
+            checkmark.Visible = false
+        end
+    end
+    
+    -- Initialize checkbox state
+    updateCheckboxVisual()
+    
+    -- Make checkbox clickable
+    checkboxBox.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isChecked = not isChecked
+            updateCheckboxVisual()
+            
+            if properties.Callback then
+                properties.Callback(isChecked)
+            end
+        end
+    end)
+    
+    checkboxContainer.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isChecked = not isChecked
+            updateCheckboxVisual()
+            
+            if properties.Callback then
+                properties.Callback(isChecked)
+            end
+        end
+    end)
+    
+    -- Set checkbox parent
+    if parent then
+        checkboxContainer.Parent = parent
+    end
+    
+    -- Checkbox API
+    local checkboxAPI = {}
+    
+    function checkboxAPI:SetState(state)
+        isChecked = state
+        updateCheckboxVisual()
+    end
+    
+    function checkboxAPI:GetState()
+        return isChecked
+    end
+    
+    function checkboxAPI:Toggle()
+        isChecked = not isChecked
+        updateCheckboxVisual()
+        
+        if properties.Callback then
+            properties.Callback(isChecked)
+        end
+    end
+    
+    function checkboxAPI:SetText(newText)
+        text.Text = newText
+    end
+    
+    -- Return the checkbox component
+    return checkboxAPI, checkboxContainer
+end
+
+-- Tab button hover effects
+tabButton.MouseEnter:Connect(function()
+    if not tab.Active then
+        TweenService:Create(tabIcon, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+            ImageColor3 = self.Colors.PRIMARY_TEXT
+        }):Play()
+    end
+end)
+
+tabButton.MouseLeave:Connect(function()
+    if not tab.Active then
+        TweenService:Create(tabIcon, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+            ImageColor3 = self.Colors.SECONDARY_TEXT
+        }):Play()
+    end
+end)
+
+-- Create function to update tab theme
+function tab:UpdateTheme(colors)
+    if self.Active then
+        if type(self.Icon) == "userdata" and self.Icon:IsA("ImageLabel") then
+            self.Icon.ImageColor3 = colors.ACCENT
+        else
+            self.Icon.TextColor3 = colors.ACCENT
+        end
+        self.Indicator.BackgroundColor3 = colors.ACCENT
+    else
+        if type(self.Icon) == "userdata" and self.Icon:IsA("ImageLabel") then
+            self.Icon.ImageColor3 = colors.SECONDARY_TEXT
+        else
+            self.Icon.TextColor3 = colors.SECONDARY_TEXT
+        end
+    end
+    
+    -- Update all sections
+    for _, section in pairs(self.Sections) do
+        section:UpdateTheme(colors)
+    end
+end
+
+-- Create function to add a section to the tab
+function tab:CreateSection(properties)
+    properties = properties or {}
+    
+    local section = {
+        Name = properties.Name or "Section",
+        Components = {}
+    }
+    
+    -- Create section container
+    local sectionContainer = Instance.new("Frame")
+    sectionContainer.Name = "Section_" .. section.Name
+    sectionContainer.Size = UDim2.new(1, 0, 0, 30) -- Initial size, will grow with content
+    sectionContainer.BackgroundColor3 = self.Active and instance.Colors.CONTROL_FILL or Color3.fromRGB(245, 245, 245)
+    sectionContainer.BorderSizePixel = 0
+    sectionContainer.ZIndex = self.Container.ZIndex + 1
+    sectionContainer.LayoutOrder = #self.Sections + 1
+    sectionContainer.AutomaticSize = Enum.AutomaticSize.Y
+    sectionContainer.Parent = self.Container
+    
+    -- Add corner radius to section
+    local sectionCorner = Instance.new("UICorner")
+    sectionCorner.CornerRadius = CONSTANTS.CORNER_RADIUS
+    sectionCorner.Parent = sectionContainer
+    
+    -- Add drop shadow
+    Utility:CreateShadow(sectionContainer, {
+        BlurSize = 4,
+        Transparency = 0.9
+    })
+    
+    -- Create section header
+    local sectionHeader = Instance.new("Frame")
+    sectionHeader.Name = "SectionHeader"
+    sectionHeader.Size = UDim2.new(1, 0, 0, 36)
+    sectionHeader.BackgroundTransparency = 1
+    sectionHeader.ZIndex = sectionContainer.ZIndex + 1
+    sectionHeader.Parent = sectionContainer
+    
+    -- Create section title
+    local sectionTitle = Utility:CreateText(sectionHeader, {
+        Name = "SectionTitle",
+        Text = section.Name,
+        TextColor3 = instance.Colors.PRIMARY_TEXT,
+        TextSize = CONSTANTS.TYPOGRAPHY.SUBTITLE,
+        Size = UDim2.new(1, -20, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Font = CONSTANTS.FONT,
+        ZIndex = sectionHeader.ZIndex + 1
+    })
+    
+    -- Create section divider
+    local sectionDivider = Instance.new("Frame")
+    sectionDivider.Name = "SectionDivider"
+    sectionDivider.Size = UDim2.new(1, -20, 0, 1)
+    sectionDivider.Position = UDim2.new(0, 10, 1, 0)
+    sectionDivider.BackgroundColor3 = instance.Colors.CONTROL_BORDER
+    sectionDivider.BorderSizePixel = 0
+    sectionDivider.ZIndex = sectionHeader.ZIndex
+    sectionDivider.Parent = sectionHeader
+    
+    -- Create content container
+    local contentContainer = Instance.new("Frame")
+    contentContainer.Name = "Content"
+    contentContainer.Size = UDim2.new(1, 0, 0, 0)
+    contentContainer.Position = UDim2.new(0, 0, 0, 36)
+    contentContainer.BackgroundTransparency = 1
+    contentContainer.BorderSizePixel = 0
+    contentContainer.ZIndex = sectionContainer.ZIndex + 1
+    contentContainer.AutomaticSize = Enum.AutomaticSize.Y
+    contentContainer.Parent = sectionContainer
+    
+    -- Add padding to content
+    local contentPadding = Instance.new("UIPadding")
+    contentPadding.PaddingLeft = UDim.new(0, 10)
+    contentPadding.PaddingRight = UDim.new(0, 10)
+    contentPadding.PaddingTop = UDim.new(0, 5)
+    contentPadding.PaddingBottom = UDim.new(0, 10)
+    contentPadding.Parent = contentContainer
+    
+    -- Create auto-layout for section content
+    local contentLayout = Instance.new("UIListLayout")
+    contentLayout.FillDirection = Enum.FillDirection.Vertical
+    contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    contentLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    contentLayout.Padding = UDim.new(0, 8)
+    contentLayout.Parent = contentContainer
+    
+    -- Store UI references in section
+    section.Container = sectionContainer
+    section.Header = sectionHeader
+    section.Title = sectionTitle
+    section.ContentContainer = contentContainer
+    
+    -- Create function to update section theme
+    function section:UpdateTheme(colors)
+        self.Container.BackgroundColor3 = colors.CONTROL_FILL
+        self.Title.TextColor3 = colors.PRIMARY_TEXT
+        self.Header.SectionDivider.BackgroundColor3 = colors.CONTROL_BORDER
+        
+        -- Update all components in the section
+        for _, component in pairs(self.Components) do
+            if component.UpdateTheme then
+                component:UpdateTheme(colors)
+            end
+        end
+    end
+    
+    -- Add component creation methods to section
+    
+    -- Create a button in this section
+    function section:AddButton(properties)
+        properties = properties or {}
+        
+        -- Create the button
+        local buttonAPI, buttonInstance = Utility:CreateButton(self.ContentContainer, properties)
+        
+        -- Set layout order
+        buttonInstance.LayoutOrder = #self.Components + 1
+        
+        -- Store component
+        table.insert(self.Components, buttonAPI)
+        
+        return buttonAPI
+    end
+    
+    -- Create a toggle in this section
+    function section:AddToggle(properties)
+        properties = properties or {}
+        
+        -- Create the toggle
+        local toggleAPI, toggleInstance = Utility:CreateToggle(self.ContentContainer, properties)
+        
+        -- Set layout order
+        toggleInstance.LayoutOrder = #self.Components + 1
+        
+        -- Store component
+        table.insert(self.Components, toggleAPI)
+        
+        return toggleAPI
+    end
+    
+    -- Create a slider in this section
+    function section:AddSlider(properties)
+        properties = properties or {}
+        
+        -- Create the slider
+        local sliderAPI, sliderInstance = Utility:CreateSlider(self.ContentContainer, properties)
+        
+        -- Set layout order
+        sliderInstance.LayoutOrder = #self.Components + 1
+        
+        -- Store component
+        table.insert(self.Components, sliderAPI)
+        
+        return sliderAPI
+    end
+    
+    -- Create a checkbox in this section
+    function section:AddCheckbox(properties)
+        properties = properties or {}
+        
+        -- Create the checkbox
+        local checkboxAPI, checkboxInstance = Utility:CreateCheckbox(self.ContentContainer, properties)
+        
+        -- Set layout order
+        checkboxInstance.LayoutOrder = #self.Components + 1
+        
+        -- Store component
+        table.insert(self.Components, checkboxAPI)
+        
+        return checkboxAPI
+    end
+    
+    -- Add dropdown component to section API
+    function section:AddDropdown(properties)
+        properties = properties or {}
+        
+        -- Create the dropdown
+        local dropdownAPI, dropdownInstance = Utility:CreateDropdown(self.ContentContainer, properties)
+        
+        -- Set layout order
+        dropdownInstance.LayoutOrder = #self.Components + 1
+        
+        -- Store component
+        table.insert(self.Components, dropdownAPI)
+        
+        return dropdownAPI
+    end
+    
+    -- Store section in tab
+    table.insert(self.Sections, section)
+    
+    return section
+end
+
+-- Create a tab API
+local tabAPI = {
+    Name = tab.Name,
+    CreateSection = tab.CreateSection
+}
+
+-- If this is the first tab, make it active
+if #self.Tabs == 0 then
+    self:SelectTab(tab.Name)
+end
+
+return tabAPI
+end
+
+-- Select a tab to display
+function instance:SelectTab(tabName)
+    -- Ensure tab exists
+    if not self.Tabs[tabName] then
+        return
+    end
+    
+    -- Deactivate current tab if there is one
+    if self.CurrentTab then
+        local currentTab = self.Tabs[self.CurrentTab]
+        currentTab.Active = false
+        currentTab.Container.Visible = false
+        currentTab.Indicator.Visible = false
+        
+        -- Update icon color
+        if type(currentTab.Icon) == "userdata" and currentTab.Icon:IsA("ImageLabel") then
+            TweenService:Create(currentTab.Icon, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                ImageColor3 = self.Colors.SECONDARY_TEXT
+            }):Play()
+        else
+            TweenService:Create(currentTab.Icon, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                TextColor3 = self.Colors.SECONDARY_TEXT
+            }):Play()
+        end
+    end
+    
+    -- Activate selected tab
+    local selectedTab = self.Tabs[tabName]
+    selectedTab.Active = true
+    selectedTab.Container.Visible = true
+    selectedTab.Indicator.Visible = true
+    
+    -- Update icon color
+    if type(selectedTab.Icon) == "userdata" and selectedTab.Icon:IsA("ImageLabel") then
+        TweenService:Create(selectedTab.Icon, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+            ImageColor3 = self.Colors.ACCENT
+        }):Play()
+    else
+        TweenService:Create(selectedTab.Icon, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+            TextColor3 = self.Colors.ACCENT
+        }):Play()
+    end
+    
+    -- Store current tab
+    self.CurrentTab = tabName
+end
+
+-- Create Windows 11 style dropdown
+function Utility:CreateDropdown(parent, properties)
+    properties = properties or {}
+    
+    -- Create dropdown container
+    local dropdownContainer = Instance.new("Frame")
+    dropdownContainer.Name = properties.Name or "Dropdown"
+    dropdownContainer.Size = properties.Size or UDim2.new(1, 0, 0, 32)
+    dropdownContainer.Position = properties.Position or UDim2.new(0, 0, 0, 0)
+    dropdownContainer.BackgroundTransparency = 1
+    dropdownContainer.BorderSizePixel = 0
+    dropdownContainer.ZIndex = properties.ZIndex or CONSTANTS.Z_INDEX.CONTROLS
+    
+    -- Create text label
+    local text = Utility:CreateText(dropdownContainer, {
+        Text = properties.Text or "Dropdown",
+        TextColor3 = properties.TextColor3 or CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT,
+        TextSize = properties.TextSize or CONSTANTS.TYPOGRAPHY.BODY,
+        Font = properties.Font or CONSTANTS.FONT,
+        Size = UDim2.new(1, 0, 0, 20),
+        Position = UDim2.new(0, 0, 0, 0),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = dropdownContainer.ZIndex + 1
+    })
+    
+    -- Create dropdown button
+    local dropdownButton = Instance.new("TextButton")
+    dropdownButton.Name = "DropdownButton"
+    dropdownButton.Size = UDim2.new(1, 0, 0, 32)
+    dropdownButton.Position = UDim2.new(0, 0, 0, 22)
+    dropdownButton.BackgroundColor3 = CONSTANTS.COLORS_LIGHT.CONTROL_FILL
+    dropdownButton.Text = ""
+    dropdownButton.AutoButtonColor = false
+    dropdownButton.BorderSizePixel = 0
+    dropdownButton.ZIndex = dropdownContainer.ZIndex + 1
+    dropdownButton.Parent = dropdownContainer
+    
+    -- Add corner radius to dropdown button
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = CONSTANTS.CORNER_RADIUS
+    buttonCorner.Parent = dropdownButton
+    
+    -- Add border to dropdown button
+    local buttonBorder = Instance.new("UIStroke")
+    buttonBorder.Color = CONSTANTS.COLORS_LIGHT.CONTROL_BORDER
+    buttonBorder.Thickness = 1
+    buttonBorder.Parent = dropdownButton
+    
+    -- Create selected value text
+    local selectedText = Utility:CreateText(dropdownButton, {
+        Text = properties.DefaultOption or "Select an option",
+        TextColor3 = properties.SelectedTextColor3 or CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT,
+        TextSize = properties.TextSize or CONSTANTS.TYPOGRAPHY.BODY,
+        Font = properties.Font or CONSTANTS.FONT,
+        Size = UDim2.new(1, -32, 1, 0),
+        Position = UDim2.new(0, 10, 0, 0),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = dropdownButton.ZIndex + 1
+    })
+    
+    -- Create dropdown arrow
+    local dropdownArrow = Instance.new("ImageLabel")
+    dropdownArrow.Name = "DropdownArrow"
+    dropdownArrow.Size = UDim2.new(0, 12, 0, 12)
+    dropdownArrow.Position = UDim2.new(1, -22, 0.5, -6)
+    dropdownArrow.BackgroundTransparency = 1
+    dropdownArrow.Image = "rbxassetid://7072706796" -- Dropdown arrow icon
+    dropdownArrow.ImageColor3 = CONSTANTS.COLORS_LIGHT.SECONDARY_TEXT
+    dropdownArrow.ZIndex = dropdownButton.ZIndex + 1
+    dropdownArrow.Parent = dropdownButton
+    
+    -- Create dropdown menu (initially hidden)
+    local dropdownMenu = Instance.new("Frame")
+    dropdownMenu.Name = "DropdownMenu"
+    dropdownMenu.Size = UDim2.new(1, 0, 0, 0)
+    dropdownMenu.Position = UDim2.new(0, 0, 1, 5)
+    dropdownMenu.BackgroundColor3 = dropdownButton.BackgroundColor3
+    dropdownMenu.BorderSizePixel = 0
+    dropdownMenu.ClipsDescendants = true
+    dropdownMenu.Visible = false
+    dropdownMenu.ZIndex = CONSTANTS.Z_INDEX.DROPDOWN
+    dropdownMenu.Parent = dropdownButton
+    
+    -- Add corner radius to dropdown menu
+    local menuCorner = Instance.new("UICorner")
+    menuCorner.CornerRadius = CONSTANTS.CORNER_RADIUS
+    menuCorner.Parent = dropdownMenu
+    
+    -- Add shadow to dropdown menu
+    Utility:CreateShadow(dropdownMenu, {
+        BlurSize = 10,
+        Transparency = 0.8
+    })
+    
+    -- Add layout for options
+    local optionLayout = Instance.new("UIListLayout")
+    optionLayout.FillDirection = Enum.FillDirection.Vertical
+    optionLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    optionLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    optionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    optionLayout.Padding = UDim.new(0, 2)
+    optionLayout.Parent = dropdownMenu
+    
+    -- Add padding to dropdown menu
+    local menuPadding = Instance.new("UIPadding")
+    menuPadding.PaddingTop = UDim.new(0, 5)
+    menuPadding.PaddingBottom = UDim.new(0, 5)
+    menuPadding.Parent = dropdownMenu
+    
+    -- Dropdown options
+    local options = properties.Options or {}
+    local selectedOption = properties.DefaultOption or nil
+    local optionButtons = {}
+    
+    -- Create option buttons
+    local function createOptions()
+        -- Clear existing options
+        for _, optionButton in pairs(optionButtons) do
+            optionButton:Destroy()
+        end
+        optionButtons = {}
+        
+        -- Create new options
+        for i, option in ipairs(options) do
+            local optionButton = Instance.new("TextButton")
+            optionButton.Name = "Option_" .. option
+            optionButton.Size = UDim2.new(1, -10, 0, 28)
+            optionButton.BackgroundColor3 = dropdownMenu.BackgroundColor3
+            optionButton.BackgroundTransparency = 1
+            optionButton.Text = ""
+            optionButton.LayoutOrder = i
+            optionButton.ZIndex = dropdownMenu.ZIndex + 1
+            optionButton.Parent = dropdownMenu
+            
+            local optionText = Utility:CreateText(optionButton, {
+                Text = option,
+                TextColor3 = CONSTANTS.COLORS_LIGHT.PRIMARY_TEXT,
+                TextSize = properties.TextSize or CONSTANTS.TYPOGRAPHY.BODY,
+                Font = properties.Font or CONSTANTS.FONT,
+                Size = UDim2.new(1, 0, 1, 0),
+                Position = UDim2.new(0, 10, 0, 0),
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = optionButton.ZIndex + 1
+            })
+            
+            -- Highlight if selected
+            if option == selectedOption then
+                optionText.TextColor3 = CONSTANTS.COLORS_LIGHT.ACCENT
+                optionText.Font = Enum.Font.GothamBold
+            end
+            
+            -- Option button hover effect
+            optionButton.MouseEnter:Connect(function()
+                TweenService:Create(optionButton, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+                    BackgroundTransparency = 0.8
+                }):Play()
+            end)
+            
+            optionButton.MouseLeave:Connect(function()
+                TweenService:Create(optionButton, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+                    BackgroundTransparency = 1
+                }):Play()
+            end)
+            
+            -- Option selection
+            optionButton.MouseButton1Click:Connect(function()
+                selectedOption = option
+                selectedText.Text = option
+                
+                -- Close dropdown menu
+                dropdownMenu.Visible = false
+                
+                -- Rotate arrow back
+                TweenService:Create(dropdownArrow, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                    Rotation = 0
+                }):Play()
+                
+                -- Call callback function
+                if properties.Callback then
+                    properties.Callback(option)
+                end
+                
+                -- Recreate options to reflect new selection
+                createOptions()
+            end)
+            
+            table.insert(optionButtons, optionButton)
+        end
+        
+        -- Update menu height based on options
+        dropdownMenu.Size = UDim2.new(1, 0, 0, math.min(#options * 30 + 10, 200))
+    end
+    
+    -- Initial option creation
+    createOptions()
+    
+    -- Toggle dropdown menu
+    local menuOpen = false
+    
+    dropdownButton.MouseButton1Click:Connect(function()
+        menuOpen = not menuOpen
+        dropdownMenu.Visible = menuOpen
+        
+        -- Rotate arrow
+        TweenService:Create(dropdownArrow, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+            Rotation = menuOpen and 180 or 0
+        }):Play()
+    end)
+    
+    -- Close menu when clicking outside
+    UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and menuOpen then
+            local mousePosition = input.Position
+            if not dropdownButton:IsDescendantOf(game) then return end
+            
+            local absolutePosition = dropdownButton.AbsolutePosition
+            local absoluteSize = dropdownButton.AbsoluteSize
+            local menuAbsolutePosition = dropdownMenu.AbsolutePosition
+            local menuAbsoluteSize = dropdownMenu.AbsoluteSize
+            
+            -- Check if click is outside button and menu
+            if not (mousePosition.X >= absolutePosition.X and mousePosition.X <= absolutePosition.X + absoluteSize.X and
+                mousePosition.Y >= absolutePosition.Y and mousePosition.Y <= absolutePosition.Y + absoluteSize.Y) and
+                not (mousePosition.X >= menuAbsolutePosition.X and mousePosition.X <= menuAbsolutePosition.X + menuAbsoluteSize.X and
+                mousePosition.Y >= menuAbsolutePosition.Y and mousePosition.Y <= menuAbsolutePosition.Y + menuAbsoluteSize.Y) then
+                
+                menuOpen = false
+                dropdownMenu.Visible = false
+                
+                -- Rotate arrow back
+                TweenService:Create(dropdownArrow, TweenInfo.new(0.2, CONSTANTS.EASING.STANDARD), {
+                    Rotation = 0
+                }):Play()
+            end
+        end
+    end)
+    
+    -- Button hover effect
+    dropdownButton.MouseEnter:Connect(function()
+        TweenService:Create(dropdownButton, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = CONSTANTS.COLORS_LIGHT.CONTROL_HOVER
+        }):Play()
+    end)
+    
+    dropdownButton.MouseLeave:Connect(function()
+        TweenService:Create(dropdownButton, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = CONSTANTS.COLORS_LIGHT.CONTROL_FILL
+        }):Play()
+    end)
+    
+    -- Set dropdown parent
+    if parent then
+        dropdownContainer.Parent = parent
+    end
+    
+    -- Dropdown API
+    local dropdownAPI = {}
+    
+    function dropdownAPI:SetOptions(newOptions)
+        options = newOptions
+        
+        -- Reset selection if current selection is not in new options
+        local found = false
+        for _, option in ipairs(options) do
+            if option == selectedOption then
+                found = true
+                break
+            end
+        end
+        
+        if not found then
+            selectedOption = nil
+            selectedText.Text = "Select an option"
+        end
+        
+        createOptions()
+    end
+    
+    function dropdownAPI:GetSelection()
+        return selectedOption
+    end
+    
+    function dropdownAPI:SetSelection(option)
+        -- Verify option exists
+        local found = false
+        for _, existingOption in ipairs(options) do
+            if existingOption == option then
+                found = true
+                break
+            end
+        end
+        
+        if found then
+            selectedOption = option
+            selectedText.Text = option
+            createOptions()
+            
+            -- Call callback function
+            if properties.Callback then
+                properties.Callback(option)
+            end
+        end
+    end
+    
+    function dropdownAPI:SetText(newText)
+        text.Text = newText
+    end
+    
+    -- Return the dropdown component
+    return dropdownAPI, dropdownContainer
+end
+
+-- Create Notification System
+function Windows11:CreateNotification(properties)
+    properties = properties or {}
+    
+    -- Get the current theme colors
+    local colors = self.Colors or CONSTANTS.COLORS_LIGHT
+    
+    -- Notification container
+    local notificationContainer = Instance.new("Frame")
+    notificationContainer.Name = "Notification"
+    notificationContainer.Size = UDim2.new(0, 300, 0, 80)
+    notificationContainer.Position = UDim2.new(1, 20, 1, -90)
+    notificationContainer.BackgroundColor3 = colors.CONTROL_FILL
+    notificationContainer.BorderSizePixel = 0
+    notificationContainer.ZIndex = CONSTANTS.Z_INDEX.NOTIFICATION
+    notificationContainer.Parent = self.ScreenGui
+    
+    -- Add corner radius
+    local cornerRadius = Instance.new("UICorner")
+    cornerRadius.CornerRadius = CONSTANTS.CORNER_RADIUS
+    cornerRadius.Parent = notificationContainer
+    
+    -- Add shadow
+    Utility:CreateShadow(notificationContainer, {
+        BlurSize = 15,
+        Transparency = 0.6
+    })
+    
+    -- Create title
+    local title = Utility:CreateText(notificationContainer, {
+        Text = properties.Title or "Notification",
+        TextColor3 = colors.PRIMARY_TEXT,
+        TextSize = CONSTANTS.TYPOGRAPHY.SUBTITLE,
+        Font = Enum.Font.GothamBold,
+        Size = UDim2.new(1, -20, 0, 24),
+        Position = UDim2.new(0, 10, 0, 10),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = CONSTANTS.Z_INDEX.NOTIFICATION + 1
+    })
+    
+    -- Create message
+    local message = Utility:CreateText(notificationContainer, {
+        Text = properties.Message or "",
+        TextColor3 = colors.SECONDARY_TEXT,
+        TextSize = CONSTANTS.TYPOGRAPHY.BODY,
+        Font = CONSTANTS.FONT,
+        Size = UDim2.new(1, -20, 0, 0),
+        Position = UDim2.new(0, 10, 0, 36),
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        TextWrapped = true,
+        ZIndex = CONSTANTS.Z_INDEX.NOTIFICATION + 1
+    })
+    
+    -- Adjust container height based on message length
+    local textSize = TextService:GetTextSize(
+        properties.Message or "",
+        CONSTANTS.TYPOGRAPHY.BODY,
+        CONSTANTS.FONT,
+        Vector2.new(280, 1000)
+    )
+    
+    local messageHeight = math.max(20, textSize.Y)
+    message.Size = UDim2.new(1, -20, 0, messageHeight)
+    notificationContainer.Size = UDim2.new(0, 300, 0, math.min(80 + messageHeight - 20, 200))
+    
+    -- Create close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 24, 0, 24)
+    closeButton.Position = UDim2.new(1, -30, 0, 10)
+    closeButton.BackgroundTransparency = 1
+    closeButton.Text = ""
+    closeButton.ZIndex = CONSTANTS.Z_INDEX.NOTIFICATION + 2
+    closeButton.Parent = notificationContainer
+    
+    -- Create close icon
+    local closeIcon = Instance.new("Frame")
+    closeIcon.Name = "CloseIcon"
+    closeIcon.Size = UDim2.new(0, 10, 0, 10)
+    closeIcon.Position = UDim2.new(0.5, -5, 0.5, -5)
+    closeIcon.BackgroundTransparency = 1
+    closeIcon.BorderSizePixel = 0
+    closeIcon.ZIndex = CONSTANTS.Z_INDEX.NOTIFICATION + 3
+    closeIcon.Parent = closeButton
+    
+    -- Create close icon lines
+    local closeIconLine1 = Instance.new("Frame")
+    closeIconLine1.Name = "Line1"
+    closeIconLine1.Size = UDim2.new(0, 12, 0, 1)
+    closeIconLine1.Position = UDim2.new(0.5, -6, 0.5, 0)
+    closeIconLine1.BackgroundColor3 = colors.SECONDARY_TEXT
+    closeIconLine1.BorderSizePixel = 0
+    closeIconLine1.ZIndex = CONSTANTS.Z_INDEX.NOTIFICATION + 4
+    closeIconLine1.Rotation = 45
+    closeIconLine1.Parent = closeIcon
+    
+    local closeIconLine2 = Instance.new("Frame")
+    closeIconLine2.Name = "Line2"
+    closeIconLine2.Size = UDim2.new(0, 12, 0, 1)
+    closeIconLine2.Position = UDim2.new(0.5, -6, 0.5, 0)
+    closeIconLine2.BackgroundColor3 = colors.SECONDARY_TEXT
+    closeIconLine2.BorderSizePixel = 0
+    closeIconLine2.ZIndex = CONSTANTS.Z_INDEX.NOTIFICATION + 4
+    closeIconLine2.Rotation = -45
+    closeIconLine2.Parent = closeIcon
+    
+    -- Hover effect for close button
+    closeButton.MouseEnter:Connect(function()
+        TweenService:Create(closeIconLine1, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = colors.PRIMARY_TEXT
+        }):Play()
+        
+        TweenService:Create(closeIconLine2, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = colors.PRIMARY_TEXT
+        }):Play()
+    end)
+    
+    closeButton.MouseLeave:Connect(function()
+        TweenService:Create(closeIconLine1, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = colors.SECONDARY_TEXT
+        }):Play()
+        
+        TweenService:Create(closeIconLine2, TweenInfo.new(0.1, CONSTANTS.EASING.STANDARD), {
+            BackgroundColor3 = colors.SECONDARY_TEXT
+        }):Play()
+    end)
+    
+    -- Close notification when button is clicked
+    closeButton.MouseButton1Click:Connect(function()
+        -- Animate out
+        TweenService:Create(notificationContainer, TweenInfo.new(0.3, CONSTANTS.EASING.STANDARD), {
+            Position = UDim2.new(1, 20, 1, -90)
+        }):Play()
+        
+        -- Destroy after animation
+        task.delay(0.3, function()
+            notificationContainer:Destroy()
+        end)
+    end)
+    
+    -- Auto-close after timeout
+    if properties.Duration then
+        task.delay(properties.Duration, function()
+            if notificationContainer and notificationContainer:IsDescendantOf(game) then
+                -- Animate out
+                TweenService:Create(notificationContainer, TweenInfo.new(0.3, CONSTANTS.EASING.STANDARD), {
+                    Position = UDim2.new(1, 20, 1, -90)
+                }):Play()
+                
+                -- Destroy after animation
+                task.delay(0.3, function()
+                    notificationContainer:Destroy()
+                end)
+            end
+        end)
+    end
+    
+    -- Animate in
+    TweenService:Create(notificationContainer, TweenInfo.new(0.3, CONSTANTS.EASING.STANDARD), {
+        Position = UDim2.new(1, -320, 1, -90)
+    }):Play()
+    
+    return notificationContainer
+end
+
+-- Initialize the library
+local function InitLibrary()
+    -- Pre-load assets
+    local assetsToPreload = {
+        TEXTURES.NOISE,
+        TEXTURES.SHADOW,
+        TEXTURES.GLOW,
+        "rbxassetid://6031094667", -- Checkmark icon
+        "rbxassetid://7072706796" -- Dropdown arrow icon
+    }
+    
+    -- Create a ContentProvider request
+    ContentProvider:PreloadAsync(assetsToPreload, function()
+        print("Windows 11 UI assets preloaded successfully")
+    end)
+    
+    -- Return the library
+    return Windows11
+end
+
+-- Return the initialized library
+return InitLibrary()
