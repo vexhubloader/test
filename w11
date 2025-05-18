@@ -574,12 +574,14 @@ end
 
 function Utility:CleanConnections()
     for _, connection in pairs(VexHub.Connections) do
-        if connection.Connected then
+        if typeof(connection) == "RBXScriptConnection" and connection.Connected then
             connection:Disconnect()
         end
     end
     
     VexHub.Connections = {}
+    DragConnections = {}
+    InputChangedConnections = {}
 end
 
 function Utility:Connect(connection, func)
@@ -629,6 +631,8 @@ function Utility:LightenColor(color, percent)
 end
 
 function Utility:SetupDrag(dragFrame, dragObject, settings)
+    if not dragFrame or not dragObject then return end
+    
     settings = settings or {}
     local dragSpeed = settings.Speed or 0.2
     local dampingFactor = settings.Damping or 0.85
@@ -636,11 +640,30 @@ function Utility:SetupDrag(dragFrame, dragObject, settings)
     local dragStart = nil
     local dragging = false
     local dragInput = nil
-    local lastDelta = nil
     
+    -- Clean up existing connections
+    for i, conn in pairs(DragConnections) do
+        if conn.Frame == dragFrame then
+            if conn.InputBegan and conn.InputBegan.Connected then
+                conn.InputBegan:Disconnect()
+            end
+            if conn.InputChanged and conn.InputChanged.Connected then
+                conn.InputChanged:Disconnect()
+            end
+            if conn.InputEnded and conn.InputEnded.Connected then
+                conn.InputEnded:Disconnect()
+            end
+            table.remove(DragConnections, i)
+            break
+        end
+    end
+    
+    -- Update function with smoother animation and error handling
     local function updateDrag(delta)
         if not dragObject or not dragObject.Parent then return end
+        if not startPosition then return end
         
+        -- Apply damping for smoother drag
         local targetPosition = UDim2.new(
             startPosition.X.Scale,
             startPosition.X.Offset + delta.X,
@@ -651,36 +674,98 @@ function Utility:SetupDrag(dragFrame, dragObject, settings)
         self:Tween(dragObject, {Position = targetPosition}, dragSpeed, Enum.EasingStyle.Quint)
     end
     
-    Utility:Connect(dragFrame.InputBegan, function(input)
+    -- Connect input events with proper error handling
+    local inputBeganConn = nil
+    local inputChangedConn = nil
+    local inputEndedConn = nil
+    
+    -- Handle mouse button down
+    local function handleInputBegan(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPosition = dragObject.Position
-            lastDelta = Vector3.new(0, 0, 0)
             
+            -- Track input ended
             local connection
             connection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
-                    connection:Disconnect()
+                    if connection and connection.Connected then
+                        connection:Disconnect()
+                    end
                 end
+            end)
+            
+            -- Prevent text selection when dragging
+            local success, err = pcall(function()
+                if UserInputService.MouseIconEnabled then
+                    UserInputService.MouseIconEnabled = false
+                end
+            end)
+            
+            input.Changed:Once(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    pcall(function()
+                        if UserInputService.MouseIconEnabled == false then
+                            UserInputService.MouseIconEnabled = true
+                        end
+                    end)
+                end
+            end)
+        end
+    end
+    
+    -- Handle mouse movement
+    local function handleInputChanged(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end
+    
+    -- Handle global input changes for dragging
+    local function handleGlobalInputChanged(input)
+        if dragging and (input == dragInput) and dragStart and startPosition then
+            local delta = input.Position - dragStart
+            updateDrag(delta)
+        end
+    end
+    
+    -- Connect events
+    inputBeganConn = dragFrame.InputBegan:Connect(handleInputBegan)
+    inputChangedConn = dragFrame.InputChanged:Connect(handleInputChanged)
+    
+    -- Use UserInputService for smoother dragging across the entire screen
+    local globalInputChangedConn = UserInputService.InputChanged:Connect(handleGlobalInputChanged)
+    
+    -- Store connections for cleanup
+    table.insert(DragConnections, {
+        Frame = dragFrame,
+        InputBegan = inputBeganConn,
+        InputChanged = inputChangedConn,
+        GlobalInputChanged = globalInputChangedConn
+    })
+    
+    -- Add hover effect for draggable area
+    local hoverConn = dragFrame.MouseEnter:Connect(function()
+        if settings.HoverEffect ~= false then
+            pcall(function()
+                dragFrame.BackgroundColor3 = self:DarkenColor(dragFrame.BackgroundColor3, 0.05)
             end)
         end
     end)
     
-    Utility:Connect(dragFrame.InputChanged, function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
+    local leaveConn = dragFrame.MouseLeave:Connect(function()
+        if settings.HoverEffect ~= false then
+            pcall(function()
+                dragFrame.BackgroundColor3 = self:LightenColor(dragFrame.BackgroundColor3, 0.05)
+            end)
         end
     end)
     
-    Utility:Connect(UserInputService.InputChanged, function(input)
-        if dragging and (input == dragInput) and dragStart then
-            local delta = input.Position - dragStart
-            updateDrag(delta)
-            dragStart = input.Position
-        end
-    end)
+    -- Store these connections too
+    table.insert(VexHub.Connections, hoverConn)
+    table.insert(VexHub.Connections, leaveConn)
 end
 
 -- Core UI functionality
@@ -2607,6 +2692,50 @@ function VexHub:ProcessNotificationQueue()
     end)
     
     return notification
+end
+
+-- Clean up resources and connections
+function VexHub:Destroy()
+    -- Clean up connections
+    Utility:CleanConnections()
+    
+    -- Clean up windows
+    for _, window in ipairs(self.Windows) do
+        if window and window.Parent then
+            window:Destroy()
+        end
+    end
+    
+    -- Clean up tooltip
+    if TooltipObjects.Container then
+        TooltipObjects.Container:Destroy()
+        TooltipObjects = {}
+    end
+    
+    -- Clean up notifications
+    if NotificationHolder then
+        for _, notification in pairs(NotificationHolder:GetChildren()) do
+            if notification:IsA("Frame") then
+                notification:Destroy()
+            end
+        end
+        NotificationQueue = {}
+        NotificationCount = 0
+    end
+    
+    -- Clean up screen GUI
+    if ScreenGui and ScreenGui.Parent then
+        ScreenGui:Destroy()
+    end
+    
+    -- Reset state
+    Initialized = false
+    VexHub.Windows = {}
+    VexHub.ThemeObjects = {}
+    
+    print("VexHub UI Library destroyed and cleaned up")
+    
+    return nil
 end
 
 -- Return the library
