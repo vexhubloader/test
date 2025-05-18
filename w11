@@ -82,7 +82,7 @@ local GuiService = game:GetService("GuiService")
 
 -- Local Variables
 local Player = Players.LocalPlayer
-local Mouse = Player:GetMouse()
+local Mouse = Player and Player:GetMouse() or nil
 local Camera = workspace.CurrentCamera
 local DragConnections = {}
 local Initialized = false
@@ -106,6 +106,12 @@ local CurrentTooltip = nil
 local ActiveKeybind = nil
 local NotificationCount = 0
 local NotificationQueue = {}
+local typeSound = {
+    Info = "Notification",
+    Success = "Success",
+    Warning = "Notification",
+    Error = "Error"
+}
 local isStudio = RunService:IsStudio()
 local isCore = false
 
@@ -671,7 +677,27 @@ function Utility:SetupDrag(dragFrame, dragObject, settings)
             startPosition.Y.Offset + delta.Y
         )
         
-        self:Tween(dragObject, {Position = targetPosition}, dragSpeed, Enum.EasingStyle.Quint)
+        -- Ensure window stays visible on screen
+        local screenSize = Camera.ViewportSize
+        local objSize = dragObject.AbsoluteSize
+        
+        -- Clamp to ensure at least part of the window is visible
+        local minPositionX = -objSize.X * 0.75
+        local maxPositionX = screenSize.X - (objSize.X * 0.25)
+        local minPositionY = 0
+        local maxPositionY = screenSize.Y - (objSize.Y * 0.25)
+        
+        local clampedX = math.clamp(targetPosition.X.Offset, minPositionX, maxPositionX)
+        local clampedY = math.clamp(targetPosition.Y.Offset, minPositionY, maxPositionY)
+        
+        local clampedPosition = UDim2.new(
+            targetPosition.X.Scale,
+            clampedX,
+            targetPosition.Y.Scale,
+            clampedY
+        )
+        
+        self:Tween(dragObject, {Position = clampedPosition}, dragSpeed, Enum.EasingStyle.Quint)
     end
     
     -- Connect input events with proper error handling
@@ -2473,13 +2499,6 @@ function VexHub:Notify(options)
         Error = theme.Error
     }
     
-    local typeSound = {
-        Info = "Notification",
-        Success = "Success",
-        Warning = "Notification",
-        Error = "Error"
-    }
-    
     local color = typeColors[notificationType] or theme.Primary
     
     -- Add to notification queue to prevent overlap
@@ -2507,9 +2526,12 @@ function VexHub:ProcessNotificationQueue()
     if #NotificationQueue == 0 then return end
     
     local notificationData = NotificationQueue[1]
+    local theme = Utility:GetTheme() -- Fixed theme reference
     
-    -- Play sound
-    Utility:PlaySound(typeSound[notificationData.Type] or "Notification")
+    -- Play sound with error handling
+    pcall(function()
+        Utility:PlaySound(typeSound[notificationData.Type] or "Notification")
+    end)
     
     -- Create notification container
     local notification = Utility:Create("Frame", {
@@ -2639,6 +2661,9 @@ function VexHub:ProcessNotificationQueue()
     
     -- Function to close notification
     local function closeNotification()
+        -- Protection against multiple calls
+        if not notification or not notification.Parent then return end
+        
         -- Remove from queue
         table.remove(NotificationQueue, 1)
         
@@ -2648,22 +2673,26 @@ function VexHub:ProcessNotificationQueue()
         }, 0.5, Enum.EasingStyle.Quint)
         
         task.delay(0.5, function()
+            if not notification or not notification.Parent then return end
+            
             NotificationCount = NotificationCount - 1
             notification:Destroy()
             
-            -- Shift other notifications up
-            for i, notif in pairs(NotificationHolder:GetChildren()) do
-                if notif:IsA("Frame") and notif.Name == "Notification" then
-                    local yPos = notif.Position.Y.Offset
-                    Utility:Tween(notif, {
-                        Position = UDim2.new(1, 20, 1, -30 - (i-1) * 90)
-                    }, 0.3)
+            -- Shift other notifications up with error protection
+            pcall(function()
+                for i, notif in pairs(NotificationHolder:GetChildren()) do
+                    if notif:IsA("Frame") and notif.Name == "Notification" then
+                        local yPos = notif.Position.Y.Offset
+                        Utility:Tween(notif, {
+                            Position = UDim2.new(1, 20, 1, -30 - (i-1) * 90)
+                        }, 0.3)
+                    end
                 end
-            end
+            end)
             
-            -- Call callback if provided
+            -- Call callback if provided (with error protection)
             if notificationData.Callback then
-                notificationData.Callback()
+                pcall(notificationData.Callback)
             end
             
             -- Process next notification if any
