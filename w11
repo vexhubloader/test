@@ -1,1 +1,2483 @@
 
+local VexHub = {
+    Name = "Vex Hub",
+    Version = "1.0.0",
+    Author = "Claude",
+    ThemeObjects = {},
+    Windows = {},
+    CurrentTheme = "Default",
+    Themes = {},
+    Connections = {},
+    Flags = {}
+}
+
+-- Services
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
+local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
+
+-- Local Variables
+local Player = Players.LocalPlayer
+local Mouse = Player:GetMouse()
+local Camera = workspace.CurrentCamera
+local DragConnections = {}
+local Initialized = false
+local ScreenGui = nil
+local NotificationHolder = nil
+local RippleEffects = {}
+local DraggingSlider = false
+local Ripples = {}
+local ActiveAnim = {}
+local InputChangedConnections = {}
+local TooltipObjects = {}
+local Hovering = false
+local FocusedTextBox = nil
+local ColorPickerFocus = false
+local ActiveColorPicker = nil
+local ActiveDropdown = nil
+local HoveringWindow = false
+local MinimizedWindows = {}
+local ConfigModule = nil
+local CurrentTooltip = nil
+local ActiveKeybind = nil
+local NotificationCount = 0
+local NotificationQueue = {}
+local isStudio = RunService:IsStudio()
+local isCore = false
+
+-- Color themes
+VexHub.Themes.Default = {
+    Name = "Default",
+    Primary = Color3.fromRGB(60, 120, 255),
+    Secondary = Color3.fromRGB(40, 40, 45),
+    Background = Color3.fromRGB(25, 25, 30),
+    Accent1 = Color3.fromRGB(70, 130, 255),
+    Accent2 = Color3.fromRGB(80, 140, 255),
+    TextColor = Color3.fromRGB(240, 240, 240),
+    SubTextColor = Color3.fromRGB(170, 170, 185),
+    Success = Color3.fromRGB(60, 200, 100),
+    Warning = Color3.fromRGB(255, 170, 40),
+    Error = Color3.fromRGB(255, 75, 75),
+    ControlBg = Color3.fromRGB(35, 35, 40),
+    InputBg = Color3.fromRGB(30, 30, 35),
+    OutlineBg = Color3.fromRGB(50, 50, 55),
+    DarkOutline = Color3.fromRGB(20, 20, 25),
+    LightOutline = Color3.fromRGB(60, 60, 65),
+    HoverBg = Color3.fromRGB(45, 45, 50),
+    PressedBg = Color3.fromRGB(50, 50, 55),
+    ScrollBarBg = Color3.fromRGB(40, 40, 45),
+    TabBg = Color3.fromRGB(35, 35, 40),
+    SectionBg = Color3.fromRGB(30, 30, 35),
+    BorderColor = Color3.fromRGB(60, 60, 65),
+    Shadow = Color3.fromRGB(0, 0, 0),
+    Divider = Color3.fromRGB(50, 50, 55),
+    Font = Enum.Font.GothamSemibold,
+    SecondaryFont = Enum.Font.Gotham,
+    TitleSize = 16,
+    TextSize = 14,
+    SubTextSize = 12,
+    Radius = {
+        Small = UDim.new(0, 4),
+        Medium = UDim.new(0, 6),
+        Large = UDim.new(0, 8),
+        ExtraLarge = UDim.new(0, 12),
+        Full = UDim.new(1, 0)
+    },
+    Shadow = {
+        Default = {Transparency = 0.8, Size = 8, Blur = 15},
+        Strong = {Transparency = 0.7, Size = 12, Blur = 25}
+    },
+    Animation = {
+        DefaultTime = 0.2,
+        FastTime = 0.1,
+        SlowTime = 0.3,
+        DefaultEasingStyle = Enum.EasingStyle.Quart,
+        DefaultEasingDirection = Enum.EasingDirection.Out,
+        SpringStyle = Enum.EasingStyle.Elastic,
+    },
+    Sounds = {
+        Click = {ID = "rbxassetid://6895079853", Volume = 0.3},
+        Hover = {ID = "rbxassetid://6895079733", Volume = 0.15},
+        Success = {ID = "rbxassetid://6895079727", Volume = 0.3},
+        Error = {ID = "rbxassetid://6895079966", Volume = 0.3},
+        Toggle = {ID = "rbxassetid://6895079688", Volume = 0.2},
+        Notification = {ID = "rbxassetid://6895079682", Volume = 0.4}
+    }
+}
+
+-- macOS Theme
+VexHub.Themes.MacOS = {
+    Name = "macOS",
+    Primary = Color3.fromRGB(0, 122, 255),
+    Secondary = Color3.fromRGB(35, 35, 38),
+    Background = Color3.fromRGB(28, 28, 30),
+    Accent1 = Color3.fromRGB(88, 186, 255),
+    Accent2 = Color3.fromRGB(10, 132, 255),
+    TextColor = Color3.fromRGB(245, 245, 245),
+    SubTextColor = Color3.fromRGB(170, 170, 175),
+    Success = Color3.fromRGB(40, 205, 65),
+    Warning = Color3.fromRGB(255, 169, 10),
+    Error = Color3.fromRGB(255, 69, 58),
+    ControlBg = Color3.fromRGB(40, 40, 42),
+    InputBg = Color3.fromRGB(30, 30, 32),
+    OutlineBg = Color3.fromRGB(50, 50, 52),
+    DarkOutline = Color3.fromRGB(20, 20, 22),
+    LightOutline = Color3.fromRGB(60, 60, 62),
+    HoverBg = Color3.fromRGB(45, 45, 47),
+    PressedBg = Color3.fromRGB(50, 50, 52),
+    ScrollBarBg = Color3.fromRGB(45, 45, 47),
+    TabBg = Color3.fromRGB(38, 38, 40),
+    SectionBg = Color3.fromRGB(32, 32, 34),
+    BorderColor = Color3.fromRGB(60, 60, 62),
+    Shadow = Color3.fromRGB(0, 0, 0),
+    Divider = Color3.fromRGB(50, 50, 52),
+    Font = Enum.Font.GothamSemibold,
+    SecondaryFont = Enum.Font.GothamMedium,
+    TitleSize = 16,
+    TextSize = 14,
+    SubTextSize = 12,
+    Radius = {
+        Small = UDim.new(0, 4),
+        Medium = UDim.new(0, 6),
+        Large = UDim.new(0, 8),
+        ExtraLarge = UDim.new(0, 12),
+        Full = UDim.new(1, 0)
+    },
+    Shadow = {
+        Default = {Transparency = 0.8, Size = 8, Blur = 15},
+        Strong = {Transparency = 0.7, Size = 12, Blur = 25}
+    },
+    Animation = {
+        DefaultTime = 0.2,
+        FastTime = 0.1,
+        SlowTime = 0.3,
+        DefaultEasingStyle = Enum.EasingStyle.Quart,
+        DefaultEasingDirection = Enum.EasingDirection.Out,
+        SpringStyle = Enum.EasingStyle.Elastic,
+    },
+    Sounds = {
+        Click = {ID = "rbxassetid://6895079853", Volume = 0.3},
+        Hover = {ID = "rbxassetid://6895079733", Volume = 0.15},
+        Success = {ID = "rbxassetid://6895079727", Volume = 0.3},
+        Error = {ID = "rbxassetid://6895079966", Volume = 0.3},
+        Toggle = {ID = "rbxassetid://6895079688", Volume = 0.2},
+        Notification = {ID = "rbxassetid://6895079682", Volume = 0.4}
+    }
+}
+
+-- Windows 11 Theme
+VexHub.Themes.Windows11 = {
+    Name = "Windows 11",
+    Primary = Color3.fromRGB(0, 103, 192),
+    Secondary = Color3.fromRGB(39, 39, 41),
+    Background = Color3.fromRGB(32, 32, 35),
+    Accent1 = Color3.fromRGB(38, 167, 255),
+    Accent2 = Color3.fromRGB(0, 120, 212),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    SubTextColor = Color3.fromRGB(180, 180, 185),
+    Success = Color3.fromRGB(67, 181, 129),
+    Warning = Color3.fromRGB(240, 185, 11),
+    Error = Color3.fromRGB(232, 17, 35),
+    ControlBg = Color3.fromRGB(45, 45, 48),
+    InputBg = Color3.fromRGB(37, 37, 40),
+    OutlineBg = Color3.fromRGB(54, 54, 57),
+    DarkOutline = Color3.fromRGB(25, 25, 28),
+    LightOutline = Color3.fromRGB(65, 65, 68),
+    HoverBg = Color3.fromRGB(50, 50, 53),
+    PressedBg = Color3.fromRGB(55, 55, 58),
+    ScrollBarBg = Color3.fromRGB(50, 50, 53),
+    TabBg = Color3.fromRGB(42, 42, 45),
+    SectionBg = Color3.fromRGB(35, 35, 38),
+    BorderColor = Color3.fromRGB(65, 65, 68),
+    Shadow = Color3.fromRGB(0, 0, 0),
+    Divider = Color3.fromRGB(55, 55, 58),
+    Font = Enum.Font.SourceSansSemibold,
+    SecondaryFont = Enum.Font.SourceSans,
+    TitleSize = 16,
+    TextSize = 14,
+    SubTextSize = 12,
+    Radius = {
+        Small = UDim.new(0, 4),
+        Medium = UDim.new(0, 6),
+        Large = UDim.new(0, 8),
+        ExtraLarge = UDim.new(0, 12),
+        Full = UDim.new(1, 0)
+    },
+    Shadow = {
+        Default = {Transparency = 0.8, Size = 8, Blur = 15},
+        Strong = {Transparency = 0.7, Size = 12, Blur = 25}
+    },
+    Animation = {
+        DefaultTime = 0.2,
+        FastTime = 0.1,
+        SlowTime = 0.3,
+        DefaultEasingStyle = Enum.EasingStyle.Quart,
+        DefaultEasingDirection = Enum.EasingDirection.Out,
+        SpringStyle = Enum.EasingStyle.Elastic,
+    },
+    Sounds = {
+        Click = {ID = "rbxassetid://6895079853", Volume = 0.3},
+        Hover = {ID = "rbxassetid://6895079733", Volume = 0.15},
+        Success = {ID = "rbxassetid://6895079727", Volume = 0.3},
+        Error = {ID = "rbxassetid://6895079966", Volume = 0.3},
+        Toggle = {ID = "rbxassetid://6895079688", Volume = 0.2},
+        Notification = {ID = "rbxassetid://6895079682", Volume = 0.4}
+    }
+}
+
+-- CS:GO Cheat Theme
+VexHub.Themes.CSGO = {
+    Name = "CS:GO Cheat",
+    Primary = Color3.fromRGB(255, 63, 63),
+    Secondary = Color3.fromRGB(35, 35, 40),
+    Background = Color3.fromRGB(22, 22, 26),
+    Accent1 = Color3.fromRGB(255, 93, 93),
+    Accent2 = Color3.fromRGB(255, 43, 43),
+    TextColor = Color3.fromRGB(255, 255, 255),
+    SubTextColor = Color3.fromRGB(190, 190, 200),
+    Success = Color3.fromRGB(100, 255, 100),
+    Warning = Color3.fromRGB(255, 255, 100),
+    Error = Color3.fromRGB(255, 50, 50),
+    ControlBg = Color3.fromRGB(35, 35, 40),
+    InputBg = Color3.fromRGB(30, 30, 35),
+    OutlineBg = Color3.fromRGB(45, 45, 50),
+    DarkOutline = Color3.fromRGB(15, 15, 20),
+    LightOutline = Color3.fromRGB(55, 55, 60),
+    HoverBg = Color3.fromRGB(40, 40, 45),
+    PressedBg = Color3.fromRGB(45, 45, 50),
+    ScrollBarBg = Color3.fromRGB(40, 40, 45),
+    TabBg = Color3.fromRGB(25, 25, 30),
+    SectionBg = Color3.fromRGB(22, 22, 26),
+    BorderColor = Color3.fromRGB(55, 55, 60),
+    Shadow = Color3.fromRGB(0, 0, 0),
+    Divider = Color3.fromRGB(45, 45, 50),
+    Font = Enum.Font.Code,
+    SecondaryFont = Enum.Font.Code,
+    TitleSize = 16,
+    TextSize = 14,
+    SubTextSize = 12,
+    Radius = {
+        Small = UDim.new(0, 2),
+        Medium = UDim.new(0, 3),
+        Large = UDim.new(0, 4),
+        ExtraLarge = UDim.new(0, 6),
+        Full = UDim.new(1, 0)
+    },
+    Shadow = {
+        Default = {Transparency = 0.85, Size = 6, Blur = 12},
+        Strong = {Transparency = 0.75, Size = 10, Blur = 20}
+    },
+    Animation = {
+        DefaultTime = 0.15,
+        FastTime = 0.08,
+        SlowTime = 0.25,
+        DefaultEasingStyle = Enum.EasingStyle.Quart,
+        DefaultEasingDirection = Enum.EasingDirection.Out,
+        SpringStyle = Enum.EasingStyle.Elastic,
+    },
+    Sounds = {
+        Click = {ID = "rbxassetid://6895079853", Volume = 0.3},
+        Hover = {ID = "rbxassetid://6895079733", Volume = 0.15},
+        Success = {ID = "rbxassetid://6895079727", Volume = 0.3},
+        Error = {ID = "rbxassetid://6895079966", Volume = 0.3},
+        Toggle = {ID = "rbxassetid://6895079688", Volume = 0.2},
+        Notification = {ID = "rbxassetid://6895079682", Volume = 0.4}
+    }
+}
+
+-- Fluent UI Theme
+VexHub.Themes.FluentUI = {
+    Name = "Fluent UI",
+    Primary = Color3.fromRGB(0, 120, 212),
+    Secondary = Color3.fromRGB(43, 43, 43),
+    Background = Color3.fromRGB(32, 32, 32),
+    Accent1 = Color3.fromRGB(48, 179, 255),
+    Accent2 = Color3.fromRGB(0, 153, 204),
+    TextColor = Color3.fromRGB(250, 250, 250),
+    SubTextColor = Color3.fromRGB(185, 185, 185),
+    Success = Color3.fromRGB(76, 194, 126),
+    Warning = Color3.fromRGB(244, 191, 62),
+    Error = Color3.fromRGB(235, 69, 69),
+    ControlBg = Color3.fromRGB(48, 48, 48),
+    InputBg = Color3.fromRGB(38, 38, 38),
+    OutlineBg = Color3.fromRGB(58, 58, 58),
+    DarkOutline = Color3.fromRGB(24, 24, 24),
+    LightOutline = Color3.fromRGB(68, 68, 68),
+    HoverBg = Color3.fromRGB(52, 52, 52),
+    PressedBg = Color3.fromRGB(57, 57, 57),
+    ScrollBarBg = Color3.fromRGB(52, 52, 52),
+    TabBg = Color3.fromRGB(45, 45, 45),
+    SectionBg = Color3.fromRGB(38, 38, 38),
+    BorderColor = Color3.fromRGB(68, 68, 68),
+    Shadow = Color3.fromRGB(0, 0, 0),
+    Divider = Color3.fromRGB(58, 58, 58),
+    Font = Enum.Font.SourceSansSemibold,
+    SecondaryFont = Enum.Font.SourceSans,
+    TitleSize = 16,
+    TextSize = 14,
+    SubTextSize = 12,
+    Radius = {
+        Small = UDim.new(0, 2),
+        Medium = UDim.new(0, 4),
+        Large = UDim.new(0, 6),
+        ExtraLarge = UDim.new(0, 8),
+        Full = UDim.new(1, 0)
+    },
+    Shadow = {
+        Default = {Transparency = 0.8, Size = 8, Blur = 15},
+        Strong = {Transparency = 0.7, Size = 12, Blur = 25}
+    },
+    Animation = {
+        DefaultTime = 0.2,
+        FastTime = 0.1,
+        SlowTime = 0.3,
+        DefaultEasingStyle = Enum.EasingStyle.Cubic,
+        DefaultEasingDirection = Enum.EasingDirection.Out,
+        SpringStyle = Enum.EasingStyle.Elastic,
+    },
+    Sounds = {
+        Click = {ID = "rbxassetid://6895079853", Volume = 0.3},
+        Hover = {ID = "rbxassetid://6895079733", Volume = 0.15},
+        Success = {ID = "rbxassetid://6895079727", Volume = 0.3},
+        Error = {ID = "rbxassetid://6895079966", Volume = 0.3},
+        Toggle = {ID = "rbxassetid://6895079688", Volume = 0.2},
+        Notification = {ID = "rbxassetid://6895079682", Volume = 0.4}
+    }
+}
+
+-- Utility Functions
+local Utility = {}
+
+function Utility:Create(instanceType, properties, children)
+    local instance = Instance.new(instanceType)
+    
+    for property, value in pairs(properties or {}) do
+        instance[property] = value
+    end
+    
+    for _, child in pairs(children or {}) do
+        child.Parent = instance
+    end
+    
+    return instance
+end
+
+function Utility:GetTheme()
+    return VexHub.Themes[VexHub.CurrentTheme]
+end
+
+function Utility:Tween(instance, properties, duration, easingStyle, easingDirection)
+    local theme = self:GetTheme()
+    local tween = TweenService:Create(
+        instance,
+        TweenInfo.new(
+            duration or theme.Animation.DefaultTime,
+            easingStyle or theme.Animation.DefaultEasingStyle,
+            easingDirection or theme.Animation.DefaultEasingDirection
+        ),
+        properties
+    )
+    tween:Play()
+    return tween
+end
+
+function Utility:SpringTween(instance, properties, duration)
+    local theme = self:GetTheme()
+    local tween = TweenService:Create(
+        instance,
+        TweenInfo.new(
+            duration or 0.8,
+            theme.Animation.SpringStyle,
+            Enum.EasingDirection.Out
+        ),
+        properties
+    )
+    tween:Play()
+    return tween
+end
+
+function Utility:Lerp(a, b, t)
+    return a + (b - a) * t
+end
+
+function Utility:LerpColor(colorA, colorB, t)
+    return Color3.new(
+        self:Lerp(colorA.R, colorB.R, t),
+        self:Lerp(colorA.G, colorB.G, t),
+        self:Lerp(colorA.B, colorB.B, t)
+    )
+end
+
+function Utility:Ripple(instance, rippleColor)
+    local theme = self:GetTheme()
+    rippleColor = rippleColor or theme.Primary
+    
+    -- Create ripple effect
+    local ripple = self:Create("Frame", {
+        Name = "Ripple",
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = rippleColor,
+        BackgroundTransparency = 0.7,
+        ZIndex = instance.ZIndex + 1,
+        Parent = instance
+    })
+    
+    -- Add rounded corners
+    local corner = self:Create("UICorner", {
+        CornerRadius = UDim.new(1, 0),
+        Parent = ripple
+    })
+    
+    -- Calculate target size based on parent's size
+    local size = math.max(instance.AbsoluteSize.X, instance.AbsoluteSize.Y) * 2
+    
+    -- Animate the ripple
+    Utility:Tween(ripple, {
+        Size = UDim2.new(0, size, 0, size),
+        BackgroundTransparency = 1
+    }, 0.5)
+    
+    task.delay(0.5, function()
+        ripple:Destroy()
+    end)
+    
+    return ripple
+end
+
+function Utility:CreateShadow(parent, shadowSettings)
+    local theme = self:GetTheme()
+    shadowSettings = shadowSettings or theme.Shadow.Default
+    
+    -- Clean up existing shadows
+    for _, child in pairs(parent:GetChildren()) do
+        if child.Name == "Shadow" then
+            child:Destroy()
+        end
+    end
+    
+    -- Create shadow
+    local shadow = self:Create("ImageLabel", {
+        Name = "Shadow",
+        Size = UDim2.new(1, shadowSettings.Size * 2, 1, shadowSettings.Size * 2),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundTransparency = 1,
+        Image = "rbxassetid://6014261993",
+        ImageColor3 = theme.Shadow,
+        ImageTransparency = shadowSettings.Transparency,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(49, 49, 450, 450),
+        SliceScale = 0.1 + (shadowSettings.Blur * 0.005),
+        ZIndex = parent.ZIndex - 1,
+        Parent = parent
+    })
+    
+    return shadow
+end
+
+function Utility:ApplyThemeToObject(object, themeProp, themeVal)
+    local theme = self:GetTheme()
+    local value = theme[themeVal]
+    
+    if object and value then
+        object[themeProp] = value
+        table.insert(VexHub.ThemeObjects, {Object = object, Property = themeProp, ThemeProperty = themeVal})
+    end
+end
+
+function Utility:SetThemeProperty(object, property, value)
+    object[property] = value
+    table.insert(VexHub.ThemeObjects, {Object = object, Property = property, Value = value})
+end
+
+function Utility:UpdateAllThemeObjects()
+    local theme = self:GetTheme()
+    
+    for _, themeObj in ipairs(VexHub.ThemeObjects) do
+        if themeObj.Object and themeObj.Object.Parent then
+            if themeObj.ThemeProperty then
+                themeObj.Object[themeObj.Property] = theme[themeObj.ThemeProperty]
+            elseif themeObj.Value then
+                themeObj.Object[themeObj.Property] = themeObj.Value
+            end
+        end
+    end
+end
+
+function Utility:CleanConnections()
+    for _, connection in pairs(VexHub.Connections) do
+        if connection.Connected then
+            connection:Disconnect()
+        end
+    end
+    
+    VexHub.Connections = {}
+end
+
+function Utility:Connect(connection, func)
+    local conn = connection:Connect(func)
+    table.insert(VexHub.Connections, conn)
+    return conn
+end
+
+function Utility:Disconnect(connection)
+    for i, conn in pairs(VexHub.Connections) do
+        if conn == connection then
+            conn:Disconnect()
+            table.remove(VexHub.Connections, i)
+            break
+        end
+    end
+end
+
+function Utility:PlaySound(soundType)
+    local theme = self:GetTheme()
+    local soundSettings = theme.Sounds[soundType]
+    
+    if not soundSettings then return end
+    
+    local sound = Instance.new("Sound")
+    sound.SoundId = soundSettings.ID
+    sound.Volume = soundSettings.Volume
+    sound.Parent = workspace
+    
+    sound:Play()
+    
+    sound.Ended:Connect(function()
+        sound:Destroy()
+    end)
+    
+    return sound
+end
+
+function Utility:DarkenColor(color, percent)
+    local h, s, v = Color3.toHSV(color)
+    return Color3.fromHSV(h, s, math.clamp(v - percent, 0, 1))
+end
+
+function Utility:LightenColor(color, percent)
+    local h, s, v = Color3.toHSV(color)
+    return Color3.fromHSV(h, s, math.clamp(v + percent, 0, 1))
+end
+
+function Utility:SetupDrag(dragFrame, dragObject, settings)
+    settings = settings or {}
+    local dragSpeed = settings.Speed or 0.2
+    local dampingFactor = settings.Damping or 0.85
+    local startPosition = nil
+    local dragStart = nil
+    local dragging = false
+    local dragInput = nil
+    local lastDelta = nil
+    
+    local function updateDrag(delta)
+        if not dragObject then return end
+        
+        local targetPosition = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+        
+        Utility:Tween(dragObject, {Position = targetPosition}, dragSpeed, Enum.EasingStyle.Quint)
+    end
+    
+    Utility:Connect(dragFrame.InputBegan, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPosition = dragObject.Position
+            lastDelta = Vector3.new(0, 0, 0)
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    Utility:Connect(dragFrame.InputChanged, function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    Utility:Connect(UserInputService.InputChanged, function(input)
+        if dragging and (input == dragInput) and dragStart then
+            local delta = input.Position - dragStart
+            updateDrag(delta)
+            dragStart = input.Position
+        end
+    end)
+end
+
+-- Core UI functionality
+function VexHub:Init(settings)
+    if Initialized then return end
+    
+    settings = settings or {}
+    self.CurrentTheme = settings.Theme or "Default"
+    
+    -- Create ScreenGui
+    if isStudio then
+        ScreenGui = Utility:Create("ScreenGui", {
+            Name = "VexHub",
+            ResetOnSpawn = false,
+            DisplayOrder = 999999,
+            ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+            Parent = Player:WaitForChild("PlayerGui")
+        })
+    else
+        isCore = pcall(function()
+            ScreenGui = Utility:Create("ScreenGui", {
+                Name = "VexHub",
+                ResetOnSpawn = false,
+                DisplayOrder = 999999,
+                ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+                Parent = CoreGui
+            })
+        end)
+        
+        if not isCore then
+            ScreenGui = Utility:Create("ScreenGui", {
+                Name = "VexHub",
+                ResetOnSpawn = false,
+                DisplayOrder = 999999,
+                ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+                Parent = Player:WaitForChild("PlayerGui")
+            })
+        end
+    end
+    
+    -- Create notification holder
+    NotificationHolder = Utility:Create("Frame", {
+        Name = "NotificationHolder",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Parent = ScreenGui
+    })
+    
+    -- Initialize tooltip
+    self:InitTooltip()
+    
+    -- Other initializations
+    Initialized = true
+    return self
+end
+
+function VexHub:InitTooltip()
+    local theme = Utility:GetTheme()
+    
+    -- Create tooltip container
+    local tooltip = Utility:Create("Frame", {
+        Name = "Tooltip",
+        Size = UDim2.new(0, 200, 0, 40),
+        BackgroundColor3 = theme.ControlBg,
+        BackgroundTransparency = 0,
+        Visible = false,
+        ZIndex = 9999,
+        Parent = ScreenGui
+    })
+    
+    -- Add corner radius
+    Utility:Create("UICorner", {
+        CornerRadius = theme.Radius.Small,
+        Parent = tooltip
+    })
+    
+    -- Create shadow
+    Utility:CreateShadow(tooltip, theme.Shadow.Default)
+    
+    -- Add text label
+    local label = Utility:Create("TextLabel", {
+        Name = "Text",
+        Size = UDim2.new(1, -16, 1, -8),
+        Position = UDim2.new(0, 8, 0, 4),
+        BackgroundTransparency = 1,
+        Text = "",
+        TextSize = theme.TextSize,
+        TextColor3 = theme.TextColor,
+        Font = theme.Font,
+        TextWrapped = true,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        ZIndex = 10000,
+        Parent = tooltip
+    })
+    
+    -- Apply theme to objects
+    Utility:ApplyThemeToObject(tooltip, "BackgroundColor3", "ControlBg")
+    Utility:ApplyThemeToObject(label, "TextColor3", "TextColor")
+    Utility:ApplyThemeToObject(label, "Font", "Font")
+    
+    TooltipObjects.Container = tooltip
+    TooltipObjects.Text = label
+    
+    -- Handle tooltip positioning
+    Utility:Connect(RunService.RenderStepped, function()
+        if TooltipObjects.Container and TooltipObjects.Container.Visible then
+            local mousePos = UserInputService:GetMouseLocation()
+            local viewportSize = Camera.ViewportSize
+            
+            -- Determine best position based on screen edges
+            local posX = mousePos.X + 20
+            local posY = mousePos.Y + 20
+            
+            -- Check if tooltip would go off screen
+            if posX + TooltipObjects.Container.AbsoluteSize.X > viewportSize.X then
+                posX = mousePos.X - 20 - TooltipObjects.Container.AbsoluteSize.X
+            end
+            
+            if posY + TooltipObjects.Container.AbsoluteSize.Y > viewportSize.Y then
+                posY = mousePos.Y - 20 - TooltipObjects.Container.AbsoluteSize.Y
+            end
+            
+            -- Apply position with smooth animation
+            Utility:Tween(TooltipObjects.Container, {
+                Position = UDim2.new(0, posX, 0, posY)
+            }, 0.1)
+        end
+    end)
+    
+    return TooltipObjects
+end
+
+function VexHub:Tooltip(object, text)
+    if not Initialized then return end
+    
+    -- Only proceed if we have a valid tooltip container
+    if not TooltipObjects.Container then return end
+    
+    local hovered = false
+    local tooltipShown = false
+    local tooltipDebounce = false
+    local theme = Utility:GetTheme()
+    
+    -- Show tooltip after a short delay
+    local function showTooltip()
+        if not hovered or tooltipShown or tooltipDebounce then return end
+        
+        tooltipDebounce = true
+        task.delay(0.5, function()
+            if not hovered then
+                tooltipDebounce = false
+                return
+            end
+            
+            -- Update text
+            TooltipObjects.Text.Text = text
+            
+            -- Calculate size based on text
+            local textSize = TextService:GetTextSize(
+                text,
+                theme.TextSize,
+                theme.Font,
+                Vector2.new(400, math.huge)
+            )
+            
+            local height = textSize.Y + 16
+            local width = math.min(textSize.X + 16, 400)
+            
+            TooltipObjects.Container.Size = UDim2.new(0, width, 0, height)
+            
+            -- Position tooltip at mouse
+            local mousePos = UserInputService:GetMouseLocation()
+            TooltipObjects.Container.Position = UDim2.new(0, mousePos.X + 20, 0, mousePos.Y + 20)
+            
+            -- Show tooltip
+            TooltipObjects.Container.Visible = true
+            tooltipShown = true
+            tooltipDebounce = false
+            
+            -- Fade in animation
+            TooltipObjects.Container.BackgroundTransparency = 1
+            TooltipObjects.Text.TextTransparency = 1
+            
+            Utility:Tween(TooltipObjects.Container, {
+                BackgroundTransparency = 0
+            }, 0.2)
+            
+            Utility:Tween(TooltipObjects.Text, {
+                TextTransparency = 0
+            }, 0.2)
+        end)
+    end
+    
+    -- Hide tooltip
+    local function hideTooltip()
+        if not tooltipShown then return end
+        
+        -- Fade out animation
+        Utility:Tween(TooltipObjects.Container, {
+            BackgroundTransparency = 1
+        }, 0.2)
+        
+        Utility:Tween(TooltipObjects.Text, {
+            TextTransparency = 1
+        }, 0.2)
+        
+        task.delay(0.2, function()
+            TooltipObjects.Container.Visible = false
+            tooltipShown = false
+        end)
+    end
+    
+    -- Connect hover events
+    Utility:Connect(object.MouseEnter, function()
+        hovered = true
+        showTooltip()
+    end)
+    
+    Utility:Connect(object.MouseLeave, function()
+        hovered = false
+        hideTooltip()
+    end)
+    
+    return {
+        Update = function(newText)
+            text = newText
+            if tooltipShown then
+                TooltipObjects.Text.Text = text
+                
+                -- Recalculate size
+                local textSize = TextService:GetTextSize(
+                    text,
+                    theme.TextSize,
+                    theme.Font,
+                    Vector2.new(400, math.huge)
+                )
+                
+                local height = textSize.Y + 16
+                local width = math.min(textSize.X + 16, 400)
+                
+                TooltipObjects.Container.Size = UDim2.new(0, width, 0, height)
+            end
+        end,
+        Remove = function()
+            Utility:Disconnect(object.MouseEnter)
+            Utility:Disconnect(object.MouseLeave)
+            hideTooltip()
+        end
+    }
+end
+
+function VexHub:SetTheme(themeName)
+    if not VexHub.Themes[themeName] then
+        warn("Theme '" .. themeName .. "' does not exist, using Default theme.")
+        themeName = "Default"
+    end
+    
+    VexHub.CurrentTheme = themeName
+    Utility:UpdateAllThemeObjects()
+    
+    return self
+end
+
+function VexHub:CreateWindow(options)
+    if not Initialized then
+        self:Init()
+    end
+    
+    options = options or {}
+    local theme = Utility:GetTheme()
+    local windowTitle = options.Title or "Vex Hub"
+    local windowSize = options.Size or UDim2.new(0, 600, 0, 400)
+    local windowPosition = options.Position 
+    local windowTheme = options.Theme or VexHub.CurrentTheme
+    local windowMinimized = false
+    local windowVisible = true
+    local canMinimize = options.CanMinimize ~= false
+    local canClose = options.CanClose ~= false
+    local tabsEnabled = options.Tabs ~= false
+    local showTitle = options.ShowTitle ~= false
+    local isModal = options.Modal or false
+    
+    -- Set theme for this window if specified
+    if windowTheme ~= VexHub.CurrentTheme then
+        VexHub.CurrentTheme = windowTheme
+    end
+    
+    -- Create main window container
+    local window = Utility:Create("Frame", {
+        Name = "VexWindow",
+        Size = windowSize,
+        Position = windowPosition or UDim2.new(0.5, 0, 0.5, 0),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        BackgroundColor3 = theme.Background,
+        BorderSizePixel = 0,
+        Parent = ScreenGui
+    })
+    
+    -- Add corner radius
+    local corner = Utility:Create("UICorner", {
+        CornerRadius = theme.Radius.Medium,
+        Parent = window
+    })
+    
+    -- Create shadow
+    Utility:CreateShadow(window, theme.Shadow.Strong)
+    
+    -- Add to windows table
+    table.insert(VexHub.Windows, window)
+    
+    -- Create title bar
+    local titleBar = Utility:Create("Frame", {
+        Name = "TitleBar",
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundColor3 = theme.Secondary,
+        BorderSizePixel = 0,
+        ZIndex = 2,
+        Parent = window
+    })
+    
+    -- Add corner radius to title bar (only top corners)
+    local titleBarCorner = Utility:Create("UICorner", {
+        CornerRadius = theme.Radius.Medium,
+        Parent = titleBar
+    })
+    
+    -- Add title text
+    local titleText = Utility:Create("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(1, -120, 1, 0),
+        Position = UDim2.new(0, 15, 0, 0),
+        BackgroundTransparency = 1,
+        Font = theme.Font,
+        Text = windowTitle,
+        TextColor3 = theme.TextColor,
+        TextSize = theme.TitleSize,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 2,
+        Parent = titleBar
+    })
+    
+    -- Add window controls
+    local controlsContainer = Utility:Create("Frame", {
+        Name = "Controls",
+        Size = UDim2.new(0, 80, 1, 0),
+        Position = UDim2.new(1, -80, 0, 0),
+        BackgroundTransparency = 1,
+        ZIndex = 3,
+        Parent = titleBar
+    })
+    
+    -- Add minimize button
+    local minimizeButton = nil
+    if canMinimize then
+        minimizeButton = Utility:Create("TextButton", {
+            Name = "MinimizeButton",
+            Size = UDim2.new(0, 30, 0, 30),
+            Position = UDim2.new(0, 5, 0.5, 0),
+            AnchorPoint = Vector2.new(0, 0.5),
+            BackgroundColor3 = theme.HoverBg,
+            BackgroundTransparency = 1,
+            AutoButtonColor = false,
+            Text = "-",
+            TextSize = 20,
+            Font = theme.Font,
+            TextColor3 = theme.TextColor,
+            ZIndex = 3,
+            Parent = controlsContainer
+        })
+        
+        -- Add corner radius
+        Utility:Create("UICorner", {
+            CornerRadius = theme.Radius.Small,
+            Parent = minimizeButton
+        })
+        
+        -- Add hover/press effects
+        Utility:Connect(minimizeButton.MouseEnter, function()
+            Utility:Tween(minimizeButton, {BackgroundTransparency = 0.7}, 0.2)
+            Utility:PlaySound("Hover")
+        end)
+        
+        Utility:Connect(minimizeButton.MouseLeave, function()
+            Utility:Tween(minimizeButton, {BackgroundTransparency = 1}, 0.2)
+        end)
+        
+        Utility:Connect(minimizeButton.MouseButton1Down, function()
+            Utility:Tween(minimizeButton, {BackgroundTransparency = 0.5}, 0.1)
+        end)
+        
+        Utility:Connect(minimizeButton.MouseButton1Up, function()
+            Utility:Tween(minimizeButton, {BackgroundTransparency = 0.7}, 0.1)
+            Utility:PlaySound("Click")
+            
+            -- Toggle minimize
+            windowMinimized = not windowMinimized
+            
+            if windowMinimized then
+                -- Store original size
+                window.OriginalSize = window.Size
+                
+                -- Minimize
+                Utility:Tween(window, {
+                    Size = UDim2.new(window.Size.X.Scale, window.Size.X.Offset, 0, 40)
+                }, 0.3, Enum.EasingStyle.Quint)
+                
+                -- Update minimize button text
+                minimizeButton.Text = "+"
+            else
+                -- Restore
+                Utility:Tween(window, {
+                    Size = window.OriginalSize
+                }, 0.3, Enum.EasingStyle.Quint)
+                
+                -- Update minimize button text
+                minimizeButton.Text = "-"
+            end
+        end)
+    end
+    
+    -- Add close button
+    local closeButton = nil
+    if canClose then
+        closeButton = Utility:Create("TextButton", {
+            Name = "CloseButton",
+            Size = UDim2.new(0, 30, 0, 30),
+            Position = UDim2.new(1, -5, 0.5, 0),
+            AnchorPoint = Vector2.new(1, 0.5),
+            BackgroundColor3 = theme.HoverBg,
+            BackgroundTransparency = 1,
+            AutoButtonColor = false,
+            Text = "×",
+            TextSize = 20,
+            Font = theme.Font,
+            TextColor3 = theme.TextColor,
+            ZIndex = 3,
+            Parent = controlsContainer
+        })
+        
+        -- Add corner radius
+        Utility:Create("UICorner", {
+            CornerRadius = theme.Radius.Small,
+            Parent = closeButton
+        })
+        
+        -- Add hover/press effects
+        Utility:Connect(closeButton.MouseEnter, function()
+            Utility:Tween(closeButton, {BackgroundTransparency = 0.7, BackgroundColor3 = theme.Error}, 0.2)
+            Utility:Tween(closeButton, {TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
+            Utility:PlaySound("Hover")
+        end)
+        
+        Utility:Connect(closeButton.MouseLeave, function()
+            Utility:Tween(closeButton, {BackgroundTransparency = 1, BackgroundColor3 = theme.HoverBg}, 0.2)
+            Utility:Tween(closeButton, {TextColor3 = theme.TextColor}, 0.2)
+        end)
+        
+        Utility:Connect(closeButton.MouseButton1Down, function()
+            Utility:Tween(closeButton, {BackgroundTransparency = 0.5}, 0.1)
+        end)
+        
+        Utility:Connect(closeButton.MouseButton1Up, function()
+            Utility:Tween(closeButton, {BackgroundTransparency = 0.7}, 0.1)
+            Utility:PlaySound("Click")
+            
+            -- Close window with animation
+            Utility:Tween(window, {
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                BackgroundTransparency = 1
+            }, 0.3, Enum.EasingStyle.Quint)
+            
+            task.delay(0.3, function()
+                window:Destroy()
+                
+                -- Remove from windows table
+                for i, win in ipairs(VexHub.Windows) do
+                    if win == window then
+                        table.remove(VexHub.Windows, i)
+                        break
+                    end
+                end
+            end)
+        end)
+    end
+    
+    -- Create main content container (for tabs or direct content)
+    local contentContainer = Utility:Create("Frame", {
+        Name = "ContentContainer",
+        Size = UDim2.new(1, 0, 1, -40),
+        Position = UDim2.new(0, 0, 0, 40),
+        BackgroundColor3 = theme.Background,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        ZIndex = 1,
+        Parent = window
+    })
+    
+    -- Fix corner radius for content container (bottom corners only)
+    local contentContainerCorner = Utility:Create("UICorner", {
+        CornerRadius = theme.Radius.Medium,
+        Parent = contentContainer
+    })
+    
+    -- Create tabs container if enabled
+    local tabsContainer = nil
+    local tabsContentContainer = nil
+    local tabs = {}
+    
+    if tabsEnabled then
+        -- Create tabs bar
+        tabsContainer = Utility:Create("Frame", {
+            Name = "TabsContainer",
+            Size = UDim2.new(1, 0, 0, 36),
+            BackgroundColor3 = theme.TabBg,
+            BorderSizePixel = 0,
+            ZIndex = 2,
+            Parent = contentContainer
+        })
+        
+        -- Add separator line
+        local tabSeparator = Utility:Create("Frame", {
+            Name = "TabSeparator",
+            Size = UDim2.new(1, 0, 0, 1),
+            Position = UDim2.new(0, 0, 1, 0),
+            BackgroundColor3 = theme.Divider,
+            BorderSizePixel = 0,
+            ZIndex = 2,
+            Parent = tabsContainer
+        })
+        
+        -- Create scroll frame for tabs
+        local tabsScrollFrame = Utility:Create("ScrollingFrame", {
+            Name = "TabsScrollFrame",
+            Size = UDim2.new(1, 0, 1, 0),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ScrollBarThickness = 0,
+            ScrollingDirection = Enum.ScrollingDirection.X,
+            AutomaticCanvasSize = Enum.AutomaticSize.X,
+            ZIndex = 2,
+            Parent = tabsContainer
+        })
+        
+        -- Create tabs layout
+        local tabsLayout = Utility:Create("UIListLayout", {
+            FillDirection = Enum.FillDirection.Horizontal,
+            HorizontalAlignment = Enum.HorizontalAlignment.Left,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 2),
+            Parent = tabsScrollFrame
+        })
+        
+        -- Create tabs content container
+        tabsContentContainer = Utility:Create("Frame", {
+            Name = "TabsContentContainer",
+            Size = UDim2.new(1, 0, 1, -36),
+            Position = UDim2.new(0, 0, 0, 36),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ClipsDescendants = true,
+            ZIndex = 1,
+            Parent = contentContainer
+        })
+    else
+        -- Create direct content container
+        tabsContentContainer = Utility:Create("Frame", {
+            Name = "ContentFrame",
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ClipsDescendants = true,
+            ZIndex = 1,
+            Parent = contentContainer
+        })
+    end
+    
+    -- Make window draggable
+    Utility:SetupDrag(titleBar, window)
+    
+    -- Apply theme to objects
+    Utility:ApplyThemeToObject(window, "BackgroundColor3", "Background")
+    Utility:ApplyThemeToObject(titleBar, "BackgroundColor3", "Secondary")
+    Utility:ApplyThemeToObject(titleText, "TextColor3", "TextColor")
+    Utility:ApplyThemeToObject(titleText, "Font", "Font")
+    
+    if tabsEnabled and tabsContainer then
+        Utility:ApplyThemeToObject(tabsContainer, "BackgroundColor3", "TabBg")
+        Utility:ApplyThemeToObject(tabSeparator, "BackgroundColor3", "Divider")
+    end
+    
+    -- Window API
+    local WindowAPI = {}
+    
+    -- Toggle visibility
+    function WindowAPI:SetVisible(visible)
+        windowVisible = visible
+        window.Visible = visible
+        return self
+    end
+    
+    -- Get visibility state
+    function WindowAPI:IsVisible()
+        return windowVisible
+    end
+    
+    -- Toggle minimized state
+    function WindowAPI:SetMinimized(minimized)
+        if not canMinimize or windowMinimized == minimized then return self end
+        
+        windowMinimized = minimized
+        
+        if windowMinimized then
+            -- Store original size
+            window.OriginalSize = window.Size
+            
+            -- Minimize
+            Utility:Tween(window, {
+                Size = UDim2.new(window.Size.X.Scale, window.Size.X.Offset, 0, 40)
+            }, 0.3, Enum.EasingStyle.Quint)
+            
+            -- Update minimize button text if it exists
+            if minimizeButton then
+                minimizeButton.Text = "+"
+            end
+        else
+            -- Restore
+            Utility:Tween(window, {
+                Size = window.OriginalSize
+            }, 0.3, Enum.EasingStyle.Quint)
+            
+            -- Update minimize button text if it exists
+            if minimizeButton then
+                minimizeButton.Text = "-"
+            end
+        end
+        
+        return self
+    end
+    
+    -- Get minimized state
+    function WindowAPI:IsMinimized()
+        return windowMinimized
+    end
+    
+    -- Set title
+    function WindowAPI:SetTitle(title)
+        windowTitle = title
+        titleText.Text = title
+        return self
+    end
+    
+    -- Get title
+    function WindowAPI:GetTitle()
+        return windowTitle
+    end
+    
+    -- Create tab
+    function WindowAPI:AddTab(tabOptions)
+        if not tabsEnabled then
+            warn("Tabs are disabled for this window. Use WindowAPI:GetContainer() instead.")
+            return nil
+        end
+        
+        tabOptions = tabOptions or {}
+        local tabTitle = tabOptions.Title or "Tab"
+        local tabIcon = tabOptions.Icon
+        local tabVisible = true
+        local tabSelected = false
+        
+        local theme = Utility:GetTheme()
+        
+        -- Create tab button
+        local tabButton = Utility:Create("TextButton", {
+            Name = "Tab_" .. tabTitle,
+            Size = UDim2.new(0, 0, 1, 0),
+            AutomaticSize = Enum.AutomaticSize.X,
+            BackgroundColor3 = theme.TabBg,
+            BackgroundTransparency = 1,
+            AutoButtonColor = false,
+            BorderSizePixel = 0,
+            Text = "",
+            ZIndex = 3,
+            Parent = tabsScrollFrame
+        })
+        
+        -- Add corner radius
+        Utility:Create("UICorner", {
+            CornerRadius = theme.Radius.Small,
+            Parent = tabButton
+        })
+        
+        -- Add padding
+        Utility:Create("UIPadding", {
+            PaddingLeft = UDim.new(0, 10),
+            PaddingRight = UDim.new(0, 10),
+            Parent = tabButton
+        })
+        
+        -- Add icon if provided
+        local iconLabel = nil
+        local titleLabel = nil
+        
+        if tabIcon then
+            iconLabel = Utility:Create("ImageLabel", {
+                Name = "Icon",
+                Size = UDim2.new(0, 16, 0, 16),
+                Position = UDim2.new(0, 0, 0.5, 0),
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundTransparency = 1,
+                Image = tabIcon,
+                ImageColor3 = theme.SubTextColor,
+                ZIndex = 3,
+                Parent = tabButton
+            })
+            
+            titleLabel = Utility:Create("TextLabel", {
+                Name = "Title",
+                Size = UDim2.new(0, 0, 1, 0),
+                Position = UDim2.new(0, 24, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.X,
+                BackgroundTransparency = 1,
+                Font = theme.Font,
+                Text = tabTitle,
+                TextColor3 = theme.SubTextColor,
+                TextSize = theme.TextSize,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 3,
+                Parent = tabButton
+            })
+        else
+            titleLabel = Utility:Create("TextLabel", {
+                Name = "Title",
+                Size = UDim2.new(0, 0, 1, 0),
+                AutomaticSize = Enum.AutomaticSize.X,
+                BackgroundTransparency = 1,
+                Font = theme.Font,
+                Text = tabTitle,
+                TextColor3 = theme.SubTextColor,
+                TextSize = theme.TextSize,
+                TextXAlignment = Enum.TextXAlignment.Center,
+                ZIndex = 3,
+                Parent = tabButton
+            })
+        end
+        
+        -- Add selection indicator
+        local selectionIndicator = Utility:Create("Frame", {
+            Name = "SelectionIndicator",
+            Size = UDim2.new(1, 0, 0, 2),
+            Position = UDim2.new(0, 0, 1, -2),
+            BackgroundColor3 = theme.Primary,
+            BorderSizePixel = 0,
+            Visible = false,
+            ZIndex = 4,
+            Parent = tabButton
+        })
+        
+        -- Create tab content container
+        local tabContent = Utility:Create("ScrollingFrame", {
+            Name = "Content_" .. tabTitle,
+            Size = UDim2.new(1, 0, 1, 0),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ScrollBarThickness = 4,
+            ScrollBarImageColor3 = theme.ScrollBarBg,
+            VerticalScrollBarPosition = Enum.VerticalScrollBarPosition.Right,
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            Visible = false,
+            ZIndex = 2,
+            Parent = tabsContentContainer
+        })
+        
+        -- Add padding to content
+        Utility:Create("UIPadding", {
+            PaddingLeft = UDim.new(0, 10),
+            PaddingRight = UDim.new(0, 10),
+            PaddingTop = UDim.new(0, 10),
+            PaddingBottom = UDim.new(0, 10),
+            Parent = tabContent
+        })
+        
+        -- Add list layout
+        local contentLayout = Utility:Create("UIListLayout", {
+            FillDirection = Enum.FillDirection.Vertical,
+            HorizontalAlignment = Enum.HorizontalAlignment.Left,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 10),
+            Parent = tabContent
+        })
+        
+        -- Apply theme to objects
+        Utility:ApplyThemeToObject(tabButton, "BackgroundColor3", "TabBg")
+        Utility:ApplyThemeToObject(selectionIndicator, "BackgroundColor3", "Primary")
+        Utility:ApplyThemeToObject(titleLabel, "TextColor3", "SubTextColor")
+        Utility:ApplyThemeToObject(titleLabel, "Font", "Font")
+        
+        if iconLabel then
+            Utility:ApplyThemeToObject(iconLabel, "ImageColor3", "SubTextColor")
+        end
+        
+        -- Handle tab selection
+        local function selectTab()
+            -- Deselect all other tabs
+            for _, tab in pairs(tabs) do
+                if tab ~= tabButton then
+                    -- Deselect tab appearance
+                    tab.BackgroundTransparency = 1
+                    tab.SelectionIndicator.Visible = false
+                    
+                    if tab.Icon then
+                        tab.Icon.ImageColor3 = theme.SubTextColor
+                    end
+                    
+                    tab.Title.TextColor3 = theme.SubTextColor
+                    
+                    -- Hide content
+                    tab.Content.Visible = false
+                end
+            end
+            
+            -- Select this tab
+            tabButton.BackgroundTransparency = 0.9
+            selectionIndicator.Visible = true
+            titleLabel.TextColor3 = theme.TextColor
+            
+            if iconLabel then
+                iconLabel.ImageColor3 = theme.TextColor
+            end
+            
+            -- Show content
+            tabContent.Visible = true
+            
+            tabSelected = true
+            Utility:PlaySound("Click")
+        end
+        
+        -- Add hover/press effects
+        Utility:Connect(tabButton.MouseEnter, function()
+            if not tabSelected then
+                Utility:Tween(tabButton, {BackgroundTransparency = 0.9}, 0.2)
+                
+                if iconLabel then
+                    Utility:Tween(iconLabel, {ImageColor3 = theme.TextColor}, 0.2)
+                end
+                
+                Utility:Tween(titleLabel, {TextColor3 = theme.TextColor}, 0.2)
+                Utility:PlaySound("Hover")
+            end
+        end)
+        
+        Utility:Connect(tabButton.MouseLeave, function()
+            if not tabSelected then
+                Utility:Tween(tabButton, {BackgroundTransparency = 1}, 0.2)
+                
+                if iconLabel then
+                    Utility:Tween(iconLabel, {ImageColor3 = theme.SubTextColor}, 0.2)
+                end
+                
+                Utility:Tween(titleLabel, {TextColor3 = theme.SubTextColor}, 0.2)
+            end
+        end)
+        
+        Utility:Connect(tabButton.MouseButton1Click, selectTab)
+        
+        -- Store tab data
+        tabButton.SelectionIndicator = selectionIndicator
+        tabButton.Title = titleLabel
+        tabButton.Icon = iconLabel
+        tabButton.Content = tabContent
+        
+        table.insert(tabs, tabButton)
+        
+        -- Select this tab if it's the first one
+        if #tabs == 1 then
+            selectTab()
+        end
+        
+        -- Tab API
+        local TabAPI = {}
+        
+        -- Add section to tab
+        function TabAPI:AddSection(sectionOptions)
+            sectionOptions = sectionOptions or {}
+            local sectionTitle = sectionOptions.Title or "Section"
+            
+            local theme = Utility:GetTheme()
+            
+            -- Create section container
+            local section = Utility:Create("Frame", {
+                Name = "Section_" .. sectionTitle,
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundColor3 = theme.SectionBg,
+                BorderSizePixel = 0,
+                ZIndex = 2,
+                Parent = tabContent
+            })
+            
+            -- Add corner radius
+            Utility:Create("UICorner", {
+                CornerRadius = theme.Radius.Medium,
+                Parent = section
+            })
+            
+            -- Add shadow
+            Utility:CreateShadow(section, theme.Shadow.Default)
+            
+            -- Add section title
+            local titleContainer = Utility:Create("Frame", {
+                Name = "TitleContainer",
+                Size = UDim2.new(1, 0, 0, 30),
+                BackgroundTransparency = 1,
+                ZIndex = 3,
+                Parent = section
+            })
+            
+            local titleLabel = Utility:Create("TextLabel", {
+                Name = "Title",
+                Size = UDim2.new(1, -16, 1, 0),
+                Position = UDim2.new(0, 8, 0, 0),
+                BackgroundTransparency = 1,
+                Font = theme.Font,
+                Text = sectionTitle,
+                TextColor3 = theme.TextColor,
+                TextSize = theme.TextSize,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 3,
+                Parent = titleContainer
+            })
+            
+            -- Add separator
+            local separator = Utility:Create("Frame", {
+                Name = "Separator",
+                Size = UDim2.new(1, -16, 0, 1),
+                Position = UDim2.new(0, 8, 1, 0),
+                BackgroundColor3 = theme.Divider,
+                BorderSizePixel = 0,
+                ZIndex = 3,
+                Parent = titleContainer
+            })
+            
+            -- Create content container
+            local contentContainer = Utility:Create("Frame", {
+                Name = "ContentContainer",
+                Size = UDim2.new(1, 0, 0, 0),
+                Position = UDim2.new(0, 0, 0, 30),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1,
+                ZIndex = 2,
+                Parent = section
+            })
+            
+            -- Add padding
+            Utility:Create("UIPadding", {
+                PaddingLeft = UDim.new(0, 8),
+                PaddingRight = UDim.new(0, 8),
+                PaddingTop = UDim.new(0, 8),
+                PaddingBottom = UDim.new(0, 8),
+                Parent = contentContainer
+            })
+            
+            -- Add list layout
+            local contentLayout = Utility:Create("UIListLayout", {
+                FillDirection = Enum.FillDirection.Vertical,
+                HorizontalAlignment = Enum.HorizontalAlignment.Left,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 8),
+                Parent = contentContainer
+            })
+            
+            -- Apply theme to objects
+            Utility:ApplyThemeToObject(section, "BackgroundColor3", "SectionBg")
+            Utility:ApplyThemeToObject(titleLabel, "TextColor3", "TextColor")
+            Utility:ApplyThemeToObject(titleLabel, "Font", "Font")
+            Utility:ApplyThemeToObject(separator, "BackgroundColor3", "Divider")
+            
+            -- Section API
+            local SectionAPI = {}
+            
+            -- Add label
+            function SectionAPI:AddLabel(labelOptions)
+                labelOptions = labelOptions or {}
+                local labelText = labelOptions.Text or "Label"
+                local labelAlignment = labelOptions.Alignment or Enum.TextXAlignment.Left
+                
+                local theme = Utility:GetTheme()
+                
+                -- Create label container
+                local label = Utility:Create("Frame", {
+                    Name = "Label",
+                    Size = UDim2.new(1, 0, 0, 20),
+                    BackgroundTransparency = 1,
+                    ZIndex = 3,
+                    Parent = contentContainer
+                })
+                
+                -- Add text label
+                local textLabel = Utility:Create("TextLabel", {
+                    Name = "Text",
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundTransparency = 1,
+                    Font = theme.Font,
+                    Text = labelText,
+                    TextColor3 = theme.TextColor,
+                    TextSize = theme.TextSize,
+                    TextXAlignment = labelAlignment,
+                    ZIndex = 3,
+                    Parent = label
+                })
+                
+                -- Apply theme to objects
+                Utility:ApplyThemeToObject(textLabel, "TextColor3", "TextColor")
+                Utility:ApplyThemeToObject(textLabel, "Font", "Font")
+                
+                -- Label API
+                local LabelAPI = {}
+                
+                -- Update text
+                function LabelAPI:SetText(text)
+                    labelText = text
+                    textLabel.Text = text
+                    return self
+                end
+                
+                -- Get text
+                function LabelAPI:GetText()
+                    return labelText
+                end
+                
+                return LabelAPI
+            end
+            
+            -- Add button
+            function SectionAPI:AddButton(buttonOptions)
+                buttonOptions = buttonOptions or {}
+                local buttonText = buttonOptions.Text or "Button"
+                local buttonCallback = buttonOptions.Callback or function() end
+                local buttonIcon = buttonOptions.Icon
+                
+                local theme = Utility:GetTheme()
+                
+                -- Create button container
+                local button = Utility:Create("Frame", {
+                    Name = "Button",
+                    Size = UDim2.new(1, 0, 0, 32),
+                    BackgroundTransparency = 1,
+                    ZIndex = 3,
+                    Parent = contentContainer
+                })
+                
+                -- Create button
+                local buttonElement = Utility:Create("TextButton", {
+                    Name = "ButtonElement",
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundColor3 = theme.ControlBg,
+                    AutoButtonColor = false,
+                    BorderSizePixel = 0,
+                    Text = "",
+                    ZIndex = 3,
+                    Parent = button
+                })
+                
+                -- Add corner radius
+                Utility:Create("UICorner", {
+                    CornerRadius = theme.Radius.Medium,
+                    Parent = buttonElement
+                })
+                
+                -- Add icon if provided
+                local textLabel = nil
+                
+                if buttonIcon then
+                    -- Create icon
+                    local iconLabel = Utility:Create("ImageLabel", {
+                        Name = "Icon",
+                        Size = UDim2.new(0, 16, 0, 16),
+                        Position = UDim2.new(0, 10, 0.5, 0),
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        BackgroundTransparency = 1,
+                        Image = buttonIcon,
+                        ImageColor3 = theme.TextColor,
+                        ZIndex = 4,
+                        Parent = buttonElement
+                    })
+                    
+                    -- Create text with offset for icon
+                    textLabel = Utility:Create("TextLabel", {
+                        Name = "Text",
+                        Size = UDim2.new(1, -36, 1, 0),
+                        Position = UDim2.new(0, 36, 0, 0),
+                        BackgroundTransparency = 1,
+                        Font = theme.Font,
+                        Text = buttonText,
+                        TextColor3 = theme.TextColor,
+                        TextSize = theme.TextSize,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        ZIndex = 4,
+                        Parent = buttonElement
+                    })
+                    
+                    -- Apply theme to icon
+                    Utility:ApplyThemeToObject(iconLabel, "ImageColor3", "TextColor")
+                else
+                    -- Create centered text
+                    textLabel = Utility:Create("TextLabel", {
+                        Name = "Text",
+                        Size = UDim2.new(1, 0, 1, 0),
+                        BackgroundTransparency = 1,
+                        Font = theme.Font,
+                        Text = buttonText,
+                        TextColor3 = theme.TextColor,
+                        TextSize = theme.TextSize,
+                        ZIndex = 4,
+                        Parent = buttonElement
+                    })
+                end
+                
+                -- Apply theme to objects
+                Utility:ApplyThemeToObject(buttonElement, "BackgroundColor3", "ControlBg")
+                Utility:ApplyThemeToObject(textLabel, "TextColor3", "TextColor")
+                Utility:ApplyThemeToObject(textLabel, "Font", "Font")
+                
+                -- Add hover/press effects
+                Utility:Connect(buttonElement.MouseEnter, function()
+                    Utility:Tween(buttonElement, {BackgroundColor3 = theme.HoverBg}, 0.2)
+                    Utility:PlaySound("Hover")
+                end)
+                
+                Utility:Connect(buttonElement.MouseLeave, function()
+                    Utility:Tween(buttonElement, {BackgroundColor3 = theme.ControlBg}, 0.2)
+                end)
+                
+                Utility:Connect(buttonElement.MouseButton1Down, function()
+                    Utility:Tween(buttonElement, {BackgroundColor3 = theme.PressedBg}, 0.1)
+                    Utility:Ripple(buttonElement, theme.Primary)
+                end)
+                
+                Utility:Connect(buttonElement.MouseButton1Up, function()
+                    Utility:Tween(buttonElement, {BackgroundColor3 = theme.HoverBg}, 0.1)
+                end)
+                
+                Utility:Connect(buttonElement.MouseButton1Click, function()
+                    Utility:PlaySound("Click")
+                    buttonCallback()
+                end)
+                
+                -- Button API
+                local ButtonAPI = {}
+                
+                -- Set callback
+                function ButtonAPI:SetCallback(callback)
+                    buttonCallback = callback
+                    return self
+                end
+                
+                -- Set text
+                function ButtonAPI:SetText(text)
+                    buttonText = text
+                    textLabel.Text = text
+                    return self
+                end
+                
+                -- Get text
+                function ButtonAPI:GetText()
+                    return buttonText
+                end
+                
+                return ButtonAPI
+            end
+            
+            -- Add toggle
+            function SectionAPI:AddToggle(toggleOptions)
+                toggleOptions = toggleOptions or {}
+                local toggleText = toggleOptions.Text or "Toggle"
+                local toggleDefault = toggleOptions.Default or false
+                local toggleCallback = toggleOptions.Callback or function() end
+                local toggleFlag = toggleOptions.Flag
+                
+                local theme = Utility:GetTheme()
+                local toggleValue = toggleDefault
+                
+                -- Create toggle container
+                local toggle = Utility:Create("Frame", {
+                    Name = "Toggle",
+                    Size = UDim2.new(1, 0, 0, 32),
+                    BackgroundTransparency = 1,
+                    ZIndex = 3,
+                    Parent = contentContainer
+                })
+                
+                -- Create toggle background
+                local toggleElement = Utility:Create("Frame", {
+                    Name = "ToggleElement",
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundColor3 = theme.ControlBg,
+                    BorderSizePixel = 0,
+                    ZIndex = 3,
+                    Parent = toggle
+                })
+                
+                -- Add corner radius
+                Utility:Create("UICorner", {
+                    CornerRadius = theme.Radius.Medium,
+                    Parent = toggleElement
+                })
+                
+                -- Create toggle text
+                local textLabel = Utility:Create("TextLabel", {
+                    Name = "Text",
+                    Size = UDim2.new(1, -60, 1, 0),
+                    Position = UDim2.new(0, 10, 0, 0),
+                    BackgroundTransparency = 1,
+                    Font = theme.Font,
+                    Text = toggleText,
+                    TextColor3 = theme.TextColor,
+                    TextSize = theme.TextSize,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    ZIndex = 4,
+                    Parent = toggleElement
+                })
+                
+                -- Create toggle indicator
+                local toggleIndicator = Utility:Create("Frame", {
+                    Name = "Indicator",
+                    Size = UDim2.new(0, 40, 0, 20),
+                    Position = UDim2.new(1, -50, 0.5, 0),
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    BackgroundColor3 = toggleValue and theme.Primary or theme.InputBg,
+                    BorderSizePixel = 0,
+                    ZIndex = 4,
+                    Parent = toggleElement
+                })
+                
+                -- Add corner radius to indicator
+                Utility:Create("UICorner", {
+                    CornerRadius = theme.Radius.Full,
+                    Parent = toggleIndicator
+                })
+                
+                -- Create toggle switch
+                local toggleSwitch = Utility:Create("Frame", {
+                    Name = "Switch",
+                    Size = UDim2.new(0, 16, 0, 16),
+                    Position = UDim2.new(toggleValue and 1 or 0, toggleValue and -18 or 2, 0.5, 0),
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    BorderSizePixel = 0,
+                    ZIndex = 5,
+                    Parent = toggleIndicator
+                })
+                
+                -- Add corner radius to switch
+                Utility:Create("UICorner", {
+                    CornerRadius = theme.Radius.Full,
+                    Parent = toggleSwitch
+                })
+                
+                -- Apply theme to objects
+                Utility:ApplyThemeToObject(toggleElement, "BackgroundColor3", "ControlBg")
+                Utility:ApplyThemeToObject(textLabel, "TextColor3", "TextColor")
+                Utility:ApplyThemeToObject(textLabel, "Font", "Font")
+                Utility:ApplyThemeToObject(toggleIndicator, "BackgroundColor3", toggleValue and "Primary" or "InputBg")
+                
+                -- Store flag if provided
+                if toggleFlag then
+                    VexHub.Flags[toggleFlag] = toggleValue
+                end
+                
+                -- Function to toggle state
+                local function updateToggle(value)
+                    toggleValue = value
+                    
+                    -- Update indicator color
+                    Utility:Tween(toggleIndicator, {
+                        BackgroundColor3 = toggleValue and theme.Primary or theme.InputBg
+                    }, 0.2)
+                    
+                    -- Move toggle switch
+                    Utility:Tween(toggleSwitch, {
+                        Position = UDim2.new(toggleValue and 1 or 0, toggleValue and -18 or 2, 0.5, 0)
+                    }, 0.2)
+                    
+                    -- Update flag
+                    if toggleFlag then
+                        VexHub.Flags[toggleFlag] = toggleValue
+                    end
+                    
+                    -- Call callback
+                    toggleCallback(toggleValue)
+                end
+                
+                -- Initialize with default state
+                if toggleDefault then
+                    toggleIndicator.BackgroundColor3 = theme.Primary
+                    toggleSwitch.Position = UDim2.new(1, -18, 0.5, 0)
+                end
+                
+                -- Add hover/press effects
+                Utility:Connect(toggleElement.MouseEnter, function()
+                    Utility:Tween(toggleElement, {BackgroundColor3 = theme.HoverBg}, 0.2)
+                    Utility:PlaySound("Hover")
+                end)
+                
+                Utility:Connect(toggleElement.MouseLeave, function()
+                    Utility:Tween(toggleElement, {BackgroundColor3 = theme.ControlBg}, 0.2)
+                end)
+                
+                Utility:Connect(toggleElement.InputBegan, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        Utility:Tween(toggleElement, {BackgroundColor3 = theme.PressedBg}, 0.1)
+                        Utility:Ripple(toggleElement, toggleValue and theme.Primary or theme.InputBg)
+                    end
+                end)
+                
+                Utility:Connect(toggleElement.InputEnded, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        Utility:Tween(toggleElement, {BackgroundColor3 = theme.HoverBg}, 0.1)
+                        
+                        -- Toggle state
+                        updateToggle(not toggleValue)
+                        Utility:PlaySound("Toggle")
+                    end
+                end)
+                
+                -- Toggle API
+                local ToggleAPI = {}
+                
+                -- Set toggle state
+                function ToggleAPI:SetValue(value)
+                    if value ~= toggleValue then
+                        updateToggle(value)
+                    end
+                    return self
+                end
+                
+                -- Get toggle state
+                function ToggleAPI:GetValue()
+                    return toggleValue
+                end
+                
+                -- Set callback
+                function ToggleAPI:SetCallback(callback)
+                    toggleCallback = callback
+                    return self
+                end
+                
+                -- Set text
+                function ToggleAPI:SetText(text)
+                    toggleText = text
+                    textLabel.Text = text
+                    return self
+                end
+                
+                -- Get text
+                function ToggleAPI:GetText()
+                    return toggleText
+                end
+                
+                return ToggleAPI
+            end
+            
+            -- Add Slider
+            function SectionAPI:AddSlider(sliderOptions)
+                sliderOptions = sliderOptions or {}
+                local sliderText = sliderOptions.Text or "Slider"
+                local sliderMin = sliderOptions.Min or 0
+                local sliderMax = sliderOptions.Max or 100
+                local sliderDefault = sliderOptions.Default or sliderMin
+                local sliderIncrement = sliderOptions.Increment or 1
+                local sliderCallback = sliderOptions.Callback or function() end
+                local sliderFlag = sliderOptions.Flag
+                
+                local theme = Utility:GetTheme()
+                local sliderValue = math.clamp(sliderDefault, sliderMin, sliderMax)
+                
+                -- Create slider container
+                local slider = Utility:Create("Frame", {
+                    Name = "Slider",
+                    Size = UDim2.new(1, 0, 0, 50),
+                    BackgroundTransparency = 1,
+                    ZIndex = 3,
+                    Parent = contentContainer
+                })
+                
+                -- Create slider background
+                local sliderElement = Utility:Create("Frame", {
+                    Name = "SliderElement",
+                    Size = UDim2.new(1, 0, 1, 0),
+                    BackgroundColor3 = theme.ControlBg,
+                    BorderSizePixel = 0,
+                    ZIndex = 3,
+                    Parent = slider
+                })
+                
+                -- Add corner radius
+                Utility:Create("UICorner", {
+                    CornerRadius = theme.Radius.Medium,
+                    Parent = sliderElement
+                })
+                
+                -- Create slider text
+                local textLabel = Utility:Create("TextLabel", {
+                    Name = "Text",
+                    Size = UDim2.new(1, -65, 0, 20),
+                    Position = UDim2.new(0, 10, 0, 6),
+                    BackgroundTransparency = 1,
+                    Font = theme.Font,
+                    Text = sliderText,
+                    TextColor3 = theme.TextColor,
+                    TextSize = theme.TextSize,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    ZIndex = 4,
+                    Parent = sliderElement
+                })
+                
+                -- Create value display
+                local valueLabel = Utility:Create("TextLabel", {
+                    Name = "Value",
+                    Size = UDim2.new(0, 50, 0, 20),
+                    Position = UDim2.new(1, -60, 0, 6),
+                    BackgroundTransparency = 1,
+                    Font = theme.Font,
+                    Text = tostring(sliderValue),
+                    TextColor3 = theme.TextColor,
+                    TextSize = theme.TextSize,
+                    TextXAlignment = Enum.TextXAlignment.Right,
+                    ZIndex = 4,
+                    Parent = sliderElement
+                })
+                
+                -- Create slider bar background
+                local sliderBarBg = Utility:Create("Frame", {
+                    Name = "SliderBarBg",
+                    Size = UDim2.new(1, -20, 0, 6),
+                    Position = UDim2.new(0, 10, 0, 32),
+                    BackgroundColor3 = theme.InputBg,
+                    BorderSizePixel = 0,
+                    ZIndex = 4,
+                    Parent = sliderElement
+                })
+                
+                -- Add corner radius to slider bar
+                Utility:Create("UICorner", {
+                    CornerRadius = theme.Radius.Full,
+                    Parent = sliderBarBg
+                })
+                
+                -- Create slider fill
+                local sliderFill = Utility:Create("Frame", {
+                    Name = "SliderFill",
+                    Size = UDim2.new(0, 0, 1, 0),
+                    BackgroundColor3 = theme.Primary,
+                    BorderSizePixel = 0,
+                    ZIndex = 5,
+                    Parent = sliderBarBg
+                })
+                
+                -- Add corner radius to slider fill
+                Utility:Create("UICorner", {
+                    CornerRadius = theme.Radius.Full,
+                    Parent = sliderFill
+                })
+                
+                -- Create slider knob
+                local sliderKnob = Utility:Create("Frame", {
+                    Name = "SliderKnob",
+                    Size = UDim2.new(0, 16, 0, 16),
+                    Position = UDim2.new(0, 0, 0.5, 0),
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    BackgroundColor3 = theme.Primary,
+                    BorderSizePixel = 0,
+                    ZIndex = 6,
+                    Parent = sliderFill
+                })
+                
+                -- Add corner radius to knob
+                Utility:Create("UICorner", {
+                    CornerRadius = theme.Radius.Full,
+                    Parent = sliderKnob
+                })
+                
+                -- Apply theme to objects
+                Utility:ApplyThemeToObject(sliderElement, "BackgroundColor3", "ControlBg")
+                Utility:ApplyThemeToObject(textLabel, "TextColor3", "TextColor")
+                Utility:ApplyThemeToObject(textLabel, "Font", "Font")
+                Utility:ApplyThemeToObject(valueLabel, "TextColor3", "TextColor")
+                Utility:ApplyThemeToObject(valueLabel, "Font", "Font")
+                Utility:ApplyThemeToObject(sliderBarBg, "BackgroundColor3", "InputBg")
+                Utility:ApplyThemeToObject(sliderFill, "BackgroundColor3", "Primary")
+                Utility:ApplyThemeToObject(sliderKnob, "BackgroundColor3", "Primary")
+                
+                -- Store flag if provided
+                if sliderFlag then
+                    VexHub.Flags[sliderFlag] = sliderValue
+                end
+                
+                -- Function to update slider
+                local function updateSlider(value)
+                    -- Clamp and round value to increment
+                    local roundedValue = sliderMin + (math.floor((math.clamp(value, sliderMin, sliderMax) - sliderMin) / sliderIncrement + 0.5) * sliderIncrement)
+                    sliderValue = roundedValue
+                    
+                    -- Calculate fill percentage
+                    local fillPercentage = (sliderValue - sliderMin) / (sliderMax - sliderMin)
+                    local fillSize = math.clamp(fillPercentage, 0, 1)
+                    
+                    -- Update fill and knob
+                    sliderFill.Size = UDim2.new(fillSize, 0, 1, 0)
+                    
+                    -- Update value label
+                    valueLabel.Text = tostring(sliderValue)
+                    
+                    -- Update flag
+                    if sliderFlag then
+                        VexHub.Flags[sliderFlag] = sliderValue
+                    end
+                    
+                    -- Call callback
+                    sliderCallback(sliderValue)
+                end
+                
+                -- Initialize with default value
+                updateSlider(sliderDefault)
+                
+                -- Add hover/press effects
+                Utility:Connect(sliderElement.MouseEnter, function()
+                    Utility:Tween(sliderElement, {BackgroundColor3 = theme.HoverBg}, 0.2)
+                    Utility:PlaySound("Hover")
+                end)
+                
+                Utility:Connect(sliderElement.MouseLeave, function()
+                    Utility:Tween(sliderElement, {BackgroundColor3 = theme.ControlBg}, 0.2)
+                end)
+                
+                -- Handle slider interaction
+                local isDragging = false
+                
+                Utility:Connect(sliderBarBg.InputBegan, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        isDragging = true
+                        
+                        -- Get new value based on mouse position
+                        local mousePos = input.Position.X
+                        local sliderPos = sliderBarBg.AbsolutePosition.X
+                        local sliderSize = sliderBarBg.AbsoluteSize.X
+                        local relativePos = (mousePos - sliderPos) / sliderSize
+                        local newValue = sliderMin + ((sliderMax - sliderMin) * relativePos)
+                        
+                        -- Update slider
+                        updateSlider(newValue)
+                        Utility:PlaySound("Click")
+                    end
+                end)
+                
+                Utility:Connect(sliderBarBg.InputEnded, function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        isDragging = false
+                    end
+                end)
+                
+                Utility:Connect(UserInputService.InputChanged, function(input)
+                    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        -- Get new value based on mouse position
+                        local mousePos = input.Position.X
+                        local sliderPos = sliderBarBg.AbsolutePosition.X
+                        local sliderSize = sliderBarBg.AbsoluteSize.X
+                        local relativePos = (mousePos - sliderPos) / sliderSize
+                        local newValue = sliderMin + ((sliderMax - sliderMin) * relativePos)
+                        
+                        -- Update slider
+                        updateSlider(newValue)
+                    end
+                end)
+                
+                -- Slider API
+                local SliderAPI = {}
+                
+                -- Set slider value
+                function SliderAPI:SetValue(value)
+                    updateSlider(value)
+                    return self
+                end
+                
+                -- Get slider value
+                function SliderAPI:GetValue()
+                    return sliderValue
+                end
+                
+                -- Set slider callback
+                function SliderAPI:SetCallback(callback)
+                    sliderCallback = callback
+                    return self
+                end
+                
+                -- Set slider text
+                function SliderAPI:SetText(text)
+                    sliderText = text
+                    textLabel.Text = text
+                    return self
+                end
+                
+                -- Get slider text
+                function SliderAPI:GetText()
+                    return sliderText
+                end
+                
+                -- Set slider min/max
+                function SliderAPI:SetBounds(min, max)
+                    sliderMin = min
+                    sliderMax = max
+                    updateSlider(sliderValue)
+                    return self
+                end
+                
+                return SliderAPI
+            end
+            
+            return SectionAPI
+        end
+        
+        return TabAPI
+    end
+    
+    -- Get content container (for non-tabbed windows)
+    function WindowAPI:GetContainer()
+        return tabsContentContainer
+    end
+    
+    -- Set theme for this window
+    function WindowAPI:SetTheme(themeName)
+        if not VexHub.Themes[themeName] then
+            warn("Theme '" .. themeName .. "' does not exist, using Default theme.")
+            themeName = "Default"
+        end
+        
+        windowTheme = themeName
+        VexHub.CurrentTheme = themeName
+        Utility:UpdateAllThemeObjects()
+        
+        return self
+    end
+    
+    -- Return window API
+    return WindowAPI
+end
+
+-- Notification system
+function VexHub:Notify(options)
+    if not Initialized then
+        self:Init()
+    end
+    
+    options = options or {}
+    local notificationType = options.Type or "Info"
+    local notificationTitle = options.Title or "Notification"
+    local notificationMessage = options.Message or ""
+    local notificationDuration = options.Duration or 5
+    local notificationCallback = options.Callback
+    
+    local theme = Utility:GetTheme()
+    local typeColors = {
+        Info = theme.Primary,
+        Success = theme.Success,
+        Warning = theme.Warning,
+        Error = theme.Error
+    }
+    
+    local typeSound = {
+        Info = "Notification",
+        Success = "Success",
+        Warning = "Notification",
+        Error = "Error"
+    }
+    
+    local color = typeColors[notificationType] or theme.Primary
+    
+    -- Play sound
+    Utility:PlaySound(typeSound[notificationType] or "Notification")
+    
+    -- Create notification container
+    local notification = Utility:Create("Frame", {
+        Name = "Notification",
+        Size = UDim2.new(0, 300, 0, 80),
+        Position = UDim2.new(1, 20, 1, -30 - (NotificationCount * 90)),
+        AnchorPoint = Vector2.new(1, 1),
+        BackgroundColor3 = theme.ControlBg,
+        BorderSizePixel = 0,
+        ZIndex = 100,
+        Parent = NotificationHolder
+    })
+    
+    NotificationCount = NotificationCount + 1
+    
+    -- Add corner radius
+    Utility:Create("UICorner", {
+        CornerRadius = theme.Radius.Medium,
+        Parent = notification
+    })
+    
+    -- Create shadow
+    Utility:CreateShadow(notification, theme.Shadow.Default)
+    
+    -- Create accent bar
+    local accentBar = Utility:Create("Frame", {
+        Name = "AccentBar",
+        Size = UDim2.new(0, 4, 1, 0),
+        BackgroundColor3 = color,
+        BorderSizePixel = 0,
+        ZIndex = 101,
+        Parent = notification
+    })
+    
+    -- Add corner radius to left side of accent bar
+    local accentBarCorner = Utility:Create("UICorner", {
+        CornerRadius = UDim.new(0, 4),
+        Parent = accentBar
+    })
+    
+    -- Create title
+    local titleLabel = Utility:Create("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(1, -50, 0, 24),
+        Position = UDim2.new(0, 14, 0, 8),
+        BackgroundTransparency = 1,
+        Font = theme.Font,
+        Text = notificationTitle,
+        TextColor3 = theme.TextColor,
+        TextSize = theme.TitleSize,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 102,
+        Parent = notification
+    })
+    
+    -- Create message
+    local messageLabel = Utility:Create("TextLabel", {
+        Name = "Message",
+        Size = UDim2.new(1, -20, 1, -40),
+        Position = UDim2.new(0, 14, 0, 32),
+        BackgroundTransparency = 1,
+        Font = theme.SecondaryFont,
+        Text = notificationMessage,
+        TextColor3 = theme.SubTextColor,
+        TextSize = theme.TextSize,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top,
+        TextWrapped = true,
+        ZIndex = 102,
+        Parent = notification
+    })
+    
+    -- Create close button
+    local closeButton = Utility:Create("TextButton", {
+        Name = "CloseButton",
+        Size = UDim2.new(0, 24, 0, 24),
+        Position = UDim2.new(1, -30, 0, 8),
+        BackgroundTransparency = 1,
+        Text = "×",
+        TextColor3 = theme.SubTextColor,
+        TextSize = 20,
+        Font = theme.Font,
+        ZIndex = 103,
+        Parent = notification
+    })
+    
+    -- Create progress bar
+    local progressBarContainer = Utility:Create("Frame", {
+        Name = "ProgressBarContainer",
+        Size = UDim2.new(1, 0, 0, 2),
+        Position = UDim2.new(0, 0, 1, -2),
+        BackgroundTransparency = 0.5,
+        BackgroundColor3 = theme.SubTextColor,
+        BorderSizePixel = 0,
+        ZIndex = 101,
+        ClipsDescendants = true,
+        Parent = notification
+    })
+    
+    local progressBar = Utility:Create("Frame", {
+        Name = "ProgressBar",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = color,
+        BorderSizePixel = 0,
+        ZIndex = 102,
+        Parent = progressBarContainer
+    })
+    
+    -- Apply theme to objects
+    Utility:ApplyThemeToObject(notification, "BackgroundColor3", "ControlBg")
+    Utility:ApplyThemeToObject(titleLabel, "TextColor3", "TextColor")
+    Utility:ApplyThemeToObject(titleLabel, "Font", "Font")
+    Utility:ApplyThemeToObject(messageLabel, "TextColor3", "SubTextColor")
+    Utility:ApplyThemeToObject(messageLabel, "Font", "SecondaryFont")
+    Utility:ApplyThemeToObject(closeButton, "TextColor3", "SubTextColor")
+    Utility:ApplyThemeToObject(closeButton, "Font", "Font")
+    Utility:ApplyThemeToObject(progressBarContainer, "BackgroundColor3", "SubTextColor")
+    
+    -- Add hover/press effects
+    Utility:Connect(closeButton.MouseEnter, function()
+        Utility:Tween(closeButton, {TextColor3 = theme.TextColor}, 0.2)
+    end)
+    
+    Utility:Connect(closeButton.MouseLeave, function()
+        Utility:Tween(closeButton, {TextColor3 = theme.SubTextColor}, 0.2)
+    end)
+    
+    -- Function to close notification
+    local function closeNotification()
+        -- Animate out
+        Utility:Tween(notification, {
+            Position = UDim2.new(1, 350, notification.Position.Y.Scale, notification.Position.Y.Offset)
+        }, 0.5, Enum.EasingStyle.Quint)
+        
+        task.delay(0.5, function()
+            NotificationCount = NotificationCount - 1
+            notification:Destroy()
+            
+            -- Shift other notifications up
+            for i, notif in pairs(NotificationHolder:GetChildren()) do
+                if notif:IsA("Frame") and notif.Name == "Notification" then
+                    local yPos = notif.Position.Y.Offset
+                    Utility:Tween(notif, {
+                        Position = UDim2.new(1, 20, 1, -30 - (i-1) * 90)
+                    }, 0.3)
+                end
+            end
+            
+            -- Call callback if provided
+            if notificationCallback then
+                notificationCallback()
+            end
+        end)
+    end
+    
+    -- Animate progress bar
+    Utility:Tween(progressBar, {
+        Size = UDim2.new(0, 0, 1, 0)
+    }, notificationDuration, Enum.EasingStyle.Linear)
+    
+    -- Animate in
+    notification.Position = UDim2.new(1, 350, 1, -30 - (NotificationCount - 1) * 90)
+    Utility:Tween(notification, {
+        Position = UDim2.new(1, 20, 1, -30 - (NotificationCount - 1) * 90)
+    }, 0.5, Enum.EasingStyle.Quint)
+    
+    -- Close after duration
+    task.delay(notificationDuration, closeNotification)
+    
+    -- Connect close button
+    Utility:Connect(closeButton.MouseButton1Click, function()
+        Utility:PlaySound("Click")
+        closeNotification()
+    end)
+    
+    return notification
+end
+
+-- Return the library
+return VexHub
