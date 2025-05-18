@@ -1111,6 +1111,9 @@ function VexHub:CreateWindow(options)
     local showTitle = options.ShowTitle ~= false
     local isModal = options.Modal or false
     
+    -- Print creation debug info
+    print("Creating window: " .. windowTitle .. " with theme: " .. windowTheme)
+    
     -- Set theme for this window if specified
     if windowTheme ~= VexHub.CurrentTheme then
         VexHub.CurrentTheme = windowTheme
@@ -1714,10 +1717,19 @@ function VexHub:CreateWindow(options)
         
         -- Add section to tab
         function TabAPI:AddSection(sectionOptions)
+            -- Get content container
+            local contentContainer = self.Container or tabsContentContainer
+            
             sectionOptions = sectionOptions or {}
             local sectionTitle = sectionOptions.Title or "Section"
             
             local theme = Utility:GetTheme()
+            
+            -- Ensure the content container exists
+            if not contentContainer then
+                warn("Failed to add section: Content container not found")
+                return nil
+            end
             
             -- Create section container
             local section = Utility:Create("Frame", {
@@ -1727,7 +1739,7 @@ function VexHub:CreateWindow(options)
                 BackgroundColor3 = theme.SectionBg,
                 BorderSizePixel = 0,
                 ZIndex = 2,
-                Parent = tabContent
+                Parent = contentContainer
             })
             
             -- Add corner radius
@@ -1774,7 +1786,7 @@ function VexHub:CreateWindow(options)
             })
             
             -- Create content container
-            local contentContainer = Utility:Create("Frame", {
+            local sectionContentContainer = Utility:Create("Frame", {
                 Name = "ContentContainer",
                 Size = UDim2.new(1, 0, 0, 0),
                 Position = UDim2.new(0, 0, 0, 30),
@@ -1790,7 +1802,7 @@ function VexHub:CreateWindow(options)
                 PaddingRight = UDim.new(0, 8),
                 PaddingTop = UDim.new(0, 8),
                 PaddingBottom = UDim.new(0, 8),
-                Parent = contentContainer
+                Parent = sectionContentContainer
             })
             
             -- Add list layout
@@ -1799,7 +1811,7 @@ function VexHub:CreateWindow(options)
                 HorizontalAlignment = Enum.HorizontalAlignment.Left,
                 SortOrder = Enum.SortOrder.LayoutOrder,
                 Padding = UDim.new(0, 8),
-                Parent = contentContainer
+                Parent = sectionContentContainer
             })
             
             -- Apply theme to objects
@@ -1825,7 +1837,7 @@ function VexHub:CreateWindow(options)
                     Size = UDim2.new(1, 0, 0, 20),
                     BackgroundTransparency = 1,
                     ZIndex = 3,
-                    Parent = contentContainer
+                    Parent = sectionContentContainer
                 })
                 
                 -- Add text label
@@ -1879,7 +1891,8 @@ function VexHub:CreateWindow(options)
                     Size = UDim2.new(1, 0, 0, 32),
                     BackgroundTransparency = 1,
                     ZIndex = 3,
-                    Parent = contentContainer
+                    Parent = sectionContentContainer,
+                    LayoutOrder = #sectionContentContainer:GetChildren()
                 })
                 
                 -- Create button
@@ -2019,7 +2032,7 @@ function VexHub:CreateWindow(options)
                     Size = UDim2.new(1, 0, 0, 32),
                     BackgroundTransparency = 1,
                     ZIndex = 3,
-                    Parent = contentContainer
+                    Parent = sectionContentContainer
                 })
                 
                 -- Create toggle background
@@ -2213,7 +2226,7 @@ function VexHub:CreateWindow(options)
                     Size = UDim2.new(1, 0, 0, 50),
                     BackgroundTransparency = 1,
                     ZIndex = 3,
-                    Parent = contentContainer
+                    Parent = sectionContentContainer
                 })
                 
                 -- Create slider background
