@@ -685,46 +685,54 @@ end
 
 -- Core UI functionality
 function VexHub:Init(settings)
-    if Initialized then return self end
+    if Initialized then 
+        warn("VexHub has already been initialized!")
+        return self 
+    end
     
     settings = settings or {}
-    self.CurrentTheme = settings.Theme or "Default"
+    self.CurrentTheme = settings.Theme and (VexHub.Themes[settings.Theme] and settings.Theme or "Default") or "Default"
     
-    -- Create ScreenGui
-    if isStudio then
-        ScreenGui = Utility:Create("ScreenGui", {
-            Name = "VexHub",
-            ResetOnSpawn = false,
-            DisplayOrder = 999999,
-            ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-            Parent = Player:WaitForChild("PlayerGui")
-        })
-    else
-        -- Try to use CoreGui, but safely handle any errors
-        local success, result = pcall(function()
-            local gui = Utility:Create("ScreenGui", {
-                Name = "VexHub",
-                ResetOnSpawn = false,
-                DisplayOrder = 999999,
-                ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-            })
-            
-            gui.Parent = CoreGui
-            return gui
+    -- Create ScreenGui with proper error handling
+    local function tryParent(gui, parent)
+        local success, err = pcall(function()
+            gui.Parent = parent
         end)
+        return success
+    end
+    
+    ScreenGui = Utility:Create("ScreenGui", {
+        Name = "VexHub",
+        ResetOnSpawn = false,
+        DisplayOrder = 999999,
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    })
+    
+    -- Try different parent options with proper fallbacks
+    if isStudio then
+        -- In Studio, use PlayerGui
+        ScreenGui.Parent = Player:WaitForChild("PlayerGui")
+        isCore = false
+    else
+        -- Try CoreGui first
+        local success = tryParent(ScreenGui, CoreGui)
         
         if success then
-            ScreenGui = result
             isCore = true
         else
-            -- Fallback to PlayerGui if CoreGui fails
-            ScreenGui = Utility:Create("ScreenGui", {
-                Name = "VexHub",
-                ResetOnSpawn = false,
-                DisplayOrder = 999999,
-                ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-                Parent = Player:WaitForChild("PlayerGui")
-            })
+            -- Fallback to PlayerGui
+            local playerGui = Player:FindFirstChild("PlayerGui")
+            if playerGui then
+                ScreenGui.Parent = playerGui
+            else
+                playerGui = Player:WaitForChild("PlayerGui", 5)
+                if playerGui then
+                    ScreenGui.Parent = playerGui
+                else
+                    warn("Failed to parent VexHub UI to PlayerGui")
+                    return nil
+                end
+            end
             isCore = false
         end
     end
@@ -742,11 +750,20 @@ function VexHub:Init(settings)
     
     -- Other initializations
     Initialized = true
+    
+    -- Print initialization message
+    print("VexHub initialized with theme: " .. self.CurrentTheme)
+    
     return self
 end
 
 function VexHub:InitTooltip()
     local theme = Utility:GetTheme()
+    
+    -- Create tooltip container if it doesn't exist
+    if TooltipObjects.Container then
+        TooltipObjects.Container:Destroy()
+    end
     
     -- Create tooltip container
     local tooltip = Utility:Create("Frame", {
@@ -793,24 +810,32 @@ function VexHub:InitTooltip()
     TooltipObjects.Container = tooltip
     TooltipObjects.Text = label
     
-    -- Handle tooltip positioning
-    Utility:Connect(RunService.RenderStepped, function()
+    -- Handle tooltip positioning with smoother animation and better screen edge detection
+    local tooltipConnection
+    tooltipConnection = RunService.RenderStepped:Connect(function()
         if TooltipObjects.Container and TooltipObjects.Container.Visible then
             local mousePos = UserInputService:GetMouseLocation()
             local viewportSize = Camera.ViewportSize
+            local tooltipSize = TooltipObjects.Container.AbsoluteSize
             
-            -- Determine best position based on screen edges
+            -- Calculate best position to avoid screen edges
+            local margin = 10
             local posX = mousePos.X + 20
             local posY = mousePos.Y + 20
             
-            -- Check if tooltip would go off screen
-            if posX + TooltipObjects.Container.AbsoluteSize.X > viewportSize.X then
-                posX = mousePos.X - 20 - TooltipObjects.Container.AbsoluteSize.X
+            -- Right edge check
+            if posX + tooltipSize.X > viewportSize.X - margin then
+                posX = mousePos.X - tooltipSize.X - 10
             end
             
-            if posY + TooltipObjects.Container.AbsoluteSize.Y > viewportSize.Y then
-                posY = mousePos.Y - 20 - TooltipObjects.Container.AbsoluteSize.Y
+            -- Bottom edge check
+            if posY + tooltipSize.Y > viewportSize.Y - margin then
+                posY = mousePos.Y - tooltipSize.Y - 10
             end
+            
+            -- Ensure tooltip stays on screen (left and top edges)
+            posX = math.max(margin, posX)
+            posY = math.max(margin, posY)
             
             -- Apply position with smooth animation
             Utility:Tween(TooltipObjects.Container, {
@@ -818,6 +843,9 @@ function VexHub:InitTooltip()
             }, 0.1)
         end
     end)
+    
+    -- Store connection for cleanup
+    table.insert(VexHub.Connections, tooltipConnection)
     
     return TooltipObjects
 end
@@ -2369,8 +2397,34 @@ function VexHub:Notify(options)
     
     local color = typeColors[notificationType] or theme.Primary
     
+    -- Add to notification queue to prevent overlap
+    local notificationData = {
+        Type = notificationType,
+        Title = notificationTitle,
+        Message = notificationMessage,
+        Duration = notificationDuration,
+        Callback = notificationCallback,
+        Color = color
+    }
+    
+    table.insert(NotificationQueue, notificationData)
+    
+    -- Process queue if we're not already processing
+    if #NotificationQueue == 1 then
+        self:ProcessNotificationQueue()
+    end
+    
+    return true
+end
+
+-- Process notification queue
+function VexHub:ProcessNotificationQueue()
+    if #NotificationQueue == 0 then return end
+    
+    local notificationData = NotificationQueue[1]
+    
     -- Play sound
-    Utility:PlaySound(typeSound[notificationType] or "Notification")
+    Utility:PlaySound(typeSound[notificationData.Type] or "Notification")
     
     -- Create notification container
     local notification = Utility:Create("Frame", {
@@ -2399,7 +2453,7 @@ function VexHub:Notify(options)
     local accentBar = Utility:Create("Frame", {
         Name = "AccentBar",
         Size = UDim2.new(0, 4, 1, 0),
-        BackgroundColor3 = color,
+        BackgroundColor3 = notificationData.Color,
         BorderSizePixel = 0,
         ZIndex = 101,
         Parent = notification
@@ -2418,7 +2472,7 @@ function VexHub:Notify(options)
         Position = UDim2.new(0, 14, 0, 8),
         BackgroundTransparency = 1,
         Font = theme.Font,
-        Text = notificationTitle,
+        Text = notificationData.Title,
         TextColor3 = theme.TextColor,
         TextSize = theme.TitleSize,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -2433,7 +2487,7 @@ function VexHub:Notify(options)
         Position = UDim2.new(0, 14, 0, 32),
         BackgroundTransparency = 1,
         Font = theme.SecondaryFont,
-        Text = notificationMessage,
+        Text = notificationData.Message,
         TextColor3 = theme.SubTextColor,
         TextSize = theme.TextSize,
         TextXAlignment = Enum.TextXAlignment.Left,
@@ -2473,7 +2527,7 @@ function VexHub:Notify(options)
     local progressBar = Utility:Create("Frame", {
         Name = "ProgressBar",
         Size = UDim2.new(1, 0, 1, 0),
-        BackgroundColor3 = color,
+        BackgroundColor3 = notificationData.Color,
         BorderSizePixel = 0,
         ZIndex = 102,
         Parent = progressBarContainer
@@ -2500,6 +2554,9 @@ function VexHub:Notify(options)
     
     -- Function to close notification
     local function closeNotification()
+        -- Remove from queue
+        table.remove(NotificationQueue, 1)
+        
         -- Animate out
         Utility:Tween(notification, {
             Position = UDim2.new(1, 350, notification.Position.Y.Scale, notification.Position.Y.Offset)
@@ -2520,16 +2577,19 @@ function VexHub:Notify(options)
             end
             
             -- Call callback if provided
-            if notificationCallback then
-                notificationCallback()
+            if notificationData.Callback then
+                notificationData.Callback()
             end
+            
+            -- Process next notification if any
+            self:ProcessNotificationQueue()
         end)
     end
     
     -- Animate progress bar
     Utility:Tween(progressBar, {
         Size = UDim2.new(0, 0, 1, 0)
-    }, notificationDuration, Enum.EasingStyle.Linear)
+    }, notificationData.Duration, Enum.EasingStyle.Linear)
     
     -- Animate in
     notification.Position = UDim2.new(1, 350, 1, -30 - (NotificationCount - 1) * 90)
@@ -2538,7 +2598,7 @@ function VexHub:Notify(options)
     }, 0.5, Enum.EasingStyle.Quint)
     
     -- Close after duration
-    task.delay(notificationDuration, closeNotification)
+    task.delay(notificationData.Duration, closeNotification)
     
     -- Connect close button
     Utility:Connect(closeButton.MouseButton1Click, function()
