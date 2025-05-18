@@ -1,3 +1,61 @@
+--[[
+    Vex Hub UI Library v1.0.0
+    A comprehensive multi-theme UI library for Roblox Lua
+    Featuring themes: macOS, Windows 11, CS:GO Cheat, and Fluent UI
+    
+    Created by: Claude
+    
+    -- USAGE INSTRUCTIONS --
+    1. Load the library:
+       local VexHub = loadstring(game:HttpGet("https://raw.githubusercontent.com/yourusername/VexHub/main/Vex%20Hub%20Lib.lua"))()
+       
+    2. Initialize with preferred theme:
+       VexHub:Init({Theme = "Default"}) -- Options: Default, MacOS, Windows11, CSGO, FluentUI
+       
+    3. Create a window:
+       local Window = VexHub:CreateWindow({
+           Title = "My Script",
+           Size = UDim2.new(0, 500, 0, 350),
+           Theme = "Default" 
+       })
+       
+    4. Add tabs (if using tabs):
+       local MainTab = Window:AddTab({Title = "Main"})
+       
+    5. Add sections to organize content:
+       local MainSection = MainTab:AddSection({Title = "Features"})
+       
+    6. Add elements:
+       -- Button
+       MainSection:AddButton({
+           Text = "Click Me",
+           Callback = function() print("Button clicked") end
+       })
+       
+       -- Toggle
+       MainSection:AddToggle({
+           Text = "Toggle Feature", 
+           Default = false,
+           Callback = function(Value) print("Toggle:", Value) end
+       })
+       
+       -- Slider
+       MainSection:AddSlider({
+           Text = "Speed",
+           Min = 0,
+           Max = 100,
+           Default = 50,
+           Callback = function(Value) print("Slider:", Value) end
+       })
+       
+    7. Create notifications:
+       VexHub:Notify({
+           Title = "Title",
+           Message = "This is a notification",
+           Type = "Info", -- Info, Success, Warning, Error
+           Duration = 5
+       })
+]]
 
 local VexHub = {
     Name = "Vex Hub",
@@ -89,7 +147,7 @@ VexHub.Themes.Default = {
         ExtraLarge = UDim.new(0, 12),
         Full = UDim.new(1, 0)
     },
-    Shadow = {
+    ShadowSettings = {
         Default = {Transparency = 0.8, Size = 8, Blur = 15},
         Strong = {Transparency = 0.7, Size = 12, Blur = 25}
     },
@@ -329,7 +387,7 @@ VexHub.Themes.FluentUI = {
         ExtraLarge = UDim.new(0, 8),
         Full = UDim.new(1, 0)
     },
-    Shadow = {
+    ShadowSettings = {
         Default = {Transparency = 0.8, Size = 8, Blur = 15},
         Strong = {Transparency = 0.7, Size = 12, Blur = 25}
     },
@@ -439,14 +497,16 @@ function Utility:Ripple(instance, rippleColor)
     -- Calculate target size based on parent's size
     local size = math.max(instance.AbsoluteSize.X, instance.AbsoluteSize.Y) * 2
     
-    -- Animate the ripple
-    Utility:Tween(ripple, {
+    -- Animate the ripple with self reference to ensure proper method call
+    self:Tween(ripple, {
         Size = UDim2.new(0, size, 0, size),
         BackgroundTransparency = 1
     }, 0.5)
     
     task.delay(0.5, function()
-        ripple:Destroy()
+        if ripple and ripple.Parent then
+            ripple:Destroy()
+        end
     end)
     
     return ripple
@@ -454,7 +514,7 @@ end
 
 function Utility:CreateShadow(parent, shadowSettings)
     local theme = self:GetTheme()
-    shadowSettings = shadowSettings or theme.Shadow.Default
+    shadowSettings = shadowSettings or theme.ShadowSettings.Default
     
     -- Clean up existing shadows
     for _, child in pairs(parent:GetChildren()) do
@@ -579,7 +639,7 @@ function Utility:SetupDrag(dragFrame, dragObject, settings)
     local lastDelta = nil
     
     local function updateDrag(delta)
-        if not dragObject then return end
+        if not dragObject or not dragObject.Parent then return end
         
         local targetPosition = UDim2.new(
             startPosition.X.Scale,
@@ -588,7 +648,7 @@ function Utility:SetupDrag(dragFrame, dragObject, settings)
             startPosition.Y.Offset + delta.Y
         )
         
-        Utility:Tween(dragObject, {Position = targetPosition}, dragSpeed, Enum.EasingStyle.Quint)
+        self:Tween(dragObject, {Position = targetPosition}, dragSpeed, Enum.EasingStyle.Quint)
     end
     
     Utility:Connect(dragFrame.InputBegan, function(input)
@@ -598,9 +658,11 @@ function Utility:SetupDrag(dragFrame, dragObject, settings)
             startPosition = dragObject.Position
             lastDelta = Vector3.new(0, 0, 0)
             
-            input.Changed:Connect(function()
+            local connection
+            connection = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
+                    connection:Disconnect()
                 end
             end)
         end
@@ -623,7 +685,7 @@ end
 
 -- Core UI functionality
 function VexHub:Init(settings)
-    if Initialized then return end
+    if Initialized then return self end
     
     settings = settings or {}
     self.CurrentTheme = settings.Theme or "Default"
@@ -638,17 +700,24 @@ function VexHub:Init(settings)
             Parent = Player:WaitForChild("PlayerGui")
         })
     else
-        isCore = pcall(function()
-            ScreenGui = Utility:Create("ScreenGui", {
+        -- Try to use CoreGui, but safely handle any errors
+        local success, result = pcall(function()
+            local gui = Utility:Create("ScreenGui", {
                 Name = "VexHub",
                 ResetOnSpawn = false,
                 DisplayOrder = 999999,
-                ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-                Parent = CoreGui
+                ZIndexBehavior = Enum.ZIndexBehavior.Sibling
             })
+            
+            gui.Parent = CoreGui
+            return gui
         end)
         
-        if not isCore then
+        if success then
+            ScreenGui = result
+            isCore = true
+        else
+            -- Fallback to PlayerGui if CoreGui fails
             ScreenGui = Utility:Create("ScreenGui", {
                 Name = "VexHub",
                 ResetOnSpawn = false,
@@ -656,6 +725,7 @@ function VexHub:Init(settings)
                 ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
                 Parent = Player:WaitForChild("PlayerGui")
             })
+            isCore = false
         end
     end
     
@@ -696,7 +766,7 @@ function VexHub:InitTooltip()
     })
     
     -- Create shadow
-    Utility:CreateShadow(tooltip, theme.Shadow.Default)
+    Utility:CreateShadow(tooltip, theme.ShadowSettings.Default)
     
     -- Add text label
     local label = Utility:Create("TextLabel", {
@@ -925,7 +995,7 @@ function VexHub:CreateWindow(options)
     })
     
     -- Create shadow
-    Utility:CreateShadow(window, theme.Shadow.Strong)
+    Utility:CreateShadow(window, theme.ShadowSettings.Strong)
     
     -- Add to windows table
     table.insert(VexHub.Windows, window)
@@ -1528,7 +1598,7 @@ function VexHub:CreateWindow(options)
             })
             
             -- Add shadow
-            Utility:CreateShadow(section, theme.Shadow.Default)
+            Utility:CreateShadow(section, theme.ShadowSettings.Default)
             
             -- Add section title
             local titleContainer = Utility:Create("Frame", {
@@ -2323,7 +2393,7 @@ function VexHub:Notify(options)
     })
     
     -- Create shadow
-    Utility:CreateShadow(notification, theme.Shadow.Default)
+    Utility:CreateShadow(notification, theme.ShadowSettings.Default)
     
     -- Create accent bar
     local accentBar = Utility:Create("Frame", {
