@@ -168,6 +168,207 @@ function Utility:CreateClickEffect(button, color)
     end)
 end
 
+-- Modern blur effect module for glass-like UI elements
+function Utility:ApplyBlur(instance, blurSize, transparency)
+    if not instance then return end
+    
+    -- Remove existing blur if any
+    for _, child in ipairs(instance:GetChildren()) do
+        if child:IsA("Frame") and child.Name == "BlurFrame" then
+            child:Destroy()
+        end
+    end
+    
+    blurSize = blurSize or 10
+    transparency = transparency or 0.85
+    
+    -- Create blur effect frame
+    local blurFrame = Instance.new("Frame")
+    blurFrame.Name = "BlurFrame"
+    blurFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+    blurFrame.BackgroundTransparency = 1 - transparency
+    blurFrame.BorderSizePixel = 0
+    blurFrame.Size = UDim2.new(1, 0, 1, 0)
+    blurFrame.ZIndex = instance.ZIndex
+    
+    -- Create blur effect
+    local blur = Instance.new("ImageLabel")
+    blur.Name = "BlurEffect"
+    blur.BackgroundTransparency = 1
+    blur.Size = UDim2.new(1, 0, 1, 0)
+    blur.Image = "rbxassetid://10929566376" -- Modern blur asset
+    blur.ImageColor3 = VexHub.Theme.Primary
+    blur.ImageTransparency = 1 - transparency
+    blur.ScaleType = Enum.ScaleType.Slice
+    blur.SliceCenter = Rect.new(10, 10, 118, 118)
+    blur.Parent = blurFrame
+    
+    -- Add corner if parent has corner
+    local parentCorner = instance:FindFirstChildOfClass("UICorner")
+    if parentCorner then
+        local corner = parentCorner:Clone()
+        corner.Parent = blurFrame
+    end
+    
+    blurFrame.Parent = instance
+    
+    -- Create animation
+    local fadeIn = TweenService:Create(
+        blurFrame,
+        TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {BackgroundTransparency = transparency}
+    )
+    
+    fadeIn:Play()
+    
+    return blurFrame
+end
+
+function Utility:CreateAnimatedGradient(instance, color1, color2, speed, rotation)
+    if not instance then return end
+    
+    -- Remove existing gradient if any
+    for _, child in ipairs(instance:GetChildren()) do
+        if child:IsA("UIGradient") and child.Name == "AnimatedGradient" then
+            child:Destroy()
+        end
+    end
+    
+    color1 = color1 or VexHub.Theme.Accent
+    color2 = color2 or VexHub.Theme.DarkAccent
+    speed = speed or 1
+    rotation = rotation or 0
+    
+    local gradient = Instance.new("UIGradient")
+    gradient.Name = "AnimatedGradient"
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, color1),
+        ColorSequenceKeypoint.new(1, color2)
+    })
+    gradient.Rotation = rotation
+    gradient.Parent = instance
+    
+    -- Animate gradient
+    task.spawn(function()
+        local t = 0
+        local connection = RunService.RenderStepped:Connect(function(dt)
+            if not gradient or not gradient.Parent then
+                connection:Disconnect()
+                return
+            end
+            
+            t = t + dt * speed
+            gradient.Offset = Vector2.new(t % 1, 0)
+        end)
+        
+        instance.Destroying:Connect(function()
+            connection:Disconnect()
+        end)
+    end)
+    
+    return gradient
+end
+
+function Utility:ApplyRippleEffect(button, color)
+    button.ClipsDescendants = true
+    
+    button.MouseButton1Down:Connect(function(x, y)
+        local ripple = Instance.new("Frame")
+        ripple.Name = "RippleEffect"
+        ripple.AnchorPoint = Vector2.new(0.5, 0.5)
+        ripple.BackgroundColor3 = color or VexHub.Theme.Accent
+        ripple.BackgroundTransparency = 0.7
+        ripple.BorderSizePixel = 0
+        ripple.Position = UDim2.new(0, x - button.AbsolutePosition.X, 0, y - button.AbsolutePosition.Y)
+        ripple.Size = UDim2.new(0, 0, 0, 0)
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = ripple
+        
+        ripple.Parent = button
+        
+        local maxSize = math.max(button.AbsoluteSize.X, button.AbsoluteSize.Y) * 1.5
+        
+        local rippleTween = TweenService:Create(
+            ripple,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {
+                Size = UDim2.new(0, maxSize, 0, maxSize),
+                BackgroundTransparency = 1
+            }
+        )
+        
+        rippleTween.Completed:Connect(function()
+            ripple:Destroy()
+        end)
+        
+        rippleTween:Play()
+    end)
+end
+
+function Utility:ApplyGlowEffect(instance, color, size, transparency)
+    if not instance then return end
+    
+    -- Remove existing glow if any
+    for _, child in ipairs(instance:GetChildren()) do
+        if child:IsA("ImageLabel") and child.Name == "GlowEffect" then
+            child:Destroy()
+        end
+    end
+    
+    color = color or VexHub.Theme.Accent
+    size = size or 2
+    transparency = transparency or 0.9
+    
+    local glow = Instance.new("ImageLabel")
+    glow.Name = "GlowEffect"
+    glow.AnchorPoint = Vector2.new(0.5, 0.5)
+    glow.BackgroundTransparency = 1
+    glow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    glow.Size = UDim2.new(size, 0, size, 0)
+    glow.ZIndex = instance.ZIndex - 1
+    glow.Image = "rbxassetid://6014261993"  -- Radial gradient
+    glow.ImageColor3 = color
+    glow.ImageTransparency = transparency
+    glow.Parent = instance
+    
+    -- Create pulsing animation
+    task.spawn(function()
+        while glow and glow.Parent do
+            local pulseIn = TweenService:Create(
+                glow,
+                TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                {
+                    Size = UDim2.new(size + 0.15, 0, size + 0.15, 0),
+                    ImageTransparency = transparency + 0.05
+                }
+            )
+            
+            local pulseOut = TweenService:Create(
+                glow,
+                TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                {
+                    Size = UDim2.new(size, 0, size, 0),
+                    ImageTransparency = transparency
+                }
+            )
+            
+            pulseIn:Play()
+            pulseIn.Completed:Wait()
+            
+            if not glow or not glow.Parent then break end
+            
+            pulseOut:Play()
+            pulseOut.Completed:Wait()
+            
+            if not glow or not glow.Parent then break end
+        end
+    end)
+    
+    return glow
+end
+
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = HttpService:GenerateGUID(false)
 MainGui.ResetOnSpawn = false
@@ -199,146 +400,345 @@ NotificationLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotificationLayout.Parent = NotificationHolder
 
 function VexHub:Notification(options)
-    options = options or {}
-    local title = options.Title or "Notification"
-    local text = options.Text or "This is a notification"
-    local duration = options.Duration or 5
-    local type = options.Type or "Info" -- Info, Success, Warning, Error
-    local callback = options.Callback
-    
-    local colors = {
-        Info = self.Theme.Accent,
-        Success = self.Theme.Success,
-        Warning = self.Theme.Warning,
-        Error = self.Theme.Error
-    }
-    
-    local icons = {
-        Info = self.DefaultIcons.Info,
-        Success = self.DefaultIcons.Success,
-        Warning = self.DefaultIcons.Warning,
-        Error = self.DefaultIcons.Error
-    }
-    
-    local Notification = Instance.new("Frame")
-    Notification.Name = "Notification"
-    Notification.BackgroundColor3 = self.Theme.Secondary
-    Notification.BorderSizePixel = 0
-    Notification.Size = UDim2.new(1, 0, 0, 0)
-    Notification.ClipsDescendants = true
-    Notification.LayoutOrder = tick()
-    Notification.Parent = NotificationHolder
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = self.Theme.RoundRadius
-    Corner.Parent = Notification
-    
-    local Shadow = Instance.new("ImageLabel")
-    Shadow.Name = "Shadow"
-    Shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-    Shadow.BackgroundTransparency = 1
-    Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Shadow.Size = UDim2.new(1, 24, 1, 24)
-    Shadow.ZIndex = -1
-    Shadow.Image = "rbxassetid://6014261993"
-    Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    Shadow.ImageTransparency = 0.5
-    Shadow.ScaleType = Enum.ScaleType.Slice
-    Shadow.SliceCenter = Rect.new(49, 49, 450, 450)
-    Shadow.Parent = Notification
-    
-    local Accent = Instance.new("Frame")
-    Accent.Name = "Accent"
-    Accent.BackgroundColor3 = colors[type]
-    Accent.BorderSizePixel = 0
-    Accent.Size = UDim2.new(0, 4, 1, 0)
-    Accent.Parent = Notification
-    
-    local Icon = Instance.new("ImageLabel")
-    Icon.Name = "Icon"
-    Icon.BackgroundTransparency = 1
-    Icon.Position = UDim2.new(0, 15, 0, 12)
-    Icon.Size = UDim2.new(0, 24, 0, 24)
-    Icon.Image = icons[type]
-    Icon.ImageColor3 = colors[type]
-    Icon.Parent = Notification
-    
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Name = "Title"
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Position = UDim2.new(0, 50, 0, 8)
-    TitleLabel.Size = UDim2.new(1, -65, 0, 20)
-    TitleLabel.Font = self.Theme.FontBold
-    TitleLabel.Text = title
-    TitleLabel.TextColor3 = self.Theme.Text
-    TitleLabel.TextSize = self.Theme.NormalTextSize
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLabel.Parent = Notification
-    
-    local TextLabel = Instance.new("TextLabel")
-    TextLabel.Name = "Text"
-    TextLabel.BackgroundTransparency = 1
-    TextLabel.Position = UDim2.new(0, 50, 0, 30)
-    TextLabel.Size = UDim2.new(1, -65, 0, 20)
-    TextLabel.Font = self.Theme.Font
-    TextLabel.Text = text
-    TextLabel.TextColor3 = self.Theme.TextDark
-    TextLabel.TextSize = self.Theme.SmallTextSize
-    TextLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TextLabel.TextYAlignment = Enum.TextYAlignment.Top
-    TextLabel.TextWrapped = true
-    TextLabel.Parent = Notification
-    
-    local CloseButton = Instance.new("ImageButton")
-    CloseButton.Name = "CloseButton"
-    CloseButton.BackgroundTransparency = 1
-    CloseButton.Position = UDim2.new(1, -25, 0, 10)
-    CloseButton.Size = UDim2.new(0, 16, 0, 16)
-    CloseButton.Image = self.DefaultIcons.Close
-    CloseButton.ImageColor3 = self.Theme.TextDark
-    CloseButton.Parent = Notification
-    
-    local textSize = Utility:GetTextBounds(text, self.Theme.SmallTextSize, self.Theme.Font, Vector2.new(Notification.AbsoluteSize.X - 65, 1000))
-    local totalHeight = 30 + textSize.Y + 15 -- 30 for title, 15 for padding
-    
-    Notification.Size = UDim2.new(1, 0, 0, 0)
-    local openTween = Utility:CreateTween(Notification, {Size = UDim2.new(1, 0, 0, totalHeight)}, 0.3, Enum.EasingStyle.Quint)
-    openTween:Play()
-    
-    CloseButton.MouseEnter:Connect(function()
-        Utility:CreateTween(CloseButton, {ImageColor3 = self.Theme.Text}):Play()
-    end)
-    
-    CloseButton.MouseLeave:Connect(function()
-        Utility:CreateTween(CloseButton, {ImageColor3 = self.Theme.TextDark}):Play()
-    end)
-    
-    local closeFn
-    closeFn = function()
-        if not Notification or not Notification.Parent then return end
-        local closeTween = Utility:CreateTween(Notification, {Size = UDim2.new(1, 0, 0, 0)}, 0.3, Enum.EasingStyle.Quint)
-        local fadeTween = Utility:CreateTween(Notification, {BackgroundTransparency = 1}, 0.3, Enum.EasingStyle.Quint)
+    task.spawn(function()
+        options = options or {}
+        local title = options.Title or "Notification"
+        local text = options.Text or "This is a notification"
+        local duration = options.Duration or 5
+        local type = options.Type or "Info" -- Info, Success, Warning, Error
+        local variant = options.Variant or "Slide" -- Slide, Fade, Pop, Bounce
+        local callback = options.Callback
+        local sound = options.Sound ~= false -- Default true
+        local position = options.Position or "BottomRight" -- TopRight, TopLeft, BottomRight, BottomLeft, Center
         
-        closeTween:Play()
-        fadeTween:Play()
+        local colors = {
+            Info = self.Theme.Accent,
+            Success = self.Theme.Success,
+            Warning = self.Theme.Warning,
+            Error = self.Theme.Error
+        }
         
-        fadeTween.Completed:Connect(function()
-            Notification:Destroy()
-            if callback then
-                callback()
-            end
+        local icons = {
+            Info = self.DefaultIcons.Info,
+            Success = self.DefaultIcons.Success,
+            Warning = self.DefaultIcons.Warning,
+            Error = self.DefaultIcons.Error
+        }
+        
+        -- Play notification sound
+        if sound then
+            local soundIds = {
+                Info = "rbxassetid://6026984224",
+                Success = "rbxassetid://6026984224",
+                Warning = "rbxassetid://6026984224",
+                Error = "rbxassetid://6026984224"
+            }
+            
+            local notifSound = Instance.new("Sound")
+            notifSound.SoundId = soundIds[type]
+            notifSound.Volume = 0.5
+            notifSound.Parent = MainGui
+            notifSound:Play()
+            
+            game:GetService("Debris"):AddItem(notifSound, 2)
+        end
+        
+        -- Create notification
+        local Notification = Instance.new("Frame")
+        Notification.Name = "Notification_" .. title
+        Notification.BackgroundColor3 = self.Theme.Secondary
+        Notification.BorderSizePixel = 0
+        Notification.Size = UDim2.new(1, 0, 0, 0)
+        Notification.ClipsDescendants = true
+        Notification.LayoutOrder = tick()
+        
+        -- Set position based on option
+        if position == "TopRight" then
+            NotificationHolder.AnchorPoint = Vector2.new(1, 0)
+            NotificationHolder.Position = UDim2.new(1, -20, 0, 20)
+            NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        elseif position == "TopLeft" then
+            NotificationHolder.AnchorPoint = Vector2.new(0, 0)
+            NotificationHolder.Position = UDim2.new(0, 20, 0, 20)
+            NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        elseif position == "BottomLeft" then
+            NotificationHolder.AnchorPoint = Vector2.new(0, 1)
+            NotificationHolder.Position = UDim2.new(0, 20, 1, -20)
+            NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+        elseif position == "Center" then
+            NotificationHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+            NotificationHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
+            NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+        else -- Default BottomRight
+            NotificationHolder.AnchorPoint = Vector2.new(1, 1)
+            NotificationHolder.Position = UDim2.new(1, -20, 1, -20)
+            NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+        end
+        
+        local Corner = Instance.new("UICorner")
+        Corner.CornerRadius = self.Theme.RoundRadius
+        Corner.Parent = Notification
+        
+        -- Apply blur for modern glass effect
+        Utility:ApplyBlur(Notification, 8, 0.5)
+        
+        -- Create accent line
+        local Accent = Instance.new("Frame")
+        Accent.Name = "Accent"
+        Accent.BackgroundColor3 = colors[type]
+        Accent.BorderSizePixel = 0
+        Accent.Size = UDim2.new(0, 4, 1, 0)
+        Accent.Parent = Notification
+        
+        -- Apply gradient to accent
+        local AccentGradient = Instance.new("UIGradient")
+        AccentGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, colors[type]),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                math.clamp(colors[type].R * 1.4 * 255, 0, 255),
+                math.clamp(colors[type].G * 1.4 * 255, 0, 255),
+                math.clamp(colors[type].B * 1.4 * 255, 0, 255)
+            ))
+        })
+        AccentGradient.Rotation = 90
+        AccentGradient.Parent = Accent
+        
+        local Icon = Instance.new("ImageLabel")
+        Icon.Name = "Icon"
+        Icon.BackgroundTransparency = 1
+        Icon.Position = UDim2.new(0, 16, 0, 12)
+        Icon.Size = UDim2.new(0, 24, 0, 24)
+        Icon.Image = icons[type]
+        Icon.ImageColor3 = colors[type]
+        Icon.Parent = Notification
+        
+        -- Add icon glow
+        local IconGlow = Instance.new("ImageLabel")
+        IconGlow.Name = "Glow"
+        IconGlow.BackgroundTransparency = 1
+        IconGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+        IconGlow.Size = UDim2.new(1.8, 0, 1.8, 0)
+        IconGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+        IconGlow.ZIndex = Icon.ZIndex - 1
+        IconGlow.Image = "rbxassetid://6014261993"
+        IconGlow.ImageColor3 = colors[type]
+        IconGlow.ImageTransparency = 0.9
+        IconGlow.Parent = Icon
+        
+        -- Create pulsing animation for glow
+        local glowTween = Utility:CreateTween(IconGlow, {
+            Size = UDim2.new(2.2, 0, 2.2, 0),
+            ImageTransparency = 0.94
+        }, 1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true)
+        glowTween:Play()
+        
+        local TitleLabel = Instance.new("TextLabel")
+        TitleLabel.Name = "Title"
+        TitleLabel.BackgroundTransparency = 1
+        TitleLabel.Position = UDim2.new(0, 50, 0, 8)
+        TitleLabel.Size = UDim2.new(1, -65, 0, 20)
+        TitleLabel.Font = self.Theme.FontBold
+        TitleLabel.Text = title
+        TitleLabel.TextColor3 = self.Theme.Text
+        TitleLabel.TextSize = self.Theme.NormalTextSize
+        TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        TitleLabel.Parent = Notification
+        
+        local TextLabel = Instance.new("TextLabel")
+        TextLabel.Name = "Text"
+        TextLabel.BackgroundTransparency = 1
+        TextLabel.Position = UDim2.new(0, 50, 0, 30)
+        TextLabel.Size = UDim2.new(1, -65, 0, 20)
+        TextLabel.Font = self.Theme.Font
+        TextLabel.Text = text
+        TextLabel.TextColor3 = self.Theme.TextDark
+        TextLabel.TextSize = self.Theme.SmallTextSize
+        TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+        TextLabel.TextYAlignment = Enum.TextYAlignment.Top
+        TextLabel.TextWrapped = true
+        TextLabel.Parent = Notification
+        
+        local CloseButton = Instance.new("ImageButton")
+        CloseButton.Name = "CloseButton"
+        CloseButton.BackgroundTransparency = 1
+        CloseButton.Position = UDim2.new(1, -25, 0, 10)
+        CloseButton.Size = UDim2.new(0, 16, 0, 16)
+        CloseButton.Image = self.DefaultIcons.Close
+        CloseButton.ImageColor3 = self.Theme.TextDark
+        CloseButton.Parent = Notification
+        
+        local Progress = Instance.new("Frame")
+        Progress.Name = "Progress"
+        Progress.BackgroundColor3 = colors[type]
+        Progress.BorderSizePixel = 0
+        Progress.AnchorPoint = Vector2.new(0, 1)
+        Progress.Position = UDim2.new(0, 0, 1, 0)
+        Progress.Size = UDim2.new(1, 0, 0, 2)
+        Progress.Parent = Notification
+        
+        -- Add progress gradient
+        local ProgressGradient = Instance.new("UIGradient")
+        ProgressGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, colors[type]),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                math.clamp(colors[type].R * 1.4 * 255, 0, 255),
+                math.clamp(colors[type].G * 1.4 * 255, 0, 255),
+                math.clamp(colors[type].B * 1.4 * 255, 0, 255)
+            ))
+        })
+        ProgressGradient.Parent = Progress
+        
+        Notification.Parent = NotificationHolder
+        
+        -- Calculate text size for notification height
+        local textSize = Utility:GetTextBounds(text, self.Theme.SmallTextSize, self.Theme.Font, Vector2.new(Notification.AbsoluteSize.X - 65, 1000))
+        local totalHeight = math.max(30 + textSize.Y + 20, 60) -- Minimum 60px height
+        
+        -- Adjust text label size based on content
+        TextLabel.Size = UDim2.new(1, -65, 0, textSize.Y)
+        
+        -- Set initial state based on animation variant
+        Notification.BackgroundTransparency = 1
+        TitleLabel.TextTransparency = 1
+        TextLabel.TextTransparency = 1
+        Icon.ImageTransparency = 1
+        CloseButton.ImageTransparency = 1
+        Progress.BackgroundTransparency = 1
+        Accent.BackgroundTransparency = 1
+        
+        -- Different enter animations based on variant
+        if variant == "Slide" then
+            Notification.Position = UDim2.new(1, 300, 0, 0)
+            Notification.Size = UDim2.new(1, 0, 0, totalHeight)
+            
+            Utility:CreateTween(Notification, {Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 0.1}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out):Play()
+        elseif variant == "Fade" then
+            Notification.Position = UDim2.new(0, 0, 0, 0)
+            Notification.Size = UDim2.new(1, 0, 0, totalHeight)
+            
+            Utility:CreateTween(Notification, {BackgroundTransparency = 0.1}, 0.4, Enum.EasingStyle.Quad):Play()
+        elseif variant == "Pop" then
+            Notification.Position = UDim2.new(0.5, 0, 0, 0)
+            Notification.AnchorPoint = Vector2.new(0.5, 0)
+            Notification.Size = UDim2.new(0, 0, 0, totalHeight)
+            
+            Utility:CreateTween(Notification, {Size = UDim2.new(1, 0, 0, totalHeight), BackgroundTransparency = 0.1}, 0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out):Play()
+            Utility:CreateTween(Notification, {AnchorPoint = Vector2.new(0, 0), Position = UDim2.new(0, 0, 0, 0)}, 0.4, Enum.EasingStyle.Quad):Play()
+        elseif variant == "Bounce" then
+            Notification.Position = UDim2.new(0, 0, -1, 0)
+            Notification.Size = UDim2.new(1, 0, 0, totalHeight)
+            
+            Utility:CreateTween(Notification, {Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 0.1}, 0.5, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out):Play()
+        end
+        
+        -- Fade in elements
+        task.wait(0.1)
+        Utility:CreateTween(TitleLabel, {TextTransparency = 0}, 0.3, Enum.EasingStyle.Quad):Play()
+        
+        task.wait(0.05)
+        Utility:CreateTween(Icon, {ImageTransparency = 0}, 0.3, Enum.EasingStyle.Quad):Play()
+        Utility:CreateTween(Accent, {BackgroundTransparency = 0}, 0.3, Enum.EasingStyle.Quad):Play()
+        
+        task.wait(0.05)
+        Utility:CreateTween(TextLabel, {TextTransparency = 0.2}, 0.3, Enum.EasingStyle.Quad):Play()
+        Utility:CreateTween(CloseButton, {ImageTransparency = 0.4}, 0.3, Enum.EasingStyle.Quad):Play()
+        Utility:CreateTween(Progress, {BackgroundTransparency = 0}, 0.3, Enum.EasingStyle.Quad):Play()
+        
+        -- Animate progress bar
+        Utility:CreateTween(Progress, {Size = UDim2.new(0, 0, 0, 2)}, duration, Enum.EasingStyle.Linear):Play()
+        
+        -- Add gradient animation to progress
+        task.spawn(function()
+            local t = 0
+            local connection = RunService.RenderStepped:Connect(function(dt)
+                t = t + dt
+                ProgressGradient.Offset = Vector2.new(t * 0.5 % 1, 0)
+                AccentGradient.Offset = Vector2.new(0, t * 0.2 % 1)
+            end)
+            
+            task.delay(duration + 1, function()
+                connection:Disconnect()
+            end)
         end)
         
-        CloseButton.MouseButton1Click:Disconnect()
-    end
-    
-    CloseButton.MouseButton1Click:Connect(closeFn)
-    
-    delay(duration, closeFn)
-    
-    return {
-        Close = closeFn
-    }
+        CloseButton.MouseEnter:Connect(function()
+            Utility:CreateTween(CloseButton, {ImageColor3 = self.Theme.Text, ImageTransparency = 0}):Play()
+        end)
+        
+        CloseButton.MouseLeave:Connect(function()
+            Utility:CreateTween(CloseButton, {ImageColor3 = self.Theme.TextDark, ImageTransparency = 0.4}):Play()
+        end)
+        
+        local closeFn
+        closeFn = function()
+            if not Notification or not Notification.Parent then return end
+            
+            -- Different exit animations based on variant
+            if variant == "Slide" then
+                local exitTween = Utility:CreateTween(Notification, {Position = UDim2.new(1, 300, 0, 0), BackgroundTransparency = 1}, 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                exitTween:Play()
+                
+                exitTween.Completed:Connect(function()
+                    Notification:Destroy()
+                    if callback then callback() end
+                end)
+            elseif variant == "Fade" then
+                local fadeTween = Utility:CreateTween(Notification, {BackgroundTransparency = 1}, 0.4, Enum.EasingStyle.Quad)
+                local shrinkTween = Utility:CreateTween(Notification, {Size = UDim2.new(1, 0, 0, 0)}, 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 0.3)
+                
+                fadeTween:Play()
+                shrinkTween:Play()
+                
+                shrinkTween.Completed:Connect(function()
+                    Notification:Destroy()
+                    if callback then callback() end
+                end)
+            elseif variant == "Pop" then
+                local shrinkTween = Utility:CreateTween(Notification, {Size = UDim2.new(0, 0, 0, totalHeight), AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 0), BackgroundTransparency = 1}, 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                shrinkTween:Play()
+                
+                shrinkTween.Completed:Connect(function()
+                    Notification:Destroy()
+                    if callback then callback() end
+                end)
+            elseif variant == "Bounce" then
+                local exitTween = Utility:CreateTween(Notification, {Position = UDim2.new(0, 0, -1, 0), BackgroundTransparency = 1}, 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+                exitTween:Play()
+                
+                exitTween.Completed:Connect(function()
+                    Notification:Destroy()
+                    if callback then callback() end
+                end)
+            end
+            
+            -- Fade out elements
+            Utility:CreateTween(TitleLabel, {TextTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()
+            Utility:CreateTween(TextLabel, {TextTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()
+            Utility:CreateTween(Icon, {ImageTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()
+            Utility:CreateTween(CloseButton, {ImageTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()
+            Utility:CreateTween(Progress, {BackgroundTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()
+            Utility:CreateTween(Accent, {BackgroundTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()
+            
+            CloseButton.MouseButton1Click:Disconnect()
+        end
+        
+        CloseButton.MouseButton1Click:Connect(closeFn)
+        task.delay(duration, closeFn)
+        
+        return {
+            Close = closeFn,
+            Progress = Progress,
+            Instance = Notification,
+            UpdateText = function(newText)
+                TextLabel.Text = newText
+                local newTextSize = Utility:GetTextBounds(newText, self.Theme.SmallTextSize, self.Theme.Font, Vector2.new(Notification.AbsoluteSize.X - 65, 1000))
+                TextLabel.Size = UDim2.new(1, -65, 0, newTextSize.Y)
+                
+                local newHeight = math.max(30 + newTextSize.Y + 20, 60)
+                Utility:CreateTween(Notification, {Size = UDim2.new(1, 0, 0, newHeight)}, 0.3, Enum.EasingStyle.Quad):Play()
+            end
+        }
+    end)
 end
 
 function VexHub:CreateWindow(options)
@@ -981,22 +1381,7 @@ function VexHub:CreateButton(parent, options)
         end)
     end
     
-    Button.MouseEnter:Connect(function()
-        Utility:CreateTween(Button, {BackgroundColor3 = self.Theme.Secondary}):Play()
-    end)
-    
-    Button.MouseLeave:Connect(function()
-        Utility:CreateTween(Button, {BackgroundColor3 = self.Theme.Tertiary}):Play()
-    end)
-    
-    Button.MouseButton1Down:Connect(function()
-        Utility:CreateTween(Button, {BackgroundColor3 = self.Theme.DarkAccent}):Play()
-        Utility:CreateClickEffect(Button)
-    end)
-    
-    Button.MouseButton1Up:Connect(function()
-        Utility:CreateTween(Button, {BackgroundColor3 = self.Theme.Secondary}):Play()
-    end)
+    -- Create a subtle shadow    local Shadow = Instance.new("ImageLabel")    Shadow.Name = "Shadow"    Shadow.AnchorPoint = Vector2.new(0.5, 0.5)    Shadow.BackgroundTransparency = 1    Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)    Shadow.Size = UDim2.new(1, 12, 1, 12)    Shadow.ZIndex = Button.ZIndex - 1    Shadow.Image = "rbxassetid://6014261993"    Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)    Shadow.ImageTransparency = 0.6    Shadow.ScaleType = Enum.ScaleType.Slice    Shadow.SliceCenter = Rect.new(49, 49, 450, 450)    Shadow.Parent = Button        -- Add a gradient effect    local Gradient = Instance.new("UIGradient")    Gradient.Color = ColorSequence.new({        ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),        ColorSequenceKeypoint.new(1, Color3.new(0.9, 0.9, 0.9))    })    Gradient.Rotation = 90    Gradient.Parent = Button        Button.MouseEnter:Connect(function()        -- Animate background color        Utility:CreateTween(Button, {BackgroundColor3 = self.Theme.Secondary}, 0.3, Enum.EasingStyle.Quad):Play()                -- Text color brightening        local textLabel = Button:FindFirstChild("Text")        if textLabel then            Utility:CreateTween(textLabel, {                TextColor3 = self.Theme.TextAccent or self.Theme.Accent            }, 0.3, Enum.EasingStyle.Quad):Play()        end                -- Icon brightening        local iconLabel = Button:FindFirstChild("Icon")        if iconLabel then            Utility:CreateTween(iconLabel, {                ImageColor3 = self.Theme.TextAccent or self.Theme.Accent            }, 0.3, Enum.EasingStyle.Quad):Play()        end                -- Subtle grow effect        Utility:CreateTween(Button, {            Size = UDim2.new(1, 0, 0, self.Theme.ElementHeight + 2),            Position = UDim2.new(0, 0, 0, -1)        }, 0.3, Enum.EasingStyle.Back):Play()                -- Enhance shadow        Utility:CreateTween(Shadow, {            ImageTransparency = 0.5,            Size = UDim2.new(1, 16, 1, 16)        }, 0.3, Enum.EasingStyle.Quad):Play()    end)        Button.MouseLeave:Connect(function()        -- Reset background color        Utility:CreateTween(Button, {            BackgroundColor3 = self.Theme.Tertiary,            Size = UDim2.new(1, 0, 0, self.Theme.ElementHeight),            Position = UDim2.new(0, 0, 0, 0)        }, 0.3, Enum.EasingStyle.Quad):Play()                -- Reset text color        local textLabel = Button:FindFirstChild("Text")        if textLabel then            Utility:CreateTween(textLabel, {                TextColor3 = self.Theme.Text            }, 0.3, Enum.EasingStyle.Quad):Play()        end                -- Reset icon color        local iconLabel = Button:FindFirstChild("Icon")        if iconLabel then            Utility:CreateTween(iconLabel, {                ImageColor3 = self.Theme.Text            }, 0.3, Enum.EasingStyle.Quad):Play()        end                -- Reset shadow        Utility:CreateTween(Shadow, {            ImageTransparency = 0.6,            Size = UDim2.new(1, 12, 1, 12)        }, 0.3, Enum.EasingStyle.Quad):Play()    end)        Button.MouseButton1Down:Connect(function()        -- Scale down effect        Utility:CreateTween(Button, {            Size = UDim2.new(1, 0, 0, self.Theme.ElementHeight - 2),            BackgroundColor3 = self.Theme.DarkAccent        }, 0.2, Enum.EasingStyle.Quad):Play()                -- Create modern ripple effect        local mouse = game:GetService("Players").LocalPlayer:GetMouse()        local mousePos = Vector2.new(mouse.X, mouse.Y) - Button.AbsolutePosition                local ripple = Instance.new("Frame")        ripple.Name = "RippleEffect"        ripple.Parent = Button        ripple.BackgroundColor3 = Color3.new(1, 1, 1)        ripple.BackgroundTransparency = 0.8        ripple.BorderSizePixel = 0        ripple.AnchorPoint = Vector2.new(0.5, 0.5)        ripple.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)        ripple.Size = UDim2.new(0, 0, 0, 0)        ripple.ZIndex = Button.ZIndex + 2                local rippleCorner = Instance.new("UICorner")        rippleCorner.CornerRadius = UDim.new(1, 0)        rippleCorner.Parent = ripple                local maxSize = math.max(Button.AbsoluteSize.X, Button.AbsoluteSize.Y) * 2                Utility:CreateTween(ripple, {            Size = UDim2.new(0, maxSize, 0, maxSize),            BackgroundTransparency = 1        }, 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out):Play()                game:GetService("Debris"):AddItem(ripple, 0.5)    end)        Button.MouseButton1Up:Connect(function()        -- Reset to hover state        Utility:CreateTween(Button, {            Size = UDim2.new(1, 0, 0, self.Theme.ElementHeight),            BackgroundColor3 = self.Theme.Secondary        }, 0.2, Enum.EasingStyle.Bounce):Play()    end)
     
     Button.MouseButton1Click:Connect(function()
         pcall(callback)
@@ -1045,16 +1430,7 @@ function VexHub:CreateToggle(parent, options)
         return nil
     end
     
-    local Toggle = Instance.new("Frame")
-    Toggle.Name = "Toggle_" .. text
-    Toggle.BackgroundColor3 = self.Theme.Tertiary
-    Toggle.BorderSizePixel = 0
-    Toggle.Size = UDim2.new(1, 0, 0, self.Theme.ElementHeight)
-    Toggle.Parent = parentInstance
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 6)
-    Corner.Parent = Toggle
+            local Toggle = Instance.new("Frame")    Toggle.Name = "Toggle_" .. text    Toggle.BackgroundColor3 = self.Theme.Tertiary    Toggle.BorderSizePixel = 0    Toggle.Size = UDim2.new(1, 0, 0, self.Theme.ElementHeight)    Toggle.ClipsDescendants = true    Toggle.Parent = parentInstance        local Corner = Instance.new("UICorner")    Corner.CornerRadius = UDim.new(0, 6)    Corner.Parent = Toggle        -- Add subtle shadow    local Shadow = Instance.new("ImageLabel")    Shadow.Name = "Shadow"    Shadow.AnchorPoint = Vector2.new(0.5, 0.5)    Shadow.BackgroundTransparency = 1    Shadow.Position = UDim2.new(0.5, 0, 0.5, 0)    Shadow.Size = UDim2.new(1, 10, 1, 10)    Shadow.ZIndex = Toggle.ZIndex - 1    Shadow.Image = "rbxassetid://6014261993"    Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)    Shadow.ImageTransparency = 0.6    Shadow.ScaleType = Enum.ScaleType.Slice    Shadow.SliceCenter = Rect.new(49, 49, 450, 450)    Shadow.Parent = Toggle
     
     local TextLabel = Instance.new("TextLabel")
     TextLabel.Name = "Text"
@@ -2544,6 +2920,93 @@ function VexHub:CreateColorPicker(parent, options)
         end,
         SetText = function(self, newText)
             TextLabel.Text = newText
+        end,
+        UseGradient = function(self, gradientData)
+            -- This function is not provided in the original file, so it's left unchanged
+            -- You can implement your own logic here to handle gradient data
+        end,
+        GetColor = function(self)
+            -- Enhanced color getter function with support for animated gradients
+            local color = self.Instance.BackgroundColor3
+            
+            -- If this is a gradient-enabled element
+            if self.UseGradient then
+                -- Return current gradient data
+                return {
+                    Type = self.GradientType or "Static",
+                    StartColor = self.GradientStartColor or VexHub.Theme.Accent,
+                    EndColor = self.GradientEndColor or VexHub.Theme.DarkAccent,
+                    Speed = self.GradientSpeed or 1,
+                    Direction = self.GradientDirection or "Horizontal",
+                    Enabled = true
+                }
+            end
+            
+            return color
+        end,
+        
+        SetColor = function(self, colorData)
+            if typeof(colorData) == "table" and colorData.Type then
+                -- This is gradient data
+                self.UseGradient = true
+                self.GradientType = colorData.Type
+                self.GradientStartColor = colorData.StartColor
+                self.GradientEndColor = colorData.EndColor
+                self.GradientSpeed = colorData.Speed
+                self.GradientDirection = colorData.Direction
+                
+                -- Create or update gradient
+                if not self.Instance:FindFirstChild("UIGradient") then
+                    local gradient = Instance.new("UIGradient")
+                    gradient.Parent = self.Instance
+                    
+                    if colorData.Type == "Animated" then
+                        -- Create animation for gradient
+                        local offset = 0
+                        local connection = RunService.RenderStepped:Connect(function(dt)
+                            offset = (offset + dt * (colorData.Speed or 1)) % 1
+                            gradient.Offset = Vector2.new(offset, 0)
+                        end)
+                        
+                        -- Store connection for cleanup
+                        self._gradientConnection = connection
+                    end
+                end
+                
+                local gradient = self.Instance:FindFirstChild("UIGradient")
+                
+                if colorData.Direction == "Horizontal" then
+                    gradient.Rotation = 0
+                elseif colorData.Direction == "Vertical" then
+                    gradient.Rotation = 90
+                elseif colorData.Direction == "Diagonal" then
+                    gradient.Rotation = 45
+                end
+                
+                gradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, colorData.StartColor),
+                    ColorSequenceKeypoint.new(1, colorData.EndColor)
+                })
+            else
+                -- Regular color
+                self.UseGradient = false
+                
+                -- Remove gradient if exists
+                if self.Instance:FindFirstChild("UIGradient") then
+                    self.Instance:FindFirstChild("UIGradient"):Destroy()
+                end
+                
+                -- Clear animation connection if exists
+                if self._gradientConnection then
+                    self._gradientConnection:Disconnect()
+                    self._gradientConnection = nil
+                end
+                
+                -- Set normal color
+                self.Instance.BackgroundColor3 = colorData
+            end
+            
+            return self
         end
     }
     
@@ -2554,4 +3017,508 @@ function VexHub:CreateColorPicker(parent, options)
     return ColorPickerObj
 end
 
-return VexHub
+-- VexHub Themes and Effects System
+VexHub.Themes = {
+    Default = {
+        Primary = Color3.fromRGB(30, 30, 30),
+        Secondary = Color3.fromRGB(25, 25, 25),
+        Tertiary = Color3.fromRGB(20, 20, 20),
+        Accent = Color3.fromRGB(0, 115, 255),
+        DarkAccent = Color3.fromRGB(0, 85, 200),
+        TextAccent = Color3.fromRGB(70, 160, 255),
+        Success = Color3.fromRGB(50, 200, 80),
+        Warning = Color3.fromRGB(255, 180, 40),
+        Error = Color3.fromRGB(255, 70, 70),
+        Text = Color3.fromRGB(240, 240, 240),
+        TextDark = Color3.fromRGB(180, 180, 180),
+        TextDarker = Color3.fromRGB(140, 140, 140),
+        
+        -- Sizing params
+        RoundRadius = UDim.new(0, 6),
+        LargeRoundRadius = UDim.new(0, 12),
+        SmallRoundRadius = UDim.new(0, 4),
+        
+        -- Font params
+        Font = Enum.Font.Gotham,
+        FontBold = Enum.Font.GothamBold,
+        FontSemiBold = Enum.Font.GothamSemibold,
+        
+        -- Text sizes
+        TitleTextSize = 20,
+        LargeTextSize = 18,
+        NormalTextSize = 14,
+        SmallTextSize = 12,
+        
+        -- Transitions
+        ShortTransition = 0.15,
+        NormalTransition = 0.25,
+        LongTransition = 0.4,
+        
+        -- Elevations (shadow depths)
+        Elevation = {
+            Low = {
+                Blur = 4,
+                Transparency = 0.8
+            },
+            Medium = {
+                Blur = 8,
+                Transparency = 0.7
+            },
+            High = {
+                Blur = 12,
+                Transparency = 0.6
+            }
+        }
+    },
+    
+    Dark = {
+        Primary = Color3.fromRGB(15, 15, 15),
+        Secondary = Color3.fromRGB(20, 20, 20),
+        Tertiary = Color3.fromRGB(25, 25, 25),
+        Accent = Color3.fromRGB(110, 80, 255),
+        DarkAccent = Color3.fromRGB(80, 50, 200),
+        TextAccent = Color3.fromRGB(150, 120, 255),
+        Success = Color3.fromRGB(40, 180, 70),
+        Warning = Color3.fromRGB(255, 160, 30),
+        Error = Color3.fromRGB(255, 60, 60),
+        Text = Color3.fromRGB(240, 240, 240),
+        TextDark = Color3.fromRGB(180, 180, 180),
+        TextDarker = Color3.fromRGB(140, 140, 140),
+        
+        -- Sizing params
+        RoundRadius = UDim.new(0, 8),
+        LargeRoundRadius = UDim.new(0, 16),
+        SmallRoundRadius = UDim.new(0, 4),
+        
+        -- Font params
+        Font = Enum.Font.Gotham,
+        FontBold = Enum.Font.GothamBold,
+        FontSemiBold = Enum.Font.GothamSemibold,
+        
+        -- Text sizes
+        TitleTextSize = 20,
+        LargeTextSize = 18,
+        NormalTextSize = 14,
+        SmallTextSize = 12,
+        
+        -- Transitions
+        ShortTransition = 0.15,
+        NormalTransition = 0.25,
+        LongTransition = 0.4,
+        
+        -- Elevations (shadow depths)
+        Elevation = {
+            Low = {
+                Blur = 4,
+                Transparency = 0.8
+            },
+            Medium = {
+                Blur = 8,
+                Transparency = 0.7
+            },
+            High = {
+                Blur = 12,
+                Transparency = 0.6
+            }
+        }
+    },
+    
+    Light = {
+        Primary = Color3.fromRGB(245, 245, 245),
+        Secondary = Color3.fromRGB(255, 255, 255),
+        Tertiary = Color3.fromRGB(235, 235, 235),
+        Accent = Color3.fromRGB(0, 115, 255),
+        DarkAccent = Color3.fromRGB(0, 85, 200),
+        TextAccent = Color3.fromRGB(0, 100, 230),
+        Success = Color3.fromRGB(40, 180, 70),
+        Warning = Color3.fromRGB(240, 150, 20),
+        Error = Color3.fromRGB(230, 50, 50),
+        Text = Color3.fromRGB(40, 40, 40),
+        TextDark = Color3.fromRGB(80, 80, 80),
+        TextDarker = Color3.fromRGB(120, 120, 120),
+        
+        -- Sizing params
+        RoundRadius = UDim.new(0, 8),
+        LargeRoundRadius = UDim.new(0, 16),
+        SmallRoundRadius = UDim.new(0, 4),
+        
+        -- Font params
+        Font = Enum.Font.Gotham,
+        FontBold = Enum.Font.GothamBold,
+        FontSemiBold = Enum.Font.GothamSemibold,
+        
+        -- Text sizes
+        TitleTextSize = 20,
+        LargeTextSize = 18,
+        NormalTextSize = 14,
+        SmallTextSize = 12,
+        
+        -- Transitions
+        ShortTransition = 0.15,
+        NormalTransition = 0.25,
+        LongTransition = 0.4,
+        
+        -- Elevations (shadow depths)
+        Elevation = {
+            Low = {
+                Blur = 4,
+                Transparency = 0.92
+            },
+            Medium = {
+                Blur = 8,
+                Transparency = 0.9
+            },
+            High = {
+                Blur = 12,
+                Transparency = 0.85
+            }
+        }
+    },
+    
+    Midnight = {
+        Primary = Color3.fromRGB(15, 20, 35),
+        Secondary = Color3.fromRGB(20, 25, 45),
+        Tertiary = Color3.fromRGB(25, 30, 55),
+        Accent = Color3.fromRGB(80, 120, 255),
+        DarkAccent = Color3.fromRGB(60, 90, 220),
+        TextAccent = Color3.fromRGB(110, 150, 255),
+        Success = Color3.fromRGB(40, 180, 100),
+        Warning = Color3.fromRGB(255, 170, 30),
+        Error = Color3.fromRGB(255, 60, 80),
+        Text = Color3.fromRGB(240, 240, 240),
+        TextDark = Color3.fromRGB(180, 180, 180),
+        TextDarker = Color3.fromRGB(140, 140, 140),
+        
+        -- Sizing params
+        RoundRadius = UDim.new(0, 10),
+        LargeRoundRadius = UDim.new(0, 18),
+        SmallRoundRadius = UDim.new(0, 6),
+        
+        -- Font params
+        Font = Enum.Font.Gotham,
+        FontBold = Enum.Font.GothamBold,
+        FontSemiBold = Enum.Font.GothamSemibold,
+        
+        -- Text sizes
+        TitleTextSize = 20,
+        LargeTextSize = 18,
+        NormalTextSize = 14,
+        SmallTextSize = 12,
+        
+        -- Transitions
+        ShortTransition = 0.15,
+        NormalTransition = 0.25,
+        LongTransition = 0.4,
+        
+        -- Elevations (shadow depths)
+        Elevation = {
+            Low = {
+                Blur = 4,
+                Transparency = 0.8
+            },
+            Medium = {
+                Blur = 8,
+                Transparency = 0.7
+            },
+            High = {
+                Blur = 12,
+                Transparency = 0.6
+            }
+        }
+    }
+}
+
+-- Effects system for UI elements
+VexHub.Effects = {
+    ApplyBlur = function(instance, blurSize, transparency)
+        local blur = Instance.new("BlurEffect")
+        blur.Size = blurSize or 10
+        blur.Parent = game:GetService("Lighting")
+        
+        local bindable = Instance.new("BindableEvent")
+        
+        -- Convert the instance to image if needed
+        if instance:IsA("Frame") or instance:IsA("ScrollingFrame") then
+            -- Create ViewportFrame for blurring
+            local viewport = Instance.new("ViewportFrame")
+            viewport.Name = "BlurViewport"
+            viewport.BackgroundTransparency = 1
+            viewport.Size = UDim2.new(1, 0, 1, 0)
+            viewport.ZIndex = instance.ZIndex - 1
+            viewport.Parent = instance
+            
+            -- Create blur effect holder
+            local blurFrame = Instance.new("Frame")
+            blurFrame.Name = "BlurFrame"
+            blurFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+            blurFrame.BackgroundTransparency = transparency or 0.9
+            blurFrame.Size = UDim2.new(1, 0, 1, 0)
+            blurFrame.BorderSizePixel = 0
+            blurFrame.ZIndex = viewport.ZIndex
+            blurFrame.Parent = viewport
+            
+            -- Track instance changes to update blur
+            local connection = RunService.RenderStepped:Connect(function()
+                if not instance or not instance.Parent then
+                    blur:Destroy()
+                    connection:Disconnect()
+                    bindable:Fire()
+                    return
+                end
+                
+                if instance.Visible then
+                    blur.Enabled = true
+                    viewport.Visible = true
+                else
+                    blur.Enabled = false
+                    viewport.Visible = false
+                end
+            end)
+            
+            instance.Destroying:Connect(function()
+                blur:Destroy()
+                connection:Disconnect()
+                bindable:Fire()
+            end)
+        end
+        
+        return {
+            BlurEffect = blur,
+            Completed = bindable.Event,
+            Destroy = function()
+                blur:Destroy()
+                bindable:Fire()
+            end
+        }
+    end,
+    
+    ApplyGradient = function(instance, color1, color2, rotation, style, speed)
+        if not instance then return end
+        
+        -- Remove existing gradient if any
+        for _, child in ipairs(instance:GetChildren()) do
+            if child:IsA("UIGradient") and child.Name == "VexGradient" then
+                child:Destroy()
+            end
+        end
+        
+        local gradient = Instance.new("UIGradient")
+        gradient.Name = "VexGradient"
+        
+        -- Default values
+        color1 = color1 or VexHub.Theme.Accent
+        color2 = color2 or VexHub.Theme.DarkAccent
+        rotation = rotation or 0
+        
+        if style == "Rainbow" then
+            -- Create rainbow gradient
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+                ColorSequenceKeypoint.new(0.167, Color3.fromRGB(255, 255, 0)),
+                ColorSequenceKeypoint.new(0.333, Color3.fromRGB(0, 255, 0)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+                ColorSequenceKeypoint.new(0.667, Color3.fromRGB(0, 0, 255)),
+                ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+            })
+        elseif style == "Fade" then
+            -- Create fade gradient
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, color1),
+                ColorSequenceKeypoint.new(0.5, color2),
+                ColorSequenceKeypoint.new(1, color1)
+            })
+        elseif style == "Shine" then
+            -- Create shine effect
+            local baseColor = color1
+            local shineColor = Color3.new(
+                math.min(baseColor.R + 0.3, 1),
+                math.min(baseColor.G + 0.3, 1),
+                math.min(baseColor.B + 0.3, 1)
+            )
+            
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, baseColor),
+                ColorSequenceKeypoint.new(0.1, baseColor),
+                ColorSequenceKeypoint.new(0.5, shineColor),
+                ColorSequenceKeypoint.new(0.9, baseColor),
+                ColorSequenceKeypoint.new(1, baseColor)
+            })
+        else
+            -- Standard two-color gradient
+            gradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, color1),
+                ColorSequenceKeypoint.new(1, color2)
+            })
+        end
+        
+        gradient.Rotation = rotation
+        gradient.Parent = instance
+        
+        -- Animate gradient if speed is provided
+        if speed and speed > 0 then
+            task.spawn(function()
+                local offset = 0
+                local connection = RunService.RenderStepped:Connect(function(dt)
+                    if not gradient or not gradient.Parent then
+                        connection:Disconnect()
+                        return
+                    end
+                    
+                    offset = (offset + dt * speed) % 1
+                    
+                    if style == "Rainbow" or style == "Fade" then
+                        gradient.Offset = Vector2.new(offset, 0)
+                    elseif style == "Shine" then
+                        -- Shine effect is slower
+                        gradient.Offset = Vector2.new(offset * 0.5, 0)
+                    end
+                end)
+                
+                instance.Destroying:Connect(function()
+                    connection:Disconnect()
+                end)
+            end)
+        end
+        
+        return gradient
+    end,
+    
+    ApplyShadow = function(instance, elevation)
+        if not instance then return end
+        
+        -- Remove existing shadow if any
+        for _, child in ipairs(instance:GetChildren()) do
+            if child:IsA("ImageLabel") and child.Name == "VexShadow" then
+                child:Destroy()
+            end
+        end
+        
+        elevation = elevation or "Medium"
+        local elevationSettings
+        
+        if type(elevation) == "string" then
+            elevationSettings = VexHub.Theme.Elevation[elevation]
+        else
+            elevationSettings = elevation
+        end
+        
+        local blur = elevationSettings.Blur or 12
+        local transparency = elevationSettings.Transparency or 0.6
+        
+        local shadow = Instance.new("ImageLabel")
+        shadow.Name = "VexShadow"
+        shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+        shadow.BackgroundTransparency = 1
+        shadow.Position = UDim2.new(0.5, 0, 0.5, blur/2)
+        shadow.Size = UDim2.new(1, blur*2, 1, blur*2)
+        shadow.ZIndex = instance.ZIndex - 1
+        shadow.Image = "rbxassetid://6014261993"
+        shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+        shadow.ImageTransparency = transparency
+        shadow.ScaleType = Enum.ScaleType.Slice
+        shadow.SliceCenter = Rect.new(49, 49, 450, 450)
+        shadow.Parent = instance
+        
+        return shadow
+    end,
+    
+    ApplyRipple = function(instance, position, color, size, duration)
+        if not instance then return end
+        
+        position = position or UDim2.new(0.5, 0, 0.5, 0)
+        color = color or VexHub.Theme.Accent
+        size = size or UDim2.new(1.5, 0, 1.5, 0)
+        duration = duration or 0.5
+        
+        local ripple = Instance.new("Frame")
+        ripple.Name = "VexRipple"
+        ripple.AnchorPoint = Vector2.new(0.5, 0.5)
+        ripple.BackgroundColor3 = color
+        ripple.BackgroundTransparency = 0.7
+        ripple.BorderSizePixel = 0
+        ripple.Position = position
+        ripple.Size = UDim2.new(0, 0, 0, 0)
+        ripple.ZIndex = instance.ZIndex + 1
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = ripple
+        
+        ripple.Parent = instance
+        
+        local tween = Utility:CreateTween(ripple, {
+            Size = size,
+            BackgroundTransparency = 1
+        }, duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        tween:Play()
+        
+        tween.Completed:Connect(function()
+            ripple:Destroy()
+        end)
+        
+        return ripple
+    end,
+    
+    ApplyStroke = function(instance, color, thickness, transparency)
+        if not instance then return end
+        
+        -- Remove existing stroke if any
+        for _, child in ipairs(instance:GetChildren()) do
+            if child:IsA("UIStroke") and child.Name == "VexStroke" then
+                child:Destroy()
+            end
+        end
+        
+        color = color or VexHub.Theme.Accent
+        thickness = thickness or 1
+        transparency = transparency or 0
+        
+        local stroke = Instance.new("UIStroke")
+        stroke.Name = "VexStroke"
+        stroke.Color = color
+        stroke.Thickness = thickness
+        stroke.Transparency = transparency
+        stroke.Parent = instance
+        
+        return stroke
+    end,
+    
+    ApplyShine = function(instance, speed, transparency)
+        if not instance then return end
+        
+        speed = speed or 1
+        transparency = transparency or 0.7
+        
+        local shine = Instance.new("Frame")
+        shine.Name = "VexShine"
+        shine.BackgroundColor3 = Color3.new(1, 1, 1)
+        shine.BackgroundTransparency = transparency
+        shine.BorderSizePixel = 0
+        shine.Size = UDim2.new(0.3, 0, 2, 0)
+        shine.Rotation = 45
+        shine.ZIndex = instance.ZIndex + 1
+        shine.ClipsDescendants = true
+        
+        instance.ClipsDescendants = true
+        
+        shine.Parent = instance
+        
+        -- Position shine off-screen to start
+        shine.Position = UDim2.new(-1, 0, -0.5, 0)
+        
+        task.spawn(function()
+            while true do
+                if not shine or not shine.Parent then break end
+                
+                local tween = Utility:CreateTween(shine, {
+                    Position = UDim2.new(1.5, 0, -0.5, 0)
+                }, 1.5 / speed, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+                
+                tween:Play()
+                tween.Completed:Wait()
+                
+                if not shine or not shine.Parent then break end
+                shine.Position = UDim2.new(-1, 0, -0.5, 0)
+                
