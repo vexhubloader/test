@@ -3,12 +3,12 @@
     A modern, sleek UI Library for Roblox exploits
     Inspired by Apple/Windows 11 design language
     
-    Version: 1.0.0
+    Version: 1.0.1
 ]]
 
 local VexHub = {
     Name = "VexHub",
-    Version = "1.0.0",
+    Version = "1.0.1",
     Windows = {},
     ActiveWindow = nil,
     Theme = {
@@ -67,6 +67,7 @@ local VexHub = {
     }
 }
 
+-- Services
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
@@ -75,12 +76,67 @@ local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
 
+-- Local variables
 local Utility = {}
 local Tweens = {}
-
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
 local Camera = workspace.CurrentCamera
+local ScreenGui
+
+-- Create the main GUI with secure loadup
+local function createMainGui()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = HttpService:GenerateGUID(false)
+    gui.ResetOnSpawn = false
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.DisplayOrder = 100
+    
+    -- Different methods of protecting GUIs across exploits
+    if syn and syn.protect_gui then
+        syn.protect_gui(gui)
+        gui.Parent = CoreGui
+    elseif gethui then
+        gui.Parent = gethui()
+    elseif KRNL_LOADED then
+        gui.Parent = CoreGui
+    elseif FLUXUS_LOADED then
+        gui.Parent = game:GetService("CoreGui")
+    elseif OXYGEN_LOADED then
+        gui.Parent = game:GetService("CoreGui")
+    elseif ELECTRON_LOADED then
+        gui.Parent = game:GetService("CoreGui")
+    elseif SENTINEL_LOADED then
+        gui.Parent = game:GetService("CoreGui")
+    elseif (secure_load or securereq) then
+        local secureload = secure_load or securereq
+        secureload(gui)
+    else
+        -- Fallback for when no known exploit is detected
+        gui.Parent = CoreGui
+    end
+    
+    return gui
+end
+
+-- Initialize the main GUI
+ScreenGui = createMainGui()
+
+-- Create notification container
+local NotificationHolder = Instance.new("Frame")
+NotificationHolder.Name = "NotificationHolder"
+NotificationHolder.AnchorPoint = Vector2.new(1, 1)
+NotificationHolder.BackgroundTransparency = 1
+NotificationHolder.Position = UDim2.new(1, -20, 1, -20)
+NotificationHolder.Size = UDim2.new(0, 300, 1, -40)
+NotificationHolder.Parent = ScreenGui
+
+local NotificationLayout = Instance.new("UIListLayout")
+NotificationLayout.Padding = UDim.new(0, 10)
+NotificationLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+NotificationLayout.SortOrder = Enum.SortOrder.LayoutOrder
+NotificationLayout.Parent = NotificationHolder
 
 function VexHub:IsMobile()
     return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
@@ -369,79 +425,7 @@ function Utility:ApplyGlowEffect(instance, color, size, transparency)
     return glow
 end
 
-local MainGui = Instance.new("ScreenGui")
-MainGui.Name = HttpService:GenerateGUID(false)
-MainGui.ResetOnSpawn = false
-MainGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-MainGui.DisplayOrder = 100
-
-if syn and syn.protect_gui then
-    syn.protect_gui(MainGui)
-    MainGui.Parent = CoreGui
-elseif gethui then
-    MainGui.Parent = gethui()
-else
-    MainGui.Parent = CoreGui
-end
-
-local NotificationHolder = Instance.new("Frame")
-NotificationHolder.Name = "NotificationHolder"
-NotificationHolder.AnchorPoint = Vector2.new(1, 1)
-NotificationHolder.BackgroundTransparency = 1
-NotificationHolder.Position = UDim2.new(1, -20, 1, -20)
-NotificationHolder.Size = UDim2.new(0, 300, 1, -40)
-NotificationHolder.Parent = MainGui
-
-local NotificationLayout = Instance.new("UIListLayout")
-NotificationLayout.Padding = UDim.new(0, 10)
-NotificationLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-NotificationLayout.SortOrder = Enum.SortOrder.LayoutOrder
-NotificationLayout.Parent = NotificationHolder
-
-function VexHub:Notification(options)
-    task.spawn(function()
-        options = options or {}
-        local title = options.Title or "Notification"
-        local text = options.Text or "This is a notification"
-        local duration = options.Duration or 5
-        local type = options.Type or "Info" -- Info, Success, Warning, Error
-        local variant = options.Variant or "Slide" -- Slide, Fade, Pop, Bounce
-        local callback = options.Callback
-        local sound = options.Sound ~= false -- Default true
-        local position = options.Position or "BottomRight" -- TopRight, TopLeft, BottomRight, BottomLeft, Center
-        
-        local colors = {
-            Info = self.Theme.Accent,
-            Success = self.Theme.Success,
-            Warning = self.Theme.Warning,
-            Error = self.Theme.Error
-        }
-        
-        local icons = {
-            Info = self.DefaultIcons.Info,
-            Success = self.DefaultIcons.Success,
-            Warning = self.DefaultIcons.Warning,
-            Error = self.DefaultIcons.Error
-        }
-        
-        -- Play notification sound
-        if sound then
-            local soundIds = {
-                Info = "rbxassetid://6026984224",
-                Success = "rbxassetid://6026984224",
-                Warning = "rbxassetid://6026984224",
-                Error = "rbxassetid://6026984224"
-            }
-            
-            local notifSound = Instance.new("Sound")
-            notifSound.SoundId = soundIds[type]
-            notifSound.Volume = 0.5
-            notifSound.Parent = MainGui
-            notifSound:Play()
-            
-            game:GetService("Debris"):AddItem(notifSound, 2)
-        end
+function VexHub:Notification(options)    task.spawn(function()        -- Validate and set defaults for options        options = options or {}        local title = options.Title or "Notification"        local text = options.Text or "This is a notification"        local duration = tonumber(options.Duration) or 5        local type = options.Type or "Info" -- Info, Success, Warning, Error        local variant = options.Variant or "Slide" -- Slide, Fade, Pop, Bounce        local callback = (type(options.Callback) == "function") and options.Callback or function() end        local sound = options.Sound ~= false -- Default true        local position = options.Position or "BottomRight" -- TopRight, TopLeft, BottomRight, BottomLeft, Center                -- Make sure type is valid        if not (type == "Info" or type == "Success" or type == "Warning" or type == "Error") then            type = "Info"        end                -- Make sure variant is valid        if not (variant == "Slide" or variant == "Fade" or variant == "Pop" or variant == "Bounce") then            variant = "Slide"        end                local colors = {            Info = self.Theme.Accent,            Success = self.Theme.Success,            Warning = self.Theme.Warning,            Error = self.Theme.Error        }                local icons = {            Info = self.DefaultIcons.Info,            Success = self.DefaultIcons.Success,            Warning = self.DefaultIcons.Warning,            Error = self.DefaultIcons.Error        }                -- Play notification sound        if sound then            pcall(function()                local soundIds = {                    Info = "rbxassetid://6026984224",                    Success = "rbxassetid://6026984224",                    Warning = "rbxassetid://6026984224",                    Error = "rbxassetid://6026984224"                }                                local notifSound = Instance.new("Sound")                notifSound.SoundId = soundIds[type]                notifSound.Volume = 0.5                notifSound.Parent = ScreenGui                notifSound:Play()                                game:GetService("Debris"):AddItem(notifSound, 2)            end)        end
         
         -- Create notification
         local Notification = Instance.new("Frame")
@@ -758,7 +742,7 @@ function VexHub:CreateWindow(options)
     Window.BorderSizePixel = 0
     Window.Position = position or UDim2.new(0.5, -size.X.Offset / 2, 0.5, -size.Y.Offset / 2)
     Window.Size = size
-    Window.Parent = MainGui
+    Window.Parent = ScreenGui
     Window.ClipsDescendants = true
     
     local Corner = Instance.new("UICorner")
