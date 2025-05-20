@@ -157,6 +157,12 @@ function VexHub:LoadConfig(name)
 end
 
 function Utility:Lerp(a, b, t)
+    -- Add nil checking to prevent "attempt to index nil with 'lerp'" errors
+    if a == nil or b == nil or t == nil then
+        warn("VexHub: Lerp received nil argument(s)")
+        return a or b or 0
+    end
+    
     return a + (b - a) * t
 end
 
@@ -165,7 +171,121 @@ function Utility:Round(number, decimalPlaces)
     return math.floor(number * multiplier + 0.5) / multiplier
 end
 
-function Utility:CreateTween(instance, properties, duration, easingStyle, easingDirection, repeatCount, reverses, delayTime)    -- Error checking - make sure instance exists and is valid    if not instance or typeof(instance) ~= "Instance" then        warn("VexHub: CreateTween failed - Invalid instance")        return {            Play = function() end,            Cancel = function() end,            Pause = function() end,            Completed = {                Wait = function() end,                Connect = function() return {Disconnect = function() end} end            }        }    end        -- Handle properties    if type(properties) ~= "table" then        warn("VexHub: CreateTween failed - Invalid properties")        properties = {}    end        -- Create the tween info    local info = TweenInfo.new(        duration or VexHub.Theme.Duration,        easingStyle or VexHub.Theme.Easing,        easingDirection or Enum.EasingDirection.Out,        repeatCount or 0,        reverses or false,        delayTime or 0    )        -- Create and store the tween safely    local tween    local success, err = pcall(function()        tween = TweenService:Create(instance, info, properties)    end)        if not success then        warn("VexHub: CreateTween error - " .. tostring(err))        return {            Play = function() end,            Cancel = function() end,            Pause = function() end,            Completed = {                Wait = function() end,                Connect = function() return {Disconnect = function() end} end            }        }    end        -- Clean up old tweens to avoid memory leaks    for i, oldTween in pairs(Tweens) do        if oldTween.Instance == instance then            -- Try to stop and remove old tweens for this instance            pcall(function()                 if oldTween.PlaybackState == Enum.PlaybackState.Playing then                    oldTween:Cancel()                end            end)            table.remove(Tweens, i)        end    end        -- Store the new tween    table.insert(Tweens, tween)        -- Create a safer tween wrapper    local safeTween = {        _tween = tween,        Instance = instance,        Properties = properties,                Play = function(self)            if instanceExists(instance) then                pcall(function() tween:Play() end)            end            return self        end,                Cancel = function(self)            pcall(function() tween:Cancel() end)            return self        end,                Pause = function(self)            pcall(function() tween:Pause() end)            return self        end,                Completed = {            Wait = function()                pcall(function() tween.Completed:Wait() end)            end,                        Connect = function(_, callback)                local connection                pcall(function()                    connection = tween.Completed:Connect(function()                        if callback then callback() end                    end)                end)                                return {                    Disconnect = function()                        if connection then                            pcall(function() connection:Disconnect() end)                        end                    end                }            end        }    }        return safeTweenend
+function Utility:CreateTween(instance, properties, duration, easingStyle, easingDirection, repeatCount, reverses, delayTime)
+    -- Error checking - make sure instance exists and is valid
+    if not instance or typeof(instance) ~= "Instance" then
+        warn("VexHub: CreateTween failed - Invalid instance")
+        return {
+            Play = function() end,
+            Cancel = function() end,
+            Pause = function() end,
+            Completed = {
+                Wait = function() end,
+                Connect = function() return {Disconnect = function() end} end
+            }
+        }
+    end
+    
+    -- Handle properties
+    if type(properties) ~= "table" then
+        warn("VexHub: CreateTween failed - Invalid properties")
+        properties = {}
+    end
+    
+    -- Create the tween info
+    local info = TweenInfo.new(
+        duration or VexHub.Theme.Duration,
+        easingStyle or VexHub.Theme.Easing,
+        easingDirection or Enum.EasingDirection.Out,
+        repeatCount or 0,
+        reverses or false,
+        delayTime or 0
+    )
+    
+    -- Create and store the tween safely
+    local tween
+    local success, err = pcall(function()
+        tween = TweenService:Create(instance, info, properties)
+    end)
+    
+    if not success then
+        warn("VexHub: CreateTween error - " .. tostring(err))
+        return {
+            Play = function() end,
+            Cancel = function() end,
+            Pause = function() end,
+            Completed = {
+                Wait = function() end,
+                Connect = function() return {Disconnect = function() end} end
+            }
+        }
+    end
+    
+    -- Clean up old tweens to avoid memory leaks
+    for i, oldTween in pairs(Tweens) do
+        if oldTween.Instance == instance then
+            -- Try to stop and remove old tweens for this instance
+            pcall(function() 
+                if oldTween.PlaybackState == Enum.PlaybackState.Playing then
+                    oldTween:Cancel()
+                end
+            end)
+            table.remove(Tweens, i)
+        end
+    end
+    
+    -- Store the new tween
+    table.insert(Tweens, tween)
+    
+    -- Create a safer tween wrapper
+    local safeTween = {
+        _tween = tween,
+        Instance = instance,
+        Properties = properties,
+        
+        Play = function(self)
+            if instanceExists(instance) then
+                pcall(function() tween:Play() end)
+            end
+            return self
+        end,
+        
+        Cancel = function(self)
+            pcall(function() tween:Cancel() end)
+            return self
+        end,
+        
+        Pause = function(self)
+            pcall(function() tween:Pause() end)
+            return self
+        end,
+        
+        Completed = {
+            Wait = function()
+                pcall(function() tween.Completed:Wait() end)
+            end,
+            
+            Connect = function(_, callback)
+                local connection
+                pcall(function()
+                    connection = tween.Completed:Connect(function()
+                        if callback then callback() end
+                    end)
+                end)
+                
+                return {
+                    Disconnect = function()
+                        if connection then
+                            pcall(function() connection:Disconnect() end)
+                        end
+                    end
+                }
+            end
+        }
+    }
+    
+    return safeTween
+end
 
 function Utility:GetTextSize(text, size, font)
     return TextService:GetTextSize(text, size, font, Vector2.new(math.huge, math.huge))
@@ -3537,6 +3657,525 @@ VexHub.Effects = {
         return shine
     end
 }
+
+-- Enhanced Luna-style animations module
+VexHub.Animations = {
+    -- Modern animation presets
+    Presets = {
+        Bounce = TweenInfo.new(0.5, Enum.EasingStyle.Bounce),
+        Smooth = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+        Elastic = TweenInfo.new(0.6, Enum.EasingStyle.Elastic),
+        Fast = TweenInfo.new(0.2, Enum.EasingStyle.Quad),
+        SlowFade = TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+        GlassReveal = TweenInfo.new(0.7, Enum.EasingStyle.Exponential),
+        -- Luna-like animation presets
+        LunaExpand = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        LunaFade = TweenInfo.new(0.4, Enum.EasingStyle.Exponential),
+        LunaRotate = TweenInfo.new(1.7, Enum.EasingStyle.Back, Enum.EasingDirection.Out, 2, false, 0.2)
+    },
+    
+    -- Create a sequence of animations like Luna
+    Sequence = function(animationTable, callback)
+        local totalAnimations = #animationTable
+        local currentAnimation = 0
+        
+        local function playNext()
+            currentAnimation = currentAnimation + 1
+            if currentAnimation <= totalAnimations then
+                local anim = animationTable[currentAnimation]
+                
+                if anim.Delay then
+                    task.delay(anim.Delay, function()
+                        local tween = Utility:CreateTween(anim.Instance, anim.Properties, anim.Duration, anim.EasingStyle, anim.EasingDirection)
+                        tween:Play()
+                        tween.Completed:Connect(playNext)
+                    end)
+                else
+                    local tween = Utility:CreateTween(anim.Instance, anim.Properties, anim.Duration, anim.EasingStyle, anim.EasingDirection)
+                    tween:Play()
+                    tween.Completed:Connect(playNext)
+                end
+            else
+                if callback then callback() end
+            end
+        end
+        
+        playNext()
+    end,
+    
+    -- Create floating dots animation (Luna-style)
+    FloatingDots = function(parent, color)
+        local dotHolder = Instance.new("Frame")
+        dotHolder.Name = "FloatingDots"
+        dotHolder.BackgroundTransparency = 1
+        dotHolder.Size = UDim2.new(1, 0, 1, 0)
+        dotHolder.ZIndex = parent.ZIndex + 1
+        dotHolder.ClipsDescendants = true
+        dotHolder.Parent = parent
+        
+        local dots = {}
+        color = color or VexHub.Theme.Accent
+        
+        for i = 1, 3 do
+            local dot = Instance.new("Frame")
+            dot.Name = "Dot" .. i
+            dot.AnchorPoint = Vector2.new(0.5, 0.5)
+            dot.BackgroundColor3 = color
+            dot.BackgroundTransparency = 0.5
+            dot.Size = UDim2.new(0, 6, 0, 6)
+            dot.Position = UDim2.new(0.5, (i-2) * 12, 0.5, 0)
+            dot.ZIndex = dotHolder.ZIndex
+            
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(1, 0)
+            corner.Parent = dot
+            
+            -- Add Luna-style glow
+            local glow = Instance.new("ImageLabel")
+            glow.Name = "Glow"
+            glow.BackgroundTransparency = 1
+            glow.Image = "rbxassetid://4996891970" -- Radial gradient
+            glow.ImageColor3 = color
+            glow.ImageTransparency = 0.7
+            glow.Size = UDim2.new(1.5, 0, 1.5, 0)
+            glow.SizeConstraint = Enum.SizeConstraint.RelativeXY
+            glow.Position = UDim2.new(0.5, 0, 0.5, 0)
+            glow.AnchorPoint = Vector2.new(0.5, 0.5)
+            glow.ZIndex = dot.ZIndex - 1
+            glow.Parent = dot
+            
+            dot.Parent = dotHolder
+            table.insert(dots, dot)
+            
+            -- Animate the dot with Luna-like pulsing
+            task.spawn(function()
+                while dot and dot.Parent do
+                    -- Sequence 1: Expand and brighten
+                    Utility:CreateTween(dot, {
+                        BackgroundTransparency = 0.3, 
+                        Size = UDim2.new(0, 8, 0, 8)
+                    }, 0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut):Play()
+                    
+                    Utility:CreateTween(glow, {
+                        ImageTransparency = 0.5,
+                        Size = UDim2.new(2, 0, 2, 0)
+                    }, 0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut):Play()
+                    
+                    task.wait(0.2 * i)
+                    
+                    -- Sequence 2: Contract and fade
+                    Utility:CreateTween(dot, {
+                        BackgroundTransparency = 0.5, 
+                        Size = UDim2.new(0, 6, 0, 6)
+                    }, 0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut):Play()
+                    
+                    Utility:CreateTween(glow, {
+                        ImageTransparency = 0.7,
+                        Size = UDim2.new(1.5, 0, 1.5, 0)
+                    }, 0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut):Play()
+                    
+                    task.wait(0.2 * (4-i))
+                end
+            end)
+        end
+        
+        return {
+            Destroy = function()
+                if dotHolder and dotHolder.Parent then
+                    dotHolder:Destroy()
+                end
+            end
+        }
+    end,
+    
+    -- Create Luna-style loading spinner
+    CreateSpinner = function(parent, size, color)
+        size = size or UDim2.new(0, 40, 0, 40)
+        color = color or VexHub.Theme.Accent
+        
+        local spinner = Instance.new("Frame")
+        spinner.Name = "Spinner"
+        spinner.BackgroundTransparency = 1
+        spinner.Size = size
+        spinner.AnchorPoint = Vector2.new(0.5, 0.5)
+        spinner.Position = UDim2.new(0.5, 0, 0.5, 0)
+        
+        local spinnerImage = Instance.new("ImageLabel")
+        spinnerImage.Name = "SpinnerImage"
+        spinnerImage.BackgroundTransparency = 1
+        spinnerImage.Size = UDim2.new(1, 0, 1, 0)
+        spinnerImage.Image = "rbxassetid://10926835820" -- Circle asset
+        spinnerImage.ImageColor3 = color
+        spinnerImage.Parent = spinner
+        
+        -- Add Luna-style glow to spinner
+        local spinnerGlow = Instance.new("ImageLabel")
+        spinnerGlow.Name = "SpinnerGlow"
+        spinnerGlow.BackgroundTransparency = 1
+        spinnerGlow.Image = "rbxassetid://4996891970" -- Radial gradient
+        spinnerGlow.ImageColor3 = color
+        spinnerGlow.ImageTransparency = 0.7
+        spinnerGlow.Size = UDim2.new(1.5, 0, 1.5, 0)
+        spinnerGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+        spinnerGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+        spinnerGlow.ZIndex = spinnerImage.ZIndex - 1
+        spinnerGlow.Parent = spinner
+        
+        local uiGradient = Instance.new("UIGradient")
+        uiGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0.8, Color3.fromRGB(180, 180, 180)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 120, 120))
+        })
+        uiGradient.Parent = spinnerImage
+        
+        spinner.Parent = parent
+        
+        -- Animate the spinner with Luna-like rotation
+        task.spawn(function()
+            while spinner and spinner.Parent do
+                -- Rotate spinner
+                local rotationTween = TweenService:Create(
+                    uiGradient, 
+                    TweenInfo.new(1, Enum.EasingStyle.Linear), 
+                    {Rotation = 360}
+                )
+                
+                -- Pulse glow
+                local glowTween = TweenService:Create(
+                    spinnerGlow,
+                    TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                    {ImageTransparency = 0.5, Size = UDim2.new(1.8, 0, 1.8, 0)}
+                )
+                
+                rotationTween:Play()
+                glowTween:Play()
+                rotationTween.Completed:Wait()
+                
+                -- Reset values
+                uiGradient.Rotation = 0
+                TweenService:Create(
+                    spinnerGlow,
+                    TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
+                    {ImageTransparency = 0.7, Size = UDim2.new(1.5, 0, 1.5, 0)}
+                ):Play()
+            end
+        end)
+        
+        return {
+            Destroy = function()
+                if spinner and spinner.Parent then
+                    spinner:Destroy()
+                end
+            end,
+            SetColor = function(newColor)
+                if spinnerImage then
+                    TweenService:Create(spinnerImage, TweenInfo.new(0.3), {ImageColor3 = newColor}):Play()
+                    if spinnerGlow then
+                        TweenService:Create(spinnerGlow, TweenInfo.new(0.3), {ImageColor3 = newColor}):Play()
+                    end
+                end
+            end
+        }
+    end,
+    
+    -- Luna-style hover effect for buttons and UI elements
+    ApplyHoverEffect = function(instance, options)
+        options = options or {}
+        local hoverColor = options.HoverColor or VexHub.Theme.Accent
+        local normalColor = options.NormalColor or instance.BackgroundColor3
+        local hoverTransparency = options.HoverTransparency or math.max(0, instance.BackgroundTransparency - 0.1)
+        local normalTransparency = options.NormalTransparency or instance.BackgroundTransparency
+        local scaleOnHover = options.ScaleOnHover or false
+        local glowOnHover = options.GlowOnHover or true
+        local strokeInstance = instance:FindFirstChildOfClass("UIStroke")
+        
+        -- Add hover events
+        local hovered = false
+        
+        -- Luna-style glow effect
+        local glowEffect
+        if glowOnHover then
+            glowEffect = Instance.new("ImageLabel")
+            glowEffect.Name = "LunaGlowEffect"
+            glowEffect.BackgroundTransparency = 1
+            glowEffect.Image = "rbxassetid://4996891970" -- Radial gradient
+            glowEffect.ImageColor3 = hoverColor
+            glowEffect.ImageTransparency = 1 -- Start fully transparent
+            glowEffect.Size = UDim2.new(1.5, 0, 1.5, 0)
+            glowEffect.SizeConstraint = Enum.SizeConstraint.RelativeXY
+            glowEffect.Position = UDim2.new(0.5, 0, 0.5, 0)
+            glowEffect.AnchorPoint = Vector2.new(0.5, 0.5)
+            glowEffect.ZIndex = instance.ZIndex - 1
+            
+            -- Match corners if the instance has them
+            local corner = instance:FindFirstChildOfClass("UICorner")
+            if corner then
+                local glowCorner = corner:Clone()
+                glowCorner.Parent = glowEffect
+            end
+            
+            glowEffect.Parent = instance
+        end
+        
+        -- Mouse enter event
+        instance.MouseEnter:Connect(function()
+            hovered = true
+            
+            -- Background color/transparency change
+            Utility:CreateTween(instance, {
+                BackgroundColor3 = hoverColor,
+                BackgroundTransparency = hoverTransparency
+            }, 0.3, Enum.EasingStyle.Quad):Play()
+            
+            -- UIStroke effect
+            if strokeInstance then
+                Utility:CreateTween(strokeInstance, {
+                    Color = hoverColor,
+                    Transparency = math.max(0, strokeInstance.Transparency - 0.2)
+                }, 0.3, Enum.EasingStyle.Quad):Play()
+            end
+            
+            -- Scale effect (Luna-like)
+            if scaleOnHover then
+                Utility:CreateTween(instance, {
+                    Size = UDim2.new(instance.Size.X.Scale, instance.Size.X.Offset + 2, 
+                                    instance.Size.Y.Scale, instance.Size.Y.Offset + 2)
+                }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out):Play()
+            end
+            
+            -- Glow effect (Luna-like)
+            if glowOnHover and glowEffect then
+                Utility:CreateTween(glowEffect, {
+                    ImageTransparency = 0.7,
+                    Size = UDim2.new(1.7, 0, 1.7, 0)
+                }, 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out):Play()
+            end
+        end)
+        
+        -- Mouse leave event
+        instance.MouseLeave:Connect(function()
+            hovered = false
+            
+            -- Reset background
+            Utility:CreateTween(instance, {
+                BackgroundColor3 = normalColor,
+                BackgroundTransparency = normalTransparency
+            }, 0.3, Enum.EasingStyle.Quad):Play()
+            
+            -- Reset stroke
+            if strokeInstance then
+                Utility:CreateTween(strokeInstance, {
+                    Color = strokeInstance.Color,
+                    Transparency = strokeInstance.Transparency + 0.2
+                }, 0.3, Enum.EasingStyle.Quad):Play()
+            end
+            
+            -- Reset scale
+            if scaleOnHover then
+                Utility:CreateTween(instance, {
+                    Size = UDim2.new(instance.Size.X.Scale, instance.Size.X.Offset - 2, 
+                                    instance.Size.Y.Scale, instance.Size.Y.Offset - 2)
+                }, 0.3, Enum.EasingStyle.Quad):Play()
+            end
+            
+            -- Reset glow
+            if glowOnHover and glowEffect then
+                Utility:CreateTween(glowEffect, {
+                    ImageTransparency = 1,
+                    Size = UDim2.new(1.5, 0, 1.5, 0)
+                }, 0.4, Enum.EasingStyle.Quad):Play()
+            end
+        end)
+        
+        -- Return control methods
+        return {
+            IsHovered = function() return hovered end,
+            SetColors = function(newNormal, newHover)
+                normalColor = newNormal or normalColor
+                hoverColor = newHover or hoverColor
+                if not hovered then
+                    Utility:CreateTween(instance, {BackgroundColor3 = normalColor}, 0.3):Play()
+                else
+                    Utility:CreateTween(instance, {BackgroundColor3 = hoverColor}, 0.3):Play()
+                end
+                
+                if glowEffect then
+                    glowEffect.ImageColor3 = hoverColor
+                end
+            end,
+            Destroy = function()
+                if glowEffect then
+                    glowEffect:Destroy()
+                end
+            end
+        }
+    end,
+    
+    -- Create a Luna-style active selection bar for tabs
+    CreateTabIndicator = function(parent, activeTab)
+        local indicator = Instance.new("Frame")
+        indicator.Name = "TabIndicator"
+        indicator.BackgroundColor3 = VexHub.Theme.Accent
+        indicator.BorderSizePixel = 0
+        indicator.Size = UDim2.new(0, 25, 0, 3)
+        indicator.AnchorPoint = Vector2.new(0.5, 1)
+        indicator.Position = UDim2.new(0.5, 0, 1, 0)
+        
+        -- Add glow to the indicator
+        local glow = Instance.new("ImageLabel")
+        glow.Name = "Glow"
+        glow.BackgroundTransparency = 1
+        glow.Image = "rbxassetid://4996891970" -- Radial gradient
+        glow.ImageColor3 = VexHub.Theme.Accent
+        glow.ImageTransparency = 0.7
+        glow.Size = UDim2.new(1, 14, 3, 0)
+        glow.Position = UDim2.new(0.5, 0, 0.5, 0)
+        glow.AnchorPoint = Vector2.new(0.5, 0.5)
+        glow.ZIndex = indicator.ZIndex - 1
+        glow.Parent = indicator
+        
+        -- Apply gradient if theme uses gradient
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = VexHub.ThemeGradient
+        gradient.Offset = Vector2.new(0, 0)
+        gradient.Rotation = 90
+        gradient.Parent = indicator
+        
+        indicator.Parent = parent
+        
+        -- Set up initial position if there's an active tab
+        if activeTab then
+            indicator.Position = UDim2.new(0.5, 0, 1, 0)
+            indicator.Parent = activeTab
+        else
+            indicator.BackgroundTransparency = 1
+            glow.ImageTransparency = 1
+        end
+        
+        return {
+            SetActiveTab = function(tab)
+                if not tab then return end
+                
+                -- First fade out the indicator
+                local fadeOutTween = Utility:CreateTween(indicator, {
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(0, 10, 0, 2)
+                }, 0.2, Enum.EasingStyle.Quad)
+                
+                local glowFadeOut = Utility:CreateTween(glow, {
+                    ImageTransparency = 1
+                }, 0.2, Enum.EasingStyle.Quad)
+                
+                -- After fading out, move to new tab
+                fadeOutTween.Completed:Connect(function()
+                    indicator.Parent = tab
+                    indicator.Position = UDim2.new(0.5, 0, 1, 0)
+                    
+                    -- Then fade back in with Luna-like animation
+                    Utility:CreateTween(indicator, {
+                        BackgroundTransparency = 0,
+                        Size = UDim2.new(0, 25, 0, 3)
+                    }, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out):Play()
+                    
+                    Utility:CreateTween(glow, {
+                        ImageTransparency = 0.7
+                    }, 0.3, Enum.EasingStyle.Quad):Play()
+                end)
+                
+                fadeOutTween:Play()
+                glowFadeOut:Play()
+            end,
+            
+            SetColor = function(color)
+                Utility:CreateTween(indicator, {BackgroundColor3 = color}, 0.3):Play()
+                Utility:CreateTween(glow, {ImageColor3 = color}, 0.3):Play()
+            end
+        }
+    end
+}
+
+-- Modern blurred glass effect for Luna-like UI
+function Utility:ApplyModernBlur(instance, strength, transparency)
+    if not instance then return end
+    
+    -- Clean any existing blur effects
+    for _, child in ipairs(instance:GetChildren()) do
+        if (child:IsA("Frame") and child.Name == "ModernBlurFrame") or
+           (child:IsA("ImageLabel") and child.Name == "ModernBlurEffect") then
+            child:Destroy()
+        end
+    end
+    
+    strength = strength or 10
+    transparency = transparency or 0.85
+    
+    -- Create Luna-style container
+    local blurContainer = Instance.new("Frame")
+    blurContainer.Name = "ModernBlurFrame"
+    blurContainer.BackgroundTransparency = 1
+    blurContainer.BorderSizePixel = 0
+    blurContainer.Size = UDim2.new(1, 0, 1, 0)
+    blurContainer.ZIndex = instance.ZIndex - 1
+    blurContainer.Parent = instance
+    
+    -- Primary blur effect (stronger in center)
+    local primaryBlur = Instance.new("ImageLabel")
+    primaryBlur.Name = "PrimaryBlurEffect"
+    primaryBlur.AnchorPoint = Vector2.new(0.5, 0.5)
+    primaryBlur.BackgroundTransparency = 1
+    primaryBlur.Position = UDim2.new(0.5, 0, 0.5, 0)
+    primaryBlur.Size = UDim2.new(1, 0, 1, 0)
+    primaryBlur.Image = "rbxassetid://10929566376" -- Modern blur asset
+    primaryBlur.ImageColor3 = Color3.fromRGB(15, 15, 20)
+    primaryBlur.ImageTransparency = transparency
+    primaryBlur.ScaleType = Enum.ScaleType.Stretch
+    primaryBlur.Parent = blurContainer
+    
+    -- Add corner if parent has corner
+    local parentCorner = instance:FindFirstChildOfClass("UICorner")
+    if parentCorner then
+        local primaryCorner = parentCorner:Clone()
+        primaryCorner.Parent = primaryBlur
+    end
+    
+    -- Animated gradient effect for glass shimmer
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(220, 220, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 230))
+    })
+    gradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.95),
+        NumberSequenceKeypoint.new(0.5, 0.9),
+        NumberSequenceKeypoint.new(1, 0.95)
+    })
+    gradient.Rotation = 45
+    gradient.Parent = primaryBlur
+    
+    -- Create subtle animation
+    task.spawn(function()
+        local t = 0
+        local connection = RunService.RenderStepped:Connect(function(dt)
+            if not gradient or not gradient.Parent then
+                connection:Disconnect()
+                return
+            end
+            
+            t = t + dt * 0.3
+            gradient.Offset = Vector2.new(math.sin(t) * 0.1, math.cos(t * 0.7) * 0.1)
+        end)
+        
+        if instance then
+            instance.Destroying:Connect(function()
+                connection:Disconnect()
+            end)
+        end
+    end)
+    
+    return blurContainer
+end
 
 -- Return the library
 return VexHub
