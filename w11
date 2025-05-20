@@ -1,27 +1,4 @@
---[[
 
-Luna Interface Suite
-by Nebula Softworks
-
-Main Credits
-
-Hunter (Nebula Softworks) | Designing And Programming | Main Developer
-JustHey (Nebula Softworks) | Configurations, Bug Fixing And More! | Co Developer
-Throit | Color Picker
-Wally | Dragging And Certain Functions
-Sirius | PCall Parsing, Notifications, Slider And Home Tab
-Luna Executor | Original UI
-
-
-Extra Credits / Provided Certain Elements
-
-Pookie Pepelss | Bug Tester
-Inori | Configuration Concept
-Latte Softworks and qweery | Lucide Icons And Material Icons
-kirill9655 | Loading Circle
-Deity/dp4pv/x64x70 | Certain Scripting and Testing ig
-
-]]
 
 local Release = "Prerelease Beta 6.1"
 
@@ -44,7 +21,6 @@ if RunService:IsStudio() then
 	isStudio = true
 end
 
--- Credits To Latte Softworks And qweery for Lucide And Material Icons Respectively.
 local IconModule = {
 	Lucide = nil,
 	Material = {
@@ -2790,7 +2766,6 @@ function Luna:CreateWindow(WindowSettings)
 					Settings = ButtonSettings
 				}
 
-
 				local Button
 				if ButtonSettings.Description == nil and ButtonSettings.Description ~= "" then
 					Button = Elements.Template.Button:Clone()
@@ -2805,52 +2780,118 @@ function Luna:CreateWindow(WindowSettings)
 				Button.Visible = true
 				Button.Parent = TabPage
 
+				-- Initial state
+				Button.BackgroundTransparency = 1
 				Button.UIStroke.Transparency = 1
 				Button.Title.TextTransparency = 1
 				if ButtonSettings.Description ~= nil and ButtonSettings.Description ~= "" then
 					Button.Desc.TextTransparency = 1
 				end
 
-				TweenService:Create(Button, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.5}):Play()
-				TweenService:Create(Button.UIStroke, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {Transparency = 0.5}):Play()
-				TweenService:Create(Button.Title, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()	
+				-- Smooth fade in animation
+				TweenService:Create(Button, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+					BackgroundTransparency = 0.5,
+					Position = Button.Position + UDim2.new(0,0,0.1,0)
+				}):Play()
+				
+				TweenService:Create(Button.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Cubic), {
+					Transparency = 0.5
+				}):Play()
+
+				TweenService:Create(Button.Title, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {
+					TextTransparency = 0,
+					Position = Button.Title.Position + UDim2.new(0,0,0.2,0)
+				}):Play()
+
 				if ButtonSettings.Description ~= nil and ButtonSettings.Description ~= "" then
-					TweenService:Create(Button.Desc, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {TextTransparency = 0}):Play()	
+					TweenService:Create(Button.Desc, TweenInfo.new(0.8, Enum.EasingStyle.Exponential), {
+						TextTransparency = 0,
+						Position = Button.Desc.Position + UDim2.new(0,0,0.2,0) 
+					}):Play()
 				end
 
 				Button.Interact["MouseButton1Click"]:Connect(function()
 					local Success,Response = pcall(ButtonSettings.Callback)
 
 					if not Success then
-						TweenService:Create(Button, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0}):Play()
-						TweenService:Create(Button, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundColor3 = Color3.fromRGB(85, 0, 0)}):Play()
-						TweenService:Create(Button.UIStroke, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {Transparency = 1}):Play()
+						-- Error animation
+						TweenService:Create(Button, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
+							BackgroundTransparency = 0,
+							BackgroundColor3 = Color3.fromRGB(85, 0, 0),
+							Size = Button.Size + UDim2.new(0,4,0,4)
+						}):Play()
+						
+						TweenService:Create(Button.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Cubic), {
+							Transparency = 1
+						}):Play()
+
 						Button.Title.Text = "Callback Error"
 						print("Luna Interface Suite | "..ButtonSettings.Name.." Callback Error " ..tostring(Response))
+						
 						wait(0.5)
+						
 						Button.Title.Text = ButtonSettings.Name
-						TweenService:Create(Button, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundTransparency = 0.5}):Play()
-						TweenService:Create(Button, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {BackgroundColor3 = Color3.fromRGB(32, 30, 38)}):Play()
-						TweenService:Create(Button.UIStroke, TweenInfo.new(0.7, Enum.EasingStyle.Exponential), {Transparency = 0.5}):Play()
+						TweenService:Create(Button, TweenInfo.new(0.6, Enum.EasingStyle.Back), {
+							BackgroundTransparency = 0.5,
+							BackgroundColor3 = Color3.fromRGB(32, 30, 38),
+							Size = Button.Size - UDim2.new(0,4,0,4)
+						}):Play()
+						
+						TweenService:Create(Button.UIStroke, TweenInfo.new(0.4, Enum.EasingStyle.Cubic), {
+							Transparency = 0.5
+						}):Play()
 					else
-						tween(Button.UIStroke, {Color = Color3.fromRGB(136, 131, 163)})
+						-- Success animation
+						TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+							Size = Button.Size - UDim2.new(0,6,0,2),
+							Position = Button.Position + UDim2.new(0,3,0,1)
+						}):Play()
+						
+						TweenService:Create(Button.UIStroke, TweenInfo.new(0.2, Enum.EasingStyle.Cubic), {
+							Color = Color3.fromRGB(136, 131, 163)
+						}):Play()
+						
 						wait(0.2)
+						
+						TweenService:Create(Button, TweenInfo.new(0.4, Enum.EasingStyle.Elastic), {
+							Size = Button.Size + UDim2.new(0,6,0,2),
+							Position = Button.Position - UDim2.new(0,3,0,1)
+						}):Play()
+						
 						if ButtonV.Hover then
-							tween(Button.UIStroke, {Color = Color3.fromRGB(87, 84, 104)})
+							TweenService:Create(Button.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Cubic), {
+								Color = Color3.fromRGB(87, 84, 104)
+							}):Play()
 						else
-							tween(Button.UIStroke, {Color = Color3.fromRGB(64,61,76)})
+							TweenService:Create(Button.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Cubic), {
+								Color = Color3.fromRGB(64,61,76)
+							}):Play()
 						end
 					end
 				end)
 
 				Button["MouseEnter"]:Connect(function()
 					ButtonV.Hover = true
-					tween(Button.UIStroke, {Color = Color3.fromRGB(87, 84, 104)})
+					TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+						BackgroundTransparency = 0.3,
+						Size = Button.Size + UDim2.new(0,2,0,2),
+						Position = Button.Position - UDim2.new(0,1,0,1)
+					}):Play()
+					TweenService:Create(Button.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Cubic), {
+						Color = Color3.fromRGB(87, 84, 104)
+					}):Play()
 				end)
 
 				Button["MouseLeave"]:Connect(function()
 					ButtonV.Hover = false
-					tween(Button.UIStroke, {Color = Color3.fromRGB(64,61,76)})
+					TweenService:Create(Button, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+						BackgroundTransparency = 0.5,
+						Size = Button.Size - UDim2.new(0,2,0,2),
+						Position = Button.Position + UDim2.new(0,1,0,1)
+					}):Play()
+					TweenService:Create(Button.UIStroke, TweenInfo.new(0.3, Enum.EasingStyle.Cubic), {
+						Color = Color3.fromRGB(64,61,76)
+					}):Play()
 				end)
 
 				function ButtonV:Set(ButtonSettings2)
@@ -2871,6 +2912,12 @@ function Luna:CreateWindow(WindowSettings)
 				end
 
 				function ButtonV:Destroy()
+					TweenService:Create(Button, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
+						BackgroundTransparency = 1,
+						Size = Button.Size - UDim2.new(0,10,0,10),
+						Position = Button.Position + UDim2.new(0,5,0,5)
+					}):Play()
+					wait(0.4)
 					Button.Visible = false
 					Button:Destroy()
 				end
@@ -6930,52 +6977,6 @@ if isStudio then
 	s:CreateDropdown()
 
 	Tabs.Premium:BuildConfigSection()
-	Tabs.Premium:BuildThemeSection()]]
-end
+	Tabs.Premium:BuildThemeSection()
 
--- THIS IS THE DEBUG DEMO, ONLY USED WHEN TESTING NEW ELEMENTS AND CODE
---[[if isStudio then
-    window = Luna:CreateWindow({LoadingEnabled = false})
-    t1 = window:CreateTab()
-    t2 = window:CreateTab({ Name = "Tab 2", Icon = "location_searching"})
-    Luna:Notification({ 
-        Title = "Welcome to Luna",
-        Icon = "sparkle",
-        ImageSource = "Material",
-        Content = "Welcome to the Luna Interface Suite. This Is an Amazing Quality Freemium UI Library For Roblox Exploiting Made By Nebula Softworks. Luna was Created in hopes of improving the standard of UI Library designs by being the golden standard for it. Luna Has Amazing Features like a key system, notification and perfection in aesthetics and design. So, What Are You Waiting For? Start Using Luna Today at " .. website
-    })
-    t1:CreateSection()
-    local btn = t1:CreateButton({Callback = "", Description = "This Is A Description"})
-    local l = t1:CreateLabel({ Style = 2})
-    local l2 = t1:CreateLabel({ Text = "Another Label" })
-    t2:CreateButton({ Callback = function() 
-        l:Destroy()
-        l2:Set("New Text")
-    end})
-    t2:CreateLabel({Style = 3})
-    t1:CreateParagraph({Text = "Single String"})
-    t1:CreateParagraph({Text = "Welcome to the Luna Interface Suite. This Is an Amazing Quality Freemium UI Library For Roblox Exploiting Made By Nebula Softworks. Luna was Created in hopes of improving the standard of UI Library designs by being the golden standard for it. Luna Has Amazing Features like a key system, notification and perfection in aesthetics and design. So, What Are You Waiting For? Start Using Luna Today at " .. website})
-    s = t2:CreateSlider({ Callback = function(v) print(v) end })	
-    t1:CreateButton({ Callback = function()
-        s:Set({Name = "new name", Callback = ""})
-        wait(5)
-        s:Destroy()
-    end})
-    t1:CreateColorPicker()
-    local toggle = t1:CreateToggle({Name = "test", Description = "test", CurrentValue = true, Callback = ""}, "toggle2")
-    t1:CreateToggle({Callback = function(Value) toggle:Destroy() print(Value) end})
-    local bind = t2:CreateBind({Name = "test", Description = "test", CurrentBind = "E", HoldToInteract = false, Callback = ""})
-    t2:CreateKeybind({HoldToInteract = true, Callback = function(v)
-        if v then
-            Players.LocalPlayer.Character.Humanoid.WalkSpeed = 100
-        else
-            Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
-        end
-    end,})
-    local input = t2:CreateInput({Name = "test",ClearTextAfterFocusLost = false, Description = "Numbers only, 8 max characters and enter required.",MaxCharacters = 8 ,Numeric = true, Enter = true, Callback = ""})
-    t2:CreateInput({Callback = function(text) print(text) end})
-    local d = t1:CreateDropdown({Name = "test", Options = {"Apples", "Bananas", "Strawberries", "Elixir"}, Description = "MultiOptions", MultipleOptions = true, Callback = function(t) print(t) end, CurrentOption = {"Apples", "Elixir"}})
-    t1:CreateDropdown({Callback = function(t) print(unpack(t)) end})
-    t1:CreateDropdown({Description = "Special Type - Player", Callback = "", SpecialType = "Player"})
-end]]--
 return Luna
