@@ -683,16 +683,102 @@ local VexUI = CreateVexUI()
 -- Main window creation function
 function Vex:CreateWindow(WindowSettings)
     WindowSettings = Kwargify({
-        Name = "Vex Hub",
-        Subtitle = "UI Library",
-        LogoID = "10723434557",
-        LoadingEnabled = true,
-        LoadingTitle = "Vex Hub",
-        LoadingSubtitle = "UI Library",
-        ThemeColor = Color3.fromRGB(65, 105, 225),
-        KeySystem = false,
-        KeySettings = {}
+        Title = "Vex Hub",
+        SubTitle = "",
+        TabWidth = 160,
+        Size = UDim2.new(0, 550, 0, 350),
+        Position = UDim2.new(0.5, -275, 0.5, -175), -- Center by default
+        Acrylic = true, -- Windows 11 style acrylic effect
+        Theme = "Dark"
     }, WindowSettings or {})
+    
+    -- Check if VexUI exists, create if not
+    if not VexUI then
+        -- Create VexUI container
+        VexUI = {
+            Windows = {},
+            Templates = {
+                Elements = Instance.new("Folder")
+            }
+        }
+        
+        -- Set default theme
+        VexTheme = {
+            Window = {
+                Background = Color3.fromRGB(25, 25, 25),
+                Stroke = Color3.fromRGB(60, 60, 60),
+                TabBackground = Color3.fromRGB(20, 20, 20),
+                TabBackgroundSelected = Color3.fromRGB(30, 30, 30),
+                TabText = Color3.fromRGB(240, 240, 240),
+                TabTextSelected = Color3.fromRGB(255, 255, 255),
+                SectionBackground = Color3.fromRGB(30, 30, 30),
+                SectionBackgroundLight = Color3.fromRGB(35, 35, 35)
+            },
+            Elements = {
+                Background = Color3.fromRGB(40, 40, 40),
+                Stroke = Color3.fromRGB(80, 80, 80),
+                Text = Color3.fromRGB(240, 240, 240),
+                SubText = Color3.fromRGB(200, 200, 200),
+                Accent = Color3.fromRGB(65, 105, 225), -- Royal Blue
+                ToggleOn = Color3.fromRGB(65, 105, 225),
+                ToggleOff = Color3.fromRGB(60, 60, 60),
+                SliderBackground = Color3.fromRGB(55, 55, 55),
+                Radius = UDim.new(0, 6)
+            }
+        }
+        
+        -- Apply theme if specified
+        if WindowSettings.Theme and WindowSettings.Theme ~= "Dark" then
+            Vex:SetTheme(WindowSettings.Theme)
+        end
+    end
+    
+    -- Create UI container
+    local VexWindow = Instance.new("ScreenGui")
+    VexWindow.Name = "Vex_" .. HttpService:GenerateGUID(false)
+    VexWindow.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
+    -- Set parent based on environment
+    if syn then
+        syn.protect_gui(VexWindow)
+        VexWindow.Parent = CoreGui
+    elseif gethui then
+        VexWindow.Parent = gethui()
+    elseif CoreGui:FindFirstChild("RobloxGui") then
+        VexWindow.Parent = CoreGui.RobloxGui
+    else
+        VexWindow.Parent = CoreGui
+    end
+    
+    -- Create main window
+    local Main = Instance.new("Frame")
+    Main.Name = "Main"
+    Main.BackgroundColor3 = VexTheme.Window.Background
+    Main.BorderSizePixel = 0
+    Main.Position = WindowSettings.Position
+    Main.Size = WindowSettings.Size
+    Main.ClipsDescendants = true
+    Main.Parent = VexWindow
+    
+    -- Create corner
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 8)
+    MainCorner.Parent = Main
+    
+    -- Create window shadow
+    local MainShadow = Instance.new("ImageLabel")
+    MainShadow.Name = "Shadow"
+    MainShadow.BackgroundTransparency = 1
+    MainShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    MainShadow.Size = UDim2.new(1, 30, 1, 30)
+    MainShadow.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainShadow.ScaleType = Enum.ScaleType.Slice
+    MainShadow.SliceCenter = Rect.new(20, 20, 280, 280)
+    MainShadow.Image = "rbxassetid://5554236805"
+    MainShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    MainShadow.ImageTransparency = 0.6
+    MainShadow.ZIndex = 0
+    MainShadow.Parent = Main
     
     -- Create the window instance
     local WindowInstance = VexUI.WindowTemplate:Clone()
@@ -704,60 +790,57 @@ function Vex:CreateWindow(WindowSettings)
     WindowInstance.TitleBar.Title.Text = WindowSettings.Name
     WindowInstance.TitleBar.Logo.Image = "rbxassetid://" .. WindowSettings.LogoID
     
-    -- Create window object for API
-    local Window = {
-        Instance = WindowInstance,
+    -- Initialize WindowAPI
+    local WindowAPI = {
+        Instance = {
+            Main = Main,
+            TopBar = TitleBar,
+            Container = Content
+        },
+        Settings = WindowSettings,
         Tabs = {},
-        CurrentTab = nil,
-        Visible = true,
-        Settings = WindowSettings
+        CurrentTab = nil
     }
     
-    -- Make window draggable
-    Draggable(WindowInstance, WindowInstance.TitleBar, true)
+    -- Create Window object
+    local Window = setmetatable({}, {
+        __index = WindowAPI
+    })
     
-    -- Apply blur effect
-    BlurModule(WindowInstance)
+    -- Add window to VexUI.Windows array
+    if not VexUI.Windows then
+        VexUI.Windows = {}
+    end
+    table.insert(VexUI.Windows, Window)
     
-    -- Set up window controls
-    WindowInstance.TitleBar.Controls.Close.Interact.MouseButton1Click:Connect(function()
-        tween(WindowInstance, {Position = UDim2.new(0.5, 0, 1.5, 0)}, function()
-            WindowInstance.Visible = false
-        end)
-    end)
+    -- Make the window draggable
+    Window:MakeDraggable()
     
-    WindowInstance.TitleBar.Controls.Minimize.Interact.MouseButton1Click:Connect(function()
-        if Window.Visible then
-            tween(WindowInstance, {Size = UDim2.new(0, WindowInstance.Size.X.Offset, 0, 40)})
-            WindowInstance.Content.Visible = false
-            Window.Visible = false
-        else
-            tween(WindowInstance, {Size = UDim2.new(0, WindowInstance.Size.X.Offset, 0, 400)})
-            WindowInstance.Content.Visible = true
-            Window.Visible = true
-        end
-    end)
+    -- Apply acrylic effect if enabled
+    if WindowSettings.Acrylic then
+        Window:SetAcrylic(true)
+    end
     
-    -- Tab creation function
+    -- Create Tab function
     function Window:CreateTab(TabSettings)
         TabSettings = Kwargify({
-            Name = "Tab",
-            Icon = "home",
-            IconSource = "Material"
+            Title = "Tab",
+            Icon = "home" -- Default icon
         }, TabSettings or {})
         
         -- Create tab button
-        local TabButton = VexUI.Templates.TabTemplate:Clone()
-        TabButton.Name = TabSettings.Name .. "Button"
-        TabButton.Parent = WindowInstance.Content.Navigation.Tabs
-        TabButton.Icon.Image = GetIcon(TabSettings.Icon, TabSettings.IconSource)
-        TabButton.Visible = true
-        TabButton.LayoutOrder = #Window.Tabs + 1
+        local TabButton = Instance.new("Frame")
+        TabButton.Name = "Tab_" .. TabSettings.Title
+        TabButton.BackgroundColor3 = VexTheme.Window.TabBackground
+        TabButton.BackgroundTransparency = 0.8
+        TabButton.Size = UDim2.new(1, 0, 0, 36)
+        TabButton.Position = UDim2.new(0, 0, 0, #Window.Tabs * 36)
+        TabButton.Parent = Navigation.Tabs
         
         -- Create tab page
         local TabPage = VexUI.Templates.PageTemplate:Clone()
         TabPage.Name = TabSettings.Name .. "Page"
-        TabPage.Parent = WindowInstance.Content.Pages
+        TabPage.Parent = Pages
         TabPage.Visible = false
         
         -- Create Tab API
@@ -952,7 +1035,7 @@ local function CreateElementTemplates()
     ButtonTemplate.Name = "ButtonTemplate"
     ButtonTemplate.BackgroundColor3 = VexTheme.Elements.Background
     ButtonTemplate.BackgroundTransparency = 0.5
-    ButtonTemplate.Size = UDim2.new(1, 0, 0, 36)
+    ButtonTemplate.Size = UDim2.new(1, 0, 0, 30) -- Reduced from 36
     ButtonTemplate.Parent = ElementTemplates
     
     local ButtonCorner = Instance.new("UICorner")
@@ -972,7 +1055,7 @@ local function CreateElementTemplates()
     ButtonTitle.Size = UDim2.new(1, -20, 1, 0)
     ButtonTitle.Font = Enum.Font.Gotham
     ButtonTitle.TextColor3 = VexTheme.Elements.Text
-    ButtonTitle.TextSize = 14
+    ButtonTitle.TextSize = 13 -- Reduced from 14
     ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
     ButtonTitle.Text = "Button"
     ButtonTitle.Parent = ButtonTemplate
@@ -989,7 +1072,7 @@ local function CreateElementTemplates()
     ToggleTemplate.Name = "ToggleTemplate"
     ToggleTemplate.BackgroundColor3 = VexTheme.Elements.Background
     ToggleTemplate.BackgroundTransparency = 0.5
-    ToggleTemplate.Size = UDim2.new(1, 0, 0, 36)
+    ToggleTemplate.Size = UDim2.new(1, 0, 0, 30) -- Reduced from 36
     ToggleTemplate.Parent = ElementTemplates
     
     local ToggleCorner = Instance.new("UICorner")
@@ -2459,6 +2542,60 @@ function WindowAPI:SetAcrylic(Enabled)
         self.Instance.Main.BackgroundTransparency = 0
         self.Instance.Main.TopBar.BackgroundTransparency = 0
     end
+end
+
+-- Reset window position and size
+function WindowAPI:Reset()
+    -- Reset window position to center
+    self.Instance.Main.Position = UDim2.new(0.5, -275, 0.5, -175)
+    self.Settings.Position = UDim2.new(0.5, -275, 0.5, -175)
+    
+    -- Reset window size
+    self.Instance.Main.Size = UDim2.new(0, 550, 0, 350)
+    self.Settings.Size = UDim2.new(0, 550, 0, 350)
+    
+    -- Update window
+    self:UpdateTheme()
+    
+    -- Notify user
+    Vex:CreateNotification({
+        Title = "Window Reset",
+        Content = "Window position and size have been reset to default",
+        Duration = 3,
+        Type = "Info"
+    })
+end
+
+-- Make window draggable
+function WindowAPI:MakeDraggable()
+    -- Make window draggable from top bar
+    Draggable(self.Instance.Main, self.Instance.Main.TopBar, true)
+    
+    -- Add drag start and end events
+    local dragging = false
+    
+    self.Instance.Main.TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            tween(self.Instance.Main.TopBar, {BackgroundTransparency = 0.4})
+        end
+    end)
+    
+    self.Instance.Main.TopBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+            
+            -- Update stored position
+            self.Settings.Position = self.Instance.Main.Position
+            
+            -- Reset topbar transparency
+            if self.Settings.Acrylic then
+                tween(self.Instance.Main.TopBar, {BackgroundTransparency = 0.8})
+            else
+                tween(self.Instance.Main.TopBar, {BackgroundTransparency = 0})
+            end
+        end
+    end)
 end
 
 -- Return the Vex library
