@@ -1,50 +1,50 @@
 --[[
-    VexHub UI Library
-    A modern, sleek UI Library for Roblox exploits
-    Inspired by Luna UI Library
+    LunaX UI Library
+    A premium, modern UI Library for Roblox exploits
+    Enhanced version of LunaX with Luna-inspired design
     
-    Version: 1.0.2
+    Version: 2.0.0
 ]]
 
-local VexHub = {
-    Name = "VexHub",
-    Version = "1.0.2",
+local LunaX = {
+    Name = "LunaX",
+    Version = "2.0.0",
     Windows = {},
     ActiveWindow = nil,
     ThemeGradient = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(117, 164, 206)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(123, 201, 201)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(224, 138, 175))
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(140, 120, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(170, 130, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(210, 140, 255))
     }),
     Theme = {
-        Primary = Color3.fromRGB(25, 25, 30),
-        Secondary = Color3.fromRGB(30, 30, 40),
-        Tertiary = Color3.fromRGB(35, 35, 45),
-        Text = Color3.fromRGB(240, 240, 240),
-        TextDark = Color3.fromRGB(175, 175, 175),
-        Accent = Color3.fromRGB(117, 164, 206),
-        DarkAccent = Color3.fromRGB(90, 140, 180),
-        Success = Color3.fromRGB(80, 200, 140),
-        Warning = Color3.fromRGB(240, 175, 70),
-        Error = Color3.fromRGB(240, 80, 100),
-        Transparency = 0.3, -- More transparent for Luna-like glass effect
+        Primary = Color3.fromRGB(18, 18, 24),
+        Secondary = Color3.fromRGB(22, 22, 30),
+        Tertiary = Color3.fromRGB(28, 28, 36),
+        Text = Color3.fromRGB(245, 245, 255),
+        TextDark = Color3.fromRGB(185, 185, 210),
+        Accent = Color3.fromRGB(140, 120, 255),
+        DarkAccent = Color3.fromRGB(110, 90, 220),
+        Success = Color3.fromRGB(70, 210, 130),
+        Warning = Color3.fromRGB(250, 180, 60),
+        Error = Color3.fromRGB(250, 70, 90),
+        Transparency = 0.15, -- More transparent for enhanced Luna-like glass effect
         Blur = true,
-        RoundRadius = UDim.new(0, 8),
-        Font = Enum.Font.Gotham,
-        FontBold = Enum.Font.GothamBold,
-        FontLight = Enum.Font.GothamMedium,
-        SmallTextSize = 12,
-        NormalTextSize = 14,
-        HeaderTextSize = 18,
-        TitleTextSize = 20,
-        IconSize = 20,
-        Padding = 10,
-        ElementHeight = 36,
-        Margin = 8,
-        Easing = Enum.EasingStyle.Quint,
-        Duration = 0.3
+        RoundRadius = UDim.new(0, 10),
+        Font = Enum.Font.GothamSSm,
+        FontBold = Enum.Font.GothamSSm,
+        FontLight = Enum.Font.GothamSSm,
+        SmallTextSize = 13,
+        NormalTextSize = 15,
+        HeaderTextSize = 19,
+        TitleTextSize = 22,
+        IconSize = 22,
+        Padding = 12,
+        ElementHeight = 38,
+        Margin = 10,
+        Easing = Enum.EasingStyle.Cubic,
+        Duration = 0.25
     },
-    Folder = "VexHub",
+    Folder = "LunaX",
     Icons = {},
     DefaultIcons = {
         Home = "rbxassetid://6026568195",
@@ -133,15 +133,15 @@ NotificationLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
 NotificationLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotificationLayout.Parent = NotificationHolder
 
-function VexHub:IsMobile()
+function LunaX:IsMobile()
     return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
 end
 
-function VexHub:IsDesktop()
+function LunaX:IsDesktop()
     return UserInputService.KeyboardEnabled and UserInputService.MouseEnabled
 end
 
-function VexHub:SaveConfig(name, data)
+function LunaX:SaveConfig(name, data)
     if not isfolder(self.Folder) then
         makefolder(self.Folder)
     end
@@ -149,7 +149,7 @@ function VexHub:SaveConfig(name, data)
     writefile(self.Folder.."/"..name..".json", HttpService:JSONEncode(data))
 end
 
-function VexHub:LoadConfig(name)
+function LunaX:LoadConfig(name)
     if isfile(self.Folder.."/"..name..".json") then
         return HttpService:JSONDecode(readfile(self.Folder.."/"..name..".json"))
     end
@@ -159,7 +159,7 @@ end
 function Utility:Lerp(a, b, t)
     -- Add nil checking to prevent "attempt to index nil with 'lerp'" errors
     if a == nil or b == nil or t == nil then
-        warn("VexHub: Lerp received nil argument(s)")
+        warn("LunaX: Lerp received nil argument(s)")
         return a or b or 0
     end
     
@@ -174,7 +174,7 @@ end
 function Utility:CreateTween(instance, properties, duration, easingStyle, easingDirection, repeatCount, reverses, delayTime)
     -- Error checking - make sure instance exists and is valid
     if not instance or typeof(instance) ~= "Instance" then
-        warn("VexHub: CreateTween failed - Invalid instance")
+        warn("LunaX: CreateTween failed - Invalid instance")
         return {
             Play = function() end,
             Cancel = function() end,
@@ -188,14 +188,14 @@ function Utility:CreateTween(instance, properties, duration, easingStyle, easing
     
     -- Handle properties
     if type(properties) ~= "table" then
-        warn("VexHub: CreateTween failed - Invalid properties")
+        warn("LunaX: CreateTween failed - Invalid properties")
         properties = {}
     end
     
     -- Create the tween info
     local info = TweenInfo.new(
-        duration or VexHub.Theme.Duration,
-        easingStyle or VexHub.Theme.Easing,
+        duration or LunaX.Theme.Duration,
+        easingStyle or LunaX.Theme.Easing,
         easingDirection or Enum.EasingDirection.Out,
         repeatCount or 0,
         reverses or false,
@@ -209,7 +209,7 @@ function Utility:CreateTween(instance, properties, duration, easingStyle, easing
     end)
     
     if not success then
-        warn("VexHub: CreateTween error - " .. tostring(err))
+        warn("LunaX: CreateTween error - " .. tostring(err))
         return {
             Play = function() end,
             Cancel = function() end,
@@ -297,7 +297,7 @@ end
 
 function Utility:CreateClickEffect(button, color)
     local effect = Instance.new("Frame")
-    effect.BackgroundColor3 = color or VexHub.Theme.Accent
+    effect.BackgroundColor3 = color or LunaX.Theme.Accent
     effect.BackgroundTransparency = 0.8
     effect.BorderSizePixel = 0
     effect.Size = UDim2.new(0, 0, 0, 0)
@@ -327,10 +327,10 @@ function Utility:CreateClickEffect(button, color)
 end
 
 -- Modern blur effect module for glass-like UI elements
--- Enhanced Luna-style Glass Blur Effectfunction Utility:ApplyBlur(instance, blurSize, transparency)    if not instance then return end        -- Remove existing blur if any    for _, child in ipairs(instance:GetChildren()) do        if (child:IsA("Frame") and child.Name == "BlurFrame") or            (child:IsA("ImageLabel") and child.Name == "LunaGlassBlur") then            child:Destroy()        end    end        blurSize = blurSize or 10    transparency = transparency or 0.85        -- Create Luna-style glass blur    local glassBlur = Instance.new("ImageLabel")    glassBlur.Name = "LunaGlassBlur"    glassBlur.BackgroundTransparency = 1    glassBlur.BorderSizePixel = 0    glassBlur.Size = UDim2.new(1, 0, 1, 0)    glassBlur.ZIndex = instance.ZIndex - 1    glassBlur.Image = "rbxassetid://10929566376" -- Modern blur asset    glassBlur.ImageColor3 = VexHub.Theme.Primary    glassBlur.ImageTransparency = 1 - transparency    glassBlur.ScaleType = Enum.ScaleType.Slice    glassBlur.SliceCenter = Rect.new(10, 10, 118, 118)        -- Add corner if parent has corner    local parentCorner = instance:FindFirstChildOfClass("UICorner")    if parentCorner then        local corner = parentCorner:Clone()        corner.Parent = glassBlur    end        -- Add Luna-style glass gradient with subtle animation    local glassGradient = Instance.new("UIGradient")    glassGradient.Color = ColorSequence.new({        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),        ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 255))    })    glassGradient.Transparency = NumberSequence.new({        NumberSequenceKeypoint.new(0, 0.9),        NumberSequenceKeypoint.new(1, 0.8)    })    glassGradient.Rotation = 45    glassGradient.Parent = glassBlur        glassBlur.Parent = instance        -- Animate the glass gradient    task.spawn(function()        local t = 0        local connection = RunService.RenderStepped:Connect(function(dt)            if not glassGradient or not glassGradient.Parent then                connection:Disconnect()                return            end                        t = t + dt * 0.05            glassGradient.Offset = Vector2.new(math.sin(t) * 0.05, math.cos(t) * 0.05)        end)                if instance then            instance.Destroying:Connect(function()                connection:Disconnect()            end)        end    end)        -- Create Luna-style reveal animation    local fadeIn = TweenService:Create(        glassBlur,        TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),        {ImageTransparency = 1 - transparency}    )        glassBlur.ImageTransparency = 1    fadeIn:Play()        return glassBlur
+-- Enhanced Luna-style Glass Blur Effectfunction Utility:ApplyBlur(instance, blurSize, transparency)    if not instance then return end        -- Remove existing blur if any    for _, child in ipairs(instance:GetChildren()) do        if (child:IsA("Frame") and child.Name == "BlurFrame") or            (child:IsA("ImageLabel") and child.Name == "LunaGlassBlur") then            child:Destroy()        end    end        blurSize = blurSize or 10    transparency = transparency or 0.85        -- Create Luna-style glass blur    local glassBlur = Instance.new("ImageLabel")    glassBlur.Name = "LunaGlassBlur"    glassBlur.BackgroundTransparency = 1    glassBlur.BorderSizePixel = 0    glassBlur.Size = UDim2.new(1, 0, 1, 0)    glassBlur.ZIndex = instance.ZIndex - 1    glassBlur.Image = "rbxassetid://10929566376" -- Modern blur asset    glassBlur.ImageColor3 = LunaX.Theme.Primary    glassBlur.ImageTransparency = 1 - transparency    glassBlur.ScaleType = Enum.ScaleType.Slice    glassBlur.SliceCenter = Rect.new(10, 10, 118, 118)        -- Add corner if parent has corner    local parentCorner = instance:FindFirstChildOfClass("UICorner")    if parentCorner then        local corner = parentCorner:Clone()        corner.Parent = glassBlur    end        -- Add Luna-style glass gradient with subtle animation    local glassGradient = Instance.new("UIGradient")    glassGradient.Color = ColorSequence.new({        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),        ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 255))    })    glassGradient.Transparency = NumberSequence.new({        NumberSequenceKeypoint.new(0, 0.9),        NumberSequenceKeypoint.new(1, 0.8)    })    glassGradient.Rotation = 45    glassGradient.Parent = glassBlur        glassBlur.Parent = instance        -- Animate the glass gradient    task.spawn(function()        local t = 0        local connection = RunService.RenderStepped:Connect(function(dt)            if not glassGradient or not glassGradient.Parent then                connection:Disconnect()                return            end                        t = t + dt * 0.05            glassGradient.Offset = Vector2.new(math.sin(t) * 0.05, math.cos(t) * 0.05)        end)                if instance then            instance.Destroying:Connect(function()                connection:Disconnect()            end)        end    end)        -- Create Luna-style reveal animation    local fadeIn = TweenService:Create(        glassBlur,        TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),        {ImageTransparency = 1 - transparency}    )        glassBlur.ImageTransparency = 1    fadeIn:Play()        return glassBlur
 end
 
-function Utility:CreateAnimatedGradient(instance, color1, color2, speed, rotation)
+function Utility:CreateAnimatedGradient(instance, color1, color2, speed, rotation, style)
     if not instance then return end
     
     -- Remove existing gradient if any
@@ -340,21 +340,52 @@ function Utility:CreateAnimatedGradient(instance, color1, color2, speed, rotatio
         end
     end
     
-    color1 = color1 or VexHub.Theme.Accent
-    color2 = color2 or VexHub.Theme.DarkAccent
+    color1 = color1 or LunaX.Theme.Accent
+    color2 = color2 or LunaX.Theme.DarkAccent
     speed = speed or 1
     rotation = rotation or 0
+    style = style or "Linear" -- New parameter for different animation styles: Linear, Pulse, Wave
     
     local gradient = Instance.new("UIGradient")
     gradient.Name = "AnimatedGradient"
-    gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, color1),
-        ColorSequenceKeypoint.new(1, color2)
-    })
+    
+    -- Enhanced gradient with more keypoints for smoother transitions (Luna-style)
+    if style == "Linear" then
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, color1),
+            ColorSequenceKeypoint.new(0.5, Color3.new(
+                (color1.R + color2.R) / 2,
+                (color1.G + color2.G) / 2,
+                (color1.B + color2.B) / 2
+            )),
+            ColorSequenceKeypoint.new(1, color2)
+        })
+    elseif style == "Pulse" then
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, color1),
+            ColorSequenceKeypoint.new(0.4, color2),
+            ColorSequenceKeypoint.new(0.6, color2),
+            ColorSequenceKeypoint.new(1, color1)
+        })
+    elseif style == "Wave" then
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, color1),
+            ColorSequenceKeypoint.new(0.25, color2),
+            ColorSequenceKeypoint.new(0.5, color1),
+            ColorSequenceKeypoint.new(0.75, color2),
+            ColorSequenceKeypoint.new(1, color1)
+        })
+    else
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, color1),
+            ColorSequenceKeypoint.new(1, color2)
+        })
+    end
+    
     gradient.Rotation = rotation
     gradient.Parent = instance
     
-    -- Animate gradient
+    -- Enhanced Luna-style gradient animation
     task.spawn(function()
         local t = 0
         local connection = RunService.RenderStepped:Connect(function(dt)
@@ -364,7 +395,19 @@ function Utility:CreateAnimatedGradient(instance, color1, color2, speed, rotatio
             end
             
             t = t + dt * speed
-            gradient.Offset = Vector2.new(t % 1, 0)
+            
+            if style == "Linear" then
+                gradient.Offset = Vector2.new(t % 1, 0)
+            elseif style == "Pulse" then
+                -- Pulsing effect that moves back and forth
+                gradient.Offset = Vector2.new(math.sin(t) * 0.5 + 0.5, 0)
+            elseif style == "Wave" then
+                -- Wave effect with smoother motion
+                gradient.Offset = Vector2.new(math.sin(t * 0.5) * 0.2 + (t * 0.1) % 1, 0)
+                gradient.Rotation = rotation + math.sin(t * 0.2) * 5 -- Subtle rotation change
+            else
+                gradient.Offset = Vector2.new(t % 1, 0)
+            end
         end)
         
         instance.Destroying:Connect(function()
@@ -380,9 +423,9 @@ function Utility:ApplyRippleEffect(button, color)
     
     button.MouseButton1Down:Connect(function(x, y)
         local ripple = Instance.new("Frame")
-        ripple.Name = "RippleEffect"
+        ripple.Name = "LunaRippleEffect"
         ripple.AnchorPoint = Vector2.new(0.5, 0.5)
-        ripple.BackgroundColor3 = color or VexHub.Theme.Accent
+        ripple.BackgroundColor3 = color or LunaX.Theme.Accent
         ripple.BackgroundTransparency = 0.7
         ripple.BorderSizePixel = 0
         ripple.Position = UDim2.new(0, x - button.AbsolutePosition.X, 0, y - button.AbsolutePosition.Y)
@@ -392,16 +435,39 @@ function Utility:ApplyRippleEffect(button, color)
         corner.CornerRadius = UDim.new(1, 0)
         corner.Parent = ripple
         
+        -- Add subtle glow to ripple (Luna-style)
+        local rippleGlow = Instance.new("ImageLabel")
+        rippleGlow.Name = "RippleGlow"
+        rippleGlow.BackgroundTransparency = 1
+        rippleGlow.Image = "rbxassetid://6014261993"
+        rippleGlow.ImageColor3 = color or LunaX.Theme.Accent
+        rippleGlow.ImageTransparency = 0.8
+        rippleGlow.Size = UDim2.new(1.2, 0, 1.2, 0)
+        rippleGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+        rippleGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+        rippleGlow.ZIndex = ripple.ZIndex - 1
+        rippleGlow.Parent = ripple
+        
         ripple.Parent = button
         
-        local maxSize = math.max(button.AbsoluteSize.X, button.AbsoluteSize.Y) * 1.5
+        local maxSize = math.max(button.AbsoluteSize.X, button.AbsoluteSize.Y) * 1.8 -- Larger for Luna-style
         
+        -- Enhanced Luna-style animation with smoother easing
         local rippleTween = TweenService:Create(
             ripple,
-            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            TweenInfo.new(0.6, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
             {
                 Size = UDim2.new(0, maxSize, 0, maxSize),
                 BackgroundTransparency = 1
+            }
+        )
+        
+        local glowTween = TweenService:Create(
+            rippleGlow,
+            TweenInfo.new(0.6, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out),
+            {
+                Size = UDim2.new(1.5, 0, 1.5, 0),
+                ImageTransparency = 1
             }
         )
         
@@ -410,6 +476,7 @@ function Utility:ApplyRippleEffect(button, color)
         end)
         
         rippleTween:Play()
+        glowTween:Play()
     end)
 end
 
@@ -423,7 +490,7 @@ function Utility:ApplyGlowEffect(instance, color, size, transparency)
         end
     end
     
-    color = color or VexHub.Theme.Accent
+    color = color or LunaX.Theme.Accent
     size = size or 2
     transparency = transparency or 0.9
     
@@ -475,9 +542,9 @@ function Utility:ApplyGlowEffect(instance, color, size, transparency)
     return glow
 end
 
-function VexHub:Notification(options)    task.spawn(function()        -- Validate and set defaults for options        options = options or {}        local title = options.Title or "Notification"        local text = options.Text or "This is a notification"        local duration = tonumber(options.Duration) or 5        local type = options.Type or "Info" -- Info, Success, Warning, Error        local variant = options.Variant or "Slide" -- Slide, Fade, Pop, Bounce        local callback = (type(options.Callback) == "function") and options.Callback or function() end        local sound = options.Sound ~= false -- Default true        local position = options.Position or "BottomRight" -- TopRight, TopLeft, BottomRight, BottomLeft, Center        local useBlur = options.Blur ~= false -- Use Luna-style glass blur                -- Make sure type is valid        if not (type == "Info" or type == "Success" or type == "Warning" or type == "Error") then            type = "Info"        end                -- Make sure variant is valid        if not (variant == "Slide" or variant == "Fade" or variant == "Pop" or variant == "Bounce") then            variant = "Slide"        end                local colors = {            Info = self.Theme.Accent,            Success = self.Theme.Success,            Warning = self.Theme.Warning,            Error = self.Theme.Error        }                local icons = {            Info = self.DefaultIcons.Info,            Success = self.DefaultIcons.Success,            Warning = self.DefaultIcons.Warning,            Error = self.DefaultIcons.Error        }                -- Play notification sound        if sound then            pcall(function()                local soundIds = {                    Info = "rbxassetid://6026984224",                    Success = "rbxassetid://6026984224",                    Warning = "rbxassetid://6026984224",                    Error = "rbxassetid://6026984224"                }                                local notifSound = Instance.new("Sound")                notifSound.SoundId = soundIds[type]                notifSound.Volume = 0.5                notifSound.Parent = ScreenGui                notifSound:Play()                                game:GetService("Debris"):AddItem(notifSound, 2)            end)        end
+function LunaX:Notification(options)    task.spawn(function()        -- Validate and set defaults for options        options = options or {}        local title = options.Title or "Notification"        local text = options.Text or "This is a notification"        local duration = tonumber(options.Duration) or 5        local type = options.Type or "Info" -- Info, Success, Warning, Error        local variant = options.Variant or "Slide" -- Slide, Fade, Pop, Bounce        local callback = (type(options.Callback) == "function") and options.Callback or function() end        local sound = options.Sound ~= false -- Default true        local position = options.Position or "BottomRight" -- TopRight, TopLeft, BottomRight, BottomLeft, Center        local useBlur = options.Blur ~= false -- Enhanced Luna-style glass blur                -- Make sure type is valid        if not (type == "Info" or type == "Success" or type == "Warning" or type == "Error") then            type = "Info"        end                -- Make sure variant is valid        if not (variant == "Slide" or variant == "Fade" or variant == "Pop" or variant == "Bounce") then            variant = "Slide"        end                local colors = {            Info = self.Theme.Accent,            Success = self.Theme.Success,            Warning = self.Theme.Warning,            Error = self.Theme.Error        }                local icons = {            Info = self.DefaultIcons.Info,            Success = self.DefaultIcons.Success,            Warning = self.DefaultIcons.Warning,            Error = self.DefaultIcons.Error        }                -- Play enhanced notification sounds        if sound then            pcall(function()                local soundIds = {                    Info = "rbxassetid://6026984224",                    Success = "rbxassetid://6026984224",                    Warning = "rbxassetid://6026984224",                    Error = "rbxassetid://6026984224"                }                                local notifSound = Instance.new("Sound")                notifSound.SoundId = soundIds[type]                notifSound.Volume = 0.6                notifSound.Parent = ScreenGui                notifSound:Play()                                game:GetService("Debris"):AddItem(notifSound, 2)            end)        end
         
-        -- Create notification
+        -- Create enhanced Luna-style notification
         local Notification = Instance.new("Frame")
         Notification.Name = "Notification_" .. title
         Notification.BackgroundColor3 = self.Theme.Secondary
@@ -485,6 +552,7 @@ function VexHub:Notification(options)    task.spawn(function()        -- Validat
         Notification.Size = UDim2.new(1, 0, 0, 0)
         Notification.ClipsDescendants = true
         Notification.LayoutOrder = tick()
+        Notification.BackgroundTransparency = 0.1 -- More transparent for Luna-style
         
         -- Set position based on option
         if position == "TopRight" then
@@ -513,7 +581,49 @@ function VexHub:Notification(options)    task.spawn(function()        -- Validat
         Corner.CornerRadius = self.Theme.RoundRadius
         Corner.Parent = Notification
         
-                -- Apply enhanced Luna-style glass blur effect        if useBlur then            -- Add glass-like blur effect for Luna style            local BlurEffect = Instance.new("ImageLabel")            BlurEffect.Name = "BlurEffect"            BlurEffect.BackgroundTransparency = 1            BlurEffect.BorderSizePixel = 0            BlurEffect.Size = UDim2.new(1, 0, 1, 0)            BlurEffect.ZIndex = Notification.ZIndex - 1            BlurEffect.Image = "rbxassetid://10929566376" -- Modern blur asset            BlurEffect.ImageColor3 = Color3.fromRGB(20, 20, 25)            BlurEffect.ImageTransparency = 0.2            BlurEffect.ScaleType = Enum.ScaleType.Slice            BlurEffect.SliceCenter = Rect.new(10, 10, 118, 118)            BlurEffect.Parent = Notification                        -- Add corner to blur            local BlurCorner = Instance.new("UICorner")            BlurCorner.CornerRadius = self.Theme.RoundRadius            BlurCorner.Parent = BlurEffect                        -- Add subtle animated gradient for glass effect            local BlurGradient = Instance.new("UIGradient")            BlurGradient.Color = ColorSequence.new({                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),                ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 255))            })            BlurGradient.Transparency = NumberSequence.new({                NumberSequenceKeypoint.new(0, 0.95),                NumberSequenceKeypoint.new(1, 0.85)            })            BlurGradient.Rotation = 45            BlurGradient.Parent = BlurEffect                        -- Animate the blur gradient            task.spawn(function()                local t = 0                local connection = RunService.RenderStepped:Connect(function(dt)                    if not BlurGradient or not BlurGradient.Parent then                        connection:Disconnect()                        return                    end                                        t = t + dt * 0.1                    BlurGradient.Offset = Vector2.new(math.sin(t) * 0.1, math.cos(t) * 0.1)                end)                                task.delay(duration + 2, function()                    connection:Disconnect()                end)            end)        end
+                -- Apply enhanced Luna-style glass blur effect
+        if useBlur then
+            -- Use our enhanced blur function for Luna-style glass effect
+            local blurContainer = Utility:ApplyModernBlur(Notification, 20, 0.7)
+            
+            -- Add subtle border glow specific to notifications
+            local borderGlow = Instance.new("ImageLabel")
+            borderGlow.Name = "NotificationBorderGlow"
+            borderGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+            borderGlow.BackgroundTransparency = 1
+            borderGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+            borderGlow.Size = UDim2.new(1.03, 0, 1.05, 0)
+            borderGlow.Image = "rbxassetid://6014261993" -- Radial gradient
+            borderGlow.ImageColor3 = colors[type]
+            borderGlow.ImageTransparency = 0.9
+            borderGlow.ScaleType = Enum.ScaleType.Stretch
+            borderGlow.ZIndex = Notification.ZIndex - 3
+            borderGlow.Parent = Notification
+            
+            -- Add corner to border glow
+            local glowCorner = Instance.new("UICorner")
+            glowCorner.CornerRadius = self.Theme.RoundRadius
+            glowCorner.Parent = borderGlow
+            
+            -- Animate the border glow
+            task.spawn(function()
+                local t = 0
+                local connection = RunService.RenderStepped:Connect(function(dt)
+                    if not borderGlow or not borderGlow.Parent then
+                        connection:Disconnect()
+                        return
+                    end
+                    
+                    t = t + dt * 0.5
+                    local pulse = 0.9 + math.sin(t) * 0.05
+                    borderGlow.ImageTransparency = pulse
+                end)
+                
+                task.delay(duration + 2, function()
+                    connection:Disconnect()
+                end)
+            end)
+        end
         
         -- Create accent line
         local Accent = Instance.new("Frame")
@@ -774,9 +884,9 @@ function VexHub:Notification(options)    task.spawn(function()        -- Validat
     end)
 end
 
-function VexHub:CreateWindow(options)
+function LunaX:CreateWindow(options)
     options = options or {}
-    local title = options.Title or "VexHub"
+    local title = options.Title or "LunaX"
     local size = options.Size or UDim2.new(0, 600, 0, 400)
     local position = options.Position
     local resize = options.Resizable == nil and true or options.Resizable
@@ -1225,13 +1335,13 @@ function VexHub:CreateWindow(options)
         return TabObj
     end
     
-        -- Improved tab selection with Luna-like animations    WindowObj.SelectTab = function(self, tabName)        if not self.Tabs[tabName] then            warn("VexHub: Tab '" .. tabName .. "' doesn't exist!")            return        end                if self.ActiveTab then            local lastTab = self.ActiveTab                        -- Luna-style deselection animations            Utility:CreateTween(lastTab.Instance, {BackgroundTransparency = 1}):Play()            Utility:CreateTween(lastTab.UIStroke, {Transparency = 1}):Play()            Utility:CreateTween(lastTab.Icon, {ImageColor3 = self.Theme.TextDark}):Play()            Utility:CreateTween(lastTab.Label, {TextColor3 = self.Theme.TextDark}):Play()            Utility:CreateTween(lastTab.DropShadow, {ImageTransparency = 1}):Play()                        -- Hide last tab content with fade            Utility:CreateTween(lastTab.Page, {ScrollBarImageTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()            task.delay(0.1, function()                if self.ActiveTab ~= lastTab then                    lastTab.Page.Visible = false                end            end)                        -- Remove highlight if exists            if lastTab.Instance:FindFirstChild("Highlight") then                lastTab.Instance.Highlight:Destroy()            end                        -- Remove old tab glow            if lastTab.Instance:FindFirstChild("TabGlow") then                lastTab.Instance.TabGlow:Destroy()            end        end                local newTab = self.Tabs[tabName]        self.ActiveTab = newTab                -- Enhanced Luna-style selection animations        Utility:CreateTween(newTab.Instance, {BackgroundTransparency = 0.8, BackgroundColor3 = self.Theme.Accent}):Play()        Utility:CreateTween(newTab.UIStroke, {Transparency = 0.2}):Play()        Utility:CreateTween(newTab.Icon, {ImageColor3 = Color3.fromRGB(255, 255, 255)}):Play()        Utility:CreateTween(newTab.Label, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()        Utility:CreateTween(newTab.DropShadow, {ImageTransparency = 0.7, Size = UDim2.new(1, 36, 1, 36)}):Play()                -- Add a subtle glow effect to the selected tab (Luna-style)        local glow = Instance.new("ImageLabel")        glow.Name = "TabGlow"        glow.BackgroundTransparency = 1        glow.Position = UDim2.new(0.5, 0, 0.5, 0)        glow.Size = UDim2.new(1.2, 0, 1.2, 0)        glow.SizeConstraint = Enum.SizeConstraint.RelativeYY        glow.AnchorPoint = Vector2.new(0.5, 0.5)        glow.ZIndex = newTab.Instance.ZIndex - 1        glow.Image = "rbxassetid://6014261993"        glow.ImageColor3 = self.Theme.Accent        glow.ImageTransparency = 0.8        glow.Parent = newTab.Instance                -- Create pulsing animation        task.spawn(function()            while glow and glow.Parent do                Utility:CreateTween(glow, {ImageTransparency = 0.85}, 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut):Play()                wait(1.2)                if not glow or not glow.Parent then break end                Utility:CreateTween(glow, {ImageTransparency = 0.75}, 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut):Play()                wait(1.2)            end        end)                -- Show new tab content with fade-in        newTab.Page.Visible = true        Utility:CreateTween(newTab.Page, {ScrollBarImageTransparency = 0}, 0.3, Enum.EasingStyle.Quad):Play()                -- Enhanced Luna-style highlight bar        local highlight = Instance.new("Frame")        highlight.Name = "Highlight"        highlight.BackgroundColor3 = self.Theme.Accent        highlight.BackgroundTransparency = 0.5        highlight.BorderSizePixel = 0        highlight.Size = UDim2.new(0, 3, 1, -10)        highlight.Position = UDim2.new(0, 2, 0, 5)        highlight.Parent = newTab.Instance                -- Add a corner to the highlight        local highlightCorner = Instance.new("UICorner")        highlightCorner.CornerRadius = UDim.new(0, 2)        highlightCorner.Parent = highlight                -- Add Luna-style highlight gradient        local highlightGradient = Instance.new("UIGradient")        highlightGradient.Color = ColorSequence.new({            ColorSequenceKeypoint.new(0, self.Theme.Accent),            ColorSequenceKeypoint.new(1, Color3.fromRGB(                math.clamp(self.Theme.Accent.R * 1.4 * 255, 0, 255),                math.clamp(self.Theme.Accent.G * 1.4 * 255, 0, 255),                math.clamp(self.Theme.Accent.B * 1.4 * 255, 0, 255)            ))        })        highlightGradient.Rotation = 90        highlightGradient.Parent = highlight                -- Create pulsing animation for the highlight        task.spawn(function()            local t = 0            local connection = RunService.RenderStepped:Connect(function(dt)                if not highlight or not highlight.Parent then                    connection:Disconnect()                    return                end                                t = t + dt                highlightGradient.Offset = Vector2.new(0, math.sin(t * 1.5) * 0.2)            end)                        if newTab.Instance then                newTab.Instance.Destroying:Connect(function()                    connection:Disconnect()                end)            end        end)                -- Use the new TabIndicator from our Animations module if it exists
+        -- Improved tab selection with Luna-like animations    WindowObj.SelectTab = function(self, tabName)        if not self.Tabs[tabName] then            warn("LunaX: Tab '" .. tabName .. "' doesn't exist!")            return        end                if self.ActiveTab then            local lastTab = self.ActiveTab                        -- Luna-style deselection animations            Utility:CreateTween(lastTab.Instance, {BackgroundTransparency = 1}):Play()            Utility:CreateTween(lastTab.UIStroke, {Transparency = 1}):Play()            Utility:CreateTween(lastTab.Icon, {ImageColor3 = self.Theme.TextDark}):Play()            Utility:CreateTween(lastTab.Label, {TextColor3 = self.Theme.TextDark}):Play()            Utility:CreateTween(lastTab.DropShadow, {ImageTransparency = 1}):Play()                        -- Hide last tab content with fade            Utility:CreateTween(lastTab.Page, {ScrollBarImageTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()            task.delay(0.1, function()                if self.ActiveTab ~= lastTab then                    lastTab.Page.Visible = false                end            end)                        -- Remove highlight if exists            if lastTab.Instance:FindFirstChild("Highlight") then                lastTab.Instance.Highlight:Destroy()            end                        -- Remove old tab glow            if lastTab.Instance:FindFirstChild("TabGlow") then                lastTab.Instance.TabGlow:Destroy()            end        end                local newTab = self.Tabs[tabName]        self.ActiveTab = newTab                -- Enhanced Luna-style selection animations        Utility:CreateTween(newTab.Instance, {BackgroundTransparency = 0.8, BackgroundColor3 = self.Theme.Accent}):Play()        Utility:CreateTween(newTab.UIStroke, {Transparency = 0.2}):Play()        Utility:CreateTween(newTab.Icon, {ImageColor3 = Color3.fromRGB(255, 255, 255)}):Play()        Utility:CreateTween(newTab.Label, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()        Utility:CreateTween(newTab.DropShadow, {ImageTransparency = 0.7, Size = UDim2.new(1, 36, 1, 36)}):Play()                -- Add a subtle glow effect to the selected tab (Luna-style)        local glow = Instance.new("ImageLabel")        glow.Name = "TabGlow"        glow.BackgroundTransparency = 1        glow.Position = UDim2.new(0.5, 0, 0.5, 0)        glow.Size = UDim2.new(1.2, 0, 1.2, 0)        glow.SizeConstraint = Enum.SizeConstraint.RelativeYY        glow.AnchorPoint = Vector2.new(0.5, 0.5)        glow.ZIndex = newTab.Instance.ZIndex - 1        glow.Image = "rbxassetid://6014261993"        glow.ImageColor3 = self.Theme.Accent        glow.ImageTransparency = 0.8        glow.Parent = newTab.Instance                -- Create pulsing animation        task.spawn(function()            while glow and glow.Parent do                Utility:CreateTween(glow, {ImageTransparency = 0.85}, 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut):Play()                wait(1.2)                if not glow or not glow.Parent then break end                Utility:CreateTween(glow, {ImageTransparency = 0.75}, 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut):Play()                wait(1.2)            end        end)                -- Show new tab content with fade-in        newTab.Page.Visible = true        Utility:CreateTween(newTab.Page, {ScrollBarImageTransparency = 0}, 0.3, Enum.EasingStyle.Quad):Play()                -- Enhanced Luna-style highlight bar        local highlight = Instance.new("Frame")        highlight.Name = "Highlight"        highlight.BackgroundColor3 = self.Theme.Accent        highlight.BackgroundTransparency = 0.5        highlight.BorderSizePixel = 0        highlight.Size = UDim2.new(0, 3, 1, -10)        highlight.Position = UDim2.new(0, 2, 0, 5)        highlight.Parent = newTab.Instance                -- Add a corner to the highlight        local highlightCorner = Instance.new("UICorner")        highlightCorner.CornerRadius = UDim.new(0, 2)        highlightCorner.Parent = highlight                -- Add Luna-style highlight gradient        local highlightGradient = Instance.new("UIGradient")        highlightGradient.Color = ColorSequence.new({            ColorSequenceKeypoint.new(0, self.Theme.Accent),            ColorSequenceKeypoint.new(1, Color3.fromRGB(                math.clamp(self.Theme.Accent.R * 1.4 * 255, 0, 255),                math.clamp(self.Theme.Accent.G * 1.4 * 255, 0, 255),                math.clamp(self.Theme.Accent.B * 1.4 * 255, 0, 255)            ))        })        highlightGradient.Rotation = 90        highlightGradient.Parent = highlight                -- Create pulsing animation for the highlight        task.spawn(function()            local t = 0            local connection = RunService.RenderStepped:Connect(function(dt)                if not highlight or not highlight.Parent then                    connection:Disconnect()                    return                end                                t = t + dt                highlightGradient.Offset = Vector2.new(0, math.sin(t * 1.5) * 0.2)            end)                        if newTab.Instance then                newTab.Instance.Destroying:Connect(function()                    connection:Disconnect()                end)            end        end)                -- Use the new TabIndicator from our Animations module if it exists
         -- Use pcall to prevent errors if the function doesn't exist
         pcall(function()
             -- Check if we already have a tab indicator
             if not WindowObj.TabIndicator then
                 -- Create a new tab indicator
-                WindowObj.TabIndicator = VexHub.Animations.CreateTabIndicator(WindowObj.TabList, newTab.Instance)
+                WindowObj.TabIndicator = LunaX.Animations.CreateTabIndicator(WindowObj.TabList, newTab.Instance)
             else
                 -- Update existing tab indicator
                 WindowObj.TabIndicator.SetActiveTab(newTab.Instance)
@@ -1255,7 +1365,7 @@ end
 -- UI Elements
 
 -- Create a section
-function VexHub:CreateSection(tab, options)
+function LunaX:CreateSection(tab, options)
     options = options or {}
     local title = options.Title or "Section"
     local paddingTop = options.PaddingTop or 5
@@ -1344,7 +1454,7 @@ function VexHub:CreateSection(tab, options)
 end
 
 -- Create a button
-function VexHub:CreateButton(parent, options)
+function LunaX:CreateButton(parent, options)
     options = options or {}
     local text = options.Text or "Button"
     local icon = options.Icon
@@ -1509,7 +1619,7 @@ function VexHub:CreateButton(parent, options)
 end
 
 -- Create a toggle
-function VexHub:CreateToggle(parent, options)
+function LunaX:CreateToggle(parent, options)
     options = options or {}
     local text = options.Text or "Toggle"
     local default = options.Default or false
@@ -1690,7 +1800,7 @@ function VexHub:CreateToggle(parent, options)
 end
 
 -- Create a label
-function VexHub:CreateLabel(parent, options)
+function LunaX:CreateLabel(parent, options)
     options = options or {}
     local text = options.Text or "Label"
     local centered = options.Centered or false
@@ -1754,7 +1864,7 @@ function VexHub:CreateLabel(parent, options)
 end
 
 -- Create a slider
-function VexHub:CreateSlider(parent, options)
+function LunaX:CreateSlider(parent, options)
     options = options or {}
     local text = options.Text or "Slider"
     local min = options.Min or 0
@@ -2000,7 +2110,7 @@ function VexHub:CreateSlider(parent, options)
 end
 
 -- Create a dropdown
-function VexHub:CreateDropdown(parent, options)
+function LunaX:CreateDropdown(parent, options)
     options = options or {}
     local text = options.Text or "Dropdown"
     local items = options.Items or {}
@@ -2377,7 +2487,7 @@ function VexHub:CreateDropdown(parent, options)
 end
 
 -- Create a textbox
-function VexHub:CreateTextbox(parent, options)
+function LunaX:CreateTextbox(parent, options)
     options = options or {}
     local text = options.Text or "Textbox"
     local placeholder = options.Placeholder or "Enter text..."
@@ -2557,7 +2667,7 @@ function VexHub:CreateTextbox(parent, options)
 end
 
 -- Create a color picker
-function VexHub:CreateColorPicker(parent, options)
+function LunaX:CreateColorPicker(parent, options)
     options = options or {}
     local text = options.Text or "Color Picker"
     local default = options.Default or Color3.fromRGB(255, 255, 255)
@@ -3032,8 +3142,8 @@ function VexHub:CreateColorPicker(parent, options)
                 -- Return current gradient data
                 return {
                     Type = self.GradientType or "Static",
-                    StartColor = self.GradientStartColor or VexHub.Theme.Accent,
-                    EndColor = self.GradientEndColor or VexHub.Theme.DarkAccent,
+                    StartColor = self.GradientStartColor or LunaX.Theme.Accent,
+                    EndColor = self.GradientEndColor or LunaX.Theme.DarkAccent,
                     Speed = self.GradientSpeed or 1,
                     Direction = self.GradientDirection or "Horizontal",
                     Enabled = true
@@ -3115,8 +3225,8 @@ function VexHub:CreateColorPicker(parent, options)
     return ColorPickerObj
 end
 
--- VexHub Themes and Effects System
-VexHub.Themes = {
+-- LunaX Themes and Effects System
+LunaX.Themes = {
     Default = {
         Primary = Color3.fromRGB(30, 30, 30),
         Secondary = Color3.fromRGB(25, 25, 25),
@@ -3327,7 +3437,7 @@ VexHub.Themes = {
 }
 
 -- Effects system for UI elements
-VexHub.Effects = {
+LunaX.Effects = {
     ApplyBlur = function(instance, blurSize, transparency)
         local blur = Instance.new("BlurEffect")
         blur.Size = blurSize or 10
@@ -3404,8 +3514,8 @@ VexHub.Effects = {
         gradient.Name = "VexGradient"
         
         -- Default values
-        color1 = color1 or VexHub.Theme.Accent
-        color2 = color2 or VexHub.Theme.DarkAccent
+        color1 = color1 or LunaX.Theme.Accent
+        color2 = color2 or LunaX.Theme.DarkAccent
         rotation = rotation or 0
         
         if style == "Rainbow" then
@@ -3496,7 +3606,7 @@ VexHub.Effects = {
         local elevationSettings
         
         if type(elevation) == "string" then
-            elevationSettings = VexHub.Theme.Elevation[elevation]
+            elevationSettings = LunaX.Theme.Elevation[elevation]
         else
             elevationSettings = elevation
         end
@@ -3525,7 +3635,7 @@ VexHub.Effects = {
         if not instance then return end
         
         position = position or UDim2.new(0.5, 0, 0.5, 0)
-        color = color or VexHub.Theme.Accent
+        color = color or LunaX.Theme.Accent
         size = size or UDim2.new(1.5, 0, 1.5, 0)
         duration = duration or 0.5
         
@@ -3569,7 +3679,7 @@ VexHub.Effects = {
             end
         end
         
-        color = color or VexHub.Theme.Accent
+        color = color or LunaX.Theme.Accent
         thickness = thickness or 1
         transparency = transparency or 0
         
@@ -3629,7 +3739,7 @@ VexHub.Effects = {
 }
 
 -- Enhanced Luna-style animations module
-VexHub.Animations = {
+LunaX.Animations = {
     -- Modern animation presets
     Presets = {
         Bounce = TweenInfo.new(0.5, Enum.EasingStyle.Bounce),
@@ -3684,7 +3794,7 @@ VexHub.Animations = {
         dotHolder.Parent = parent
         
         local dots = {}
-        color = color or VexHub.Theme.Accent
+        color = color or LunaX.Theme.Accent
         
         for i = 1, 3 do
             local dot = Instance.new("Frame")
@@ -3761,7 +3871,7 @@ VexHub.Animations = {
     -- Create Luna-style loading spinner
     CreateSpinner = function(parent, size, color)
         size = size or UDim2.new(0, 40, 0, 40)
-        color = color or VexHub.Theme.Accent
+        color = color or LunaX.Theme.Accent
         
         local spinner = Instance.new("Frame")
         spinner.Name = "Spinner"
@@ -3852,7 +3962,7 @@ VexHub.Animations = {
     -- Luna-style hover effect for buttons and UI elements
     ApplyHoverEffect = function(instance, options)
         options = options or {}
-        local hoverColor = options.HoverColor or VexHub.Theme.Accent
+        local hoverColor = options.HoverColor or LunaX.Theme.Accent
         local normalColor = options.NormalColor or instance.BackgroundColor3
         local hoverTransparency = options.HoverTransparency or math.max(0, instance.BackgroundTransparency - 0.1)
         local normalTransparency = options.NormalTransparency or instance.BackgroundTransparency
@@ -3986,7 +4096,7 @@ VexHub.Animations = {
     CreateTabIndicator = function(parent, activeTab)
         local indicator = Instance.new("Frame")
         indicator.Name = "TabIndicator"
-        indicator.BackgroundColor3 = VexHub.Theme.Accent
+        indicator.BackgroundColor3 = LunaX.Theme.Accent
         indicator.BorderSizePixel = 0
         indicator.Size = UDim2.new(0, 25, 0, 3)
         indicator.AnchorPoint = Vector2.new(0.5, 1)
@@ -3997,7 +4107,7 @@ VexHub.Animations = {
         glow.Name = "Glow"
         glow.BackgroundTransparency = 1
         glow.Image = "rbxassetid://4996891970" -- Radial gradient
-        glow.ImageColor3 = VexHub.Theme.Accent
+        glow.ImageColor3 = LunaX.Theme.Accent
         glow.ImageTransparency = 0.7
         glow.Size = UDim2.new(1, 14, 3, 0)
         glow.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -4007,7 +4117,7 @@ VexHub.Animations = {
         
         -- Apply gradient if theme uses gradient
         local gradient = Instance.new("UIGradient")
-        gradient.Color = VexHub.ThemeGradient
+        gradient.Color = LunaX.ThemeGradient
         gradient.Offset = Vector2.new(0, 0)
         gradient.Rotation = 90
         gradient.Parent = indicator
@@ -4065,24 +4175,24 @@ VexHub.Animations = {
     end
 }
 
--- Modern blurred glass effect for Luna-like UI
+-- Enhanced Luna-style glass blur effect
 function Utility:ApplyModernBlur(instance, strength, transparency)
     if not instance then return end
     
     -- Clean any existing blur effects
     for _, child in ipairs(instance:GetChildren()) do
-        if (child:IsA("Frame") and child.Name == "ModernBlurFrame") or
-           (child:IsA("ImageLabel") and child.Name == "ModernBlurEffect") then
+        if (child:IsA("Frame") and child.Name == "LunaBlurFrame") or
+           (child:IsA("ImageLabel") and child.Name:match("LunaBlurEffect")) then
             child:Destroy()
         end
     end
     
-    strength = strength or 10
-    transparency = transparency or 0.85
+    strength = strength or 15 -- Increased strength for more Luna-like effect
+    transparency = transparency or 0.75 -- Less transparent for better glass effect
     
     -- Create Luna-style container
     local blurContainer = Instance.new("Frame")
-    blurContainer.Name = "ModernBlurFrame"
+    blurContainer.Name = "LunaBlurFrame"
     blurContainer.BackgroundTransparency = 1
     blurContainer.BorderSizePixel = 0
     blurContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -4091,40 +4201,78 @@ function Utility:ApplyModernBlur(instance, strength, transparency)
     
     -- Primary blur effect (stronger in center)
     local primaryBlur = Instance.new("ImageLabel")
-    primaryBlur.Name = "PrimaryBlurEffect"
+    primaryBlur.Name = "LunaBlurEffectPrimary"
     primaryBlur.AnchorPoint = Vector2.new(0.5, 0.5)
     primaryBlur.BackgroundTransparency = 1
     primaryBlur.Position = UDim2.new(0.5, 0, 0.5, 0)
     primaryBlur.Size = UDim2.new(1, 0, 1, 0)
     primaryBlur.Image = "rbxassetid://10929566376" -- Modern blur asset
-    primaryBlur.ImageColor3 = Color3.fromRGB(15, 15, 20)
+    primaryBlur.ImageColor3 = Color3.fromRGB(10, 10, 18) -- Darker for better contrast
     primaryBlur.ImageTransparency = transparency
     primaryBlur.ScaleType = Enum.ScaleType.Stretch
     primaryBlur.Parent = blurContainer
+    
+    -- Secondary blur for enhanced depth effect (Luna-style)
+    local secondaryBlur = Instance.new("ImageLabel")
+    secondaryBlur.Name = "LunaBlurEffectSecondary"
+    secondaryBlur.AnchorPoint = Vector2.new(0.5, 0.5)
+    secondaryBlur.BackgroundTransparency = 1
+    secondaryBlur.Position = UDim2.new(0.5, 0, 0.5, 0)
+    secondaryBlur.Size = UDim2.new(1.05, 0, 1.05, 0) -- Slightly larger
+    secondaryBlur.Image = "rbxassetid://10929566376"
+    secondaryBlur.ImageColor3 = Color3.fromRGB(5, 5, 15) -- Even darker
+    secondaryBlur.ImageTransparency = transparency + 0.1
+    secondaryBlur.ScaleType = Enum.ScaleType.Stretch
+    secondaryBlur.ZIndex = primaryBlur.ZIndex - 1
+    secondaryBlur.Parent = blurContainer
     
     -- Add corner if parent has corner
     local parentCorner = instance:FindFirstChildOfClass("UICorner")
     if parentCorner then
         local primaryCorner = parentCorner:Clone()
         primaryCorner.Parent = primaryBlur
+        
+        local secondaryCorner = parentCorner:Clone()
+        secondaryCorner.Parent = secondaryBlur
     end
     
-    -- Animated gradient effect for glass shimmer
+    -- Add subtle border glow (Luna-style)
+    local borderGlow = Instance.new("ImageLabel")
+    borderGlow.Name = "LunaBorderGlow"
+    borderGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+    borderGlow.BackgroundTransparency = 1
+    borderGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    borderGlow.Size = UDim2.new(1.02, 0, 1.02, 0)
+    borderGlow.Image = "rbxassetid://6014261993" -- Radial gradient
+    borderGlow.ImageColor3 = LunaX.Theme.Accent
+    borderGlow.ImageTransparency = 0.92
+    borderGlow.ScaleType = Enum.ScaleType.Stretch
+    borderGlow.ZIndex = primaryBlur.ZIndex - 2
+    borderGlow.Parent = blurContainer
+    
+    if parentCorner then
+        local glowCorner = parentCorner:Clone()
+        glowCorner.Parent = borderGlow
+    end
+    
+    -- Animated gradient effect for glass shimmer (enhanced Luna-style)
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(220, 220, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 230))
+        ColorSequenceKeypoint.new(0.3, Color3.fromRGB(230, 230, 255)),
+        ColorSequenceKeypoint.new(0.7, Color3.fromRGB(210, 210, 250)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 180, 240))
     })
     gradient.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.95),
-        NumberSequenceKeypoint.new(0.5, 0.9),
-        NumberSequenceKeypoint.new(1, 0.95)
+        NumberSequenceKeypoint.new(0, 0.97),
+        NumberSequenceKeypoint.new(0.3, 0.94),
+        NumberSequenceKeypoint.new(0.7, 0.96),
+        NumberSequenceKeypoint.new(1, 0.98)
     })
     gradient.Rotation = 45
     gradient.Parent = primaryBlur
     
-    -- Create subtle animation
+    -- Create subtle animation with Luna-like smoothness
     task.spawn(function()
         local t = 0
         local connection = RunService.RenderStepped:Connect(function(dt)
@@ -4133,8 +4281,15 @@ function Utility:ApplyModernBlur(instance, strength, transparency)
                 return
             end
             
-            t = t + dt * 0.3
-            gradient.Offset = Vector2.new(math.sin(t) * 0.1, math.cos(t * 0.7) * 0.1)
+            -- Slower, smoother animation for Luna-like effect
+            t = t + dt * 0.15
+            gradient.Offset = Vector2.new(math.sin(t) * 0.08, math.cos(t * 0.5) * 0.08)
+            
+            -- Subtle pulsing for border glow
+            if borderGlow and borderGlow.Parent then
+                local pulse = 0.92 + math.sin(t * 0.7) * 0.03
+                borderGlow.ImageTransparency = pulse
+            end
         end)
         
         if instance then
@@ -4148,4 +4303,4 @@ function Utility:ApplyModernBlur(instance, strength, transparency)
 end
 
 -- Return the library
-return VexHub
+return LunaX
