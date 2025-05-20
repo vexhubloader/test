@@ -76,13 +76,7 @@ local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local TextService = game:GetService("TextService")
 
--- Local variables
-local Utility = {}
-local Tweens = {}
-local Player = Players.LocalPlayer
-local Mouse = Player:GetMouse()
-local Camera = workspace.CurrentCamera
-local ScreenGui
+-- Local variableslocal Utility = {}local Tweens = {}local Player = Players.LocalPlayerlocal Mouse = Player and Player:GetMouse() or {X = 0, Y = 0}local Camera = workspace.CurrentCameralocal ScreenGui-- Error handling for key operationslocal function safeDestroy(instance)    if instance and typeof(instance) == "Instance" then        pcall(function()            instance:Destroy()        end)    endendlocal function safeSetParent(instance, parent)    if instance and typeof(instance) == "Instance" then        pcall(function()            instance.Parent = parent        end)    endend-- Function to check if an instance still existslocal function instanceExists(instance)    if instance and typeof(instance) == "Instance" then        return pcall(function() return instance.Parent end)    end    return falseend-- Safe disconnect function for event connectionslocal function safeDisconnect(connection)    if connection and typeof(connection) == "RBXScriptConnection" then        pcall(function()            if connection.Connected then                connection:Disconnect()            end        end)    endend
 
 -- Create the main GUI with secure loadup
 local function createMainGui()
@@ -170,20 +164,7 @@ function Utility:Round(number, decimalPlaces)
     return math.floor(number * multiplier + 0.5) / multiplier
 end
 
-function Utility:CreateTween(instance, properties, duration, easingStyle, easingDirection, repeatCount, reverses, delayTime)
-    local info = TweenInfo.new(
-        duration or VexHub.Theme.Duration,
-        easingStyle or VexHub.Theme.Easing,
-        easingDirection or Enum.EasingDirection.Out,
-        repeatCount or 0,
-        reverses or false,
-        delayTime or 0
-    )
-    
-    local tween = TweenService:Create(instance, info, properties)
-    table.insert(Tweens, tween)
-    return tween
-end
+function Utility:CreateTween(instance, properties, duration, easingStyle, easingDirection, repeatCount, reverses, delayTime)    -- Error checking - make sure instance exists and is valid    if not instance or typeof(instance) ~= "Instance" then        warn("VexHub: CreateTween failed - Invalid instance")        return {            Play = function() end,            Cancel = function() end,            Pause = function() end,            Completed = {                Wait = function() end,                Connect = function() return {Disconnect = function() end} end            }        }    end        -- Handle properties    if type(properties) ~= "table" then        warn("VexHub: CreateTween failed - Invalid properties")        properties = {}    end        -- Create the tween info    local info = TweenInfo.new(        duration or VexHub.Theme.Duration,        easingStyle or VexHub.Theme.Easing,        easingDirection or Enum.EasingDirection.Out,        repeatCount or 0,        reverses or false,        delayTime or 0    )        -- Create and store the tween safely    local tween    local success, err = pcall(function()        tween = TweenService:Create(instance, info, properties)    end)        if not success then        warn("VexHub: CreateTween error - " .. tostring(err))        return {            Play = function() end,            Cancel = function() end,            Pause = function() end,            Completed = {                Wait = function() end,                Connect = function() return {Disconnect = function() end} end            }        }    end        -- Clean up old tweens to avoid memory leaks    for i, oldTween in pairs(Tweens) do        if oldTween.Instance == instance then            -- Try to stop and remove old tweens for this instance            pcall(function()                 if oldTween.PlaybackState == Enum.PlaybackState.Playing then                    oldTween:Cancel()                end            end)            table.remove(Tweens, i)        end    end        -- Store the new tween    table.insert(Tweens, tween)        -- Create a safer tween wrapper    local safeTween = {        _tween = tween,        Instance = instance,        Properties = properties,                Play = function(self)            if instanceExists(instance) then                pcall(function() tween:Play() end)            end            return self        end,                Cancel = function(self)            pcall(function() tween:Cancel() end)            return self        end,                Pause = function(self)            pcall(function() tween:Pause() end)            return self        end,                Completed = {            Wait = function()                pcall(function() tween.Completed:Wait() end)            end,                        Connect = function(_, callback)                local connection                pcall(function()                    connection = tween.Completed:Connect(function()                        if callback then callback() end                    end)                end)                                return {                    Disconnect = function()                        if connection then                            pcall(function() connection:Disconnect() end)                        end                    end                }            end        }    }        return safeTweenend
 
 function Utility:GetTextSize(text, size, font)
     return TextService:GetTextSize(text, size, font, Vector2.new(math.huge, math.huge))
@@ -735,15 +716,7 @@ function VexHub:CreateWindow(options)
     local maxSize = options.MaxSize
     local tabs = options.Tabs or {}
     
-    -- Create window container
-    local Window = Instance.new("Frame")
-    Window.Name = title
-    Window.BackgroundColor3 = self.Theme.Primary
-    Window.BorderSizePixel = 0
-    Window.Position = position or UDim2.new(0.5, -size.X.Offset / 2, 0.5, -size.Y.Offset / 2)
-    Window.Size = size
-    Window.Parent = ScreenGui
-    Window.ClipsDescendants = true
+    -- Create window container with error handling    local Window    pcall(function()        Window = Instance.new("Frame")        Window.Name = title:gsub("[^%w%s]", "") -- Remove special characters for safety        Window.BackgroundColor3 = self.Theme.Primary        Window.BorderSizePixel = 0        Window.Position = position or UDim2.new(0.5, -size.X.Offset / 2, 0.5, -size.Y.Offset / 2)        Window.Size = size        Window.Parent = ScreenGui        Window.ClipsDescendants = true    end)        if not Window then        Window = Instance.new("Frame")        Window.Name = "VexWindow"        Window.BackgroundColor3 = self.Theme.Primary        Window.BorderSizePixel = 0        Window.Position = UDim2.new(0.5, -300, 0.5, -200)        Window.Size = UDim2.new(0, 600, 0, 400)        Window.Parent = ScreenGui        Window.ClipsDescendants = true        print("VexHub: Failed to create window with provided parameters. Using default window.")    end
     
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = self.Theme.RoundRadius
