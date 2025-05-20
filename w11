@@ -987,7 +987,8 @@ function Vex:CreateWindow(WindowSettings)
             table.insert(Tab.Sections, SectionAPI)
             
             -- Return Section API with element creation functions (will be added in next part)
-            return SectionAPI
+            local EnhancedSectionAPI = ApplyElementFunctions(SectionAPI)
+            return EnhancedSectionAPI
         end
         
         -- Add tab to window
@@ -1334,7 +1335,7 @@ function Vex:Notification(NotifSettings)
     return NotificationAPI
 end
 
--- Add element creation functions to Section API
+-- Add basic element creation functions to Section API
 local function ApplyElementFunctions(SectionAPI)
     -- Button
     function SectionAPI:AddButton(ButtonSettings)
@@ -1350,6 +1351,13 @@ local function ApplyElementFunctions(SectionAPI)
         Button.Parent = SectionAPI.Instance.Content
         Button.Visible = true
         
+        -- Create Button API
+        local ButtonAPI = {
+            Instance = Button,
+            Settings = ButtonSettings,
+            Type = "Button"
+        }
+        
         -- Button interaction
         Button.Interact.MouseEnter:Connect(function()
             tween(Button, {BackgroundTransparency = 0.4})
@@ -1360,19 +1368,10 @@ local function ApplyElementFunctions(SectionAPI)
         end)
         
         Button.Interact.MouseButton1Click:Connect(function()
-            tween(Button, {BackgroundTransparency = 0.3}, function()
-                tween(Button, {BackgroundTransparency = 0.5})
+            task.spawn(function()
+                ButtonSettings.Callback()
             end)
-            
-            -- Execute callback
-            task.spawn(ButtonSettings.Callback)
         end)
-        
-        -- Create Button API
-        local ButtonAPI = {
-            Instance = Button,
-            Settings = ButtonSettings
-        }
         
         -- Add to section elements
         table.insert(SectionAPI.Elements, ButtonAPI)
@@ -1384,58 +1383,35 @@ local function ApplyElementFunctions(SectionAPI)
     function SectionAPI:AddToggle(ToggleSettings)
         ToggleSettings = Kwargify({
             Name = "Toggle",
-            Description = nil,
             Default = false,
             Callback = function(Value) end
         }, ToggleSettings or {})
         
-        -- Create toggle based on whether description is provided
-        local Toggle
-        if ToggleSettings.Description and ToggleSettings.Description ~= "" then
-            Toggle = VexUI.Templates.Elements.ToggleDescTemplate:Clone()
-            Toggle.Title.Text = ToggleSettings.Name
-            Toggle.Description.Text = ToggleSettings.Description
-        else
-            Toggle = VexUI.Templates.Elements.ToggleTemplate:Clone()
-            Toggle.Title.Text = ToggleSettings.Name
-        end
-        
+        -- Create toggle
+        local Toggle = VexUI.Templates.Elements.ToggleTemplate:Clone()
         Toggle.Name = ToggleSettings.Name .. "Toggle"
+        Toggle.Title.Text = ToggleSettings.Name
         Toggle.Parent = SectionAPI.Instance.Content
         Toggle.Visible = true
+        
+        -- Create toggle frames for animation
+        local ToggleFrame = Toggle.Indicator
+        local ToggleCircle = ToggleFrame.Circle
         
         -- Create Toggle API
         local ToggleAPI = {
             Instance = Toggle,
             Settings = ToggleSettings,
-            Value = ToggleSettings.Default
+            Toggled = ToggleSettings.Default,
+            Type = "Toggle"
         }
         
-        -- Set initial state
-        local function UpdateToggle(value)
-            ToggleAPI.Value = value
-            
-            if value then
-                local indicator = Toggle:FindFirstChild("Indicator", true)
-                local circle = indicator:FindFirstChild("Circle")
-                
-                tween(indicator, {BackgroundColor3 = VexTheme.Elements.Accent})
-                tween(circle, {Position = UDim2.new(1, -19, 0.5, 0)})
-            else
-                local indicator = Toggle:FindFirstChild("Indicator", true)
-                local circle = indicator:FindFirstChild("Circle")
-                
-                tween(indicator, {BackgroundColor3 = Color3.fromRGB(60, 60, 60)})
-                tween(circle, {Position = UDim2.new(0, 3, 0.5, 0)})
-            end
-            
-            task.spawn(function()
-                ToggleSettings.Callback(value)
-            end)
+        -- Set initial toggle state
+        if ToggleSettings.Default then
+            ToggleFrame.BackgroundColor3 = VexTheme.Elements.ToggleOn
+            ToggleCircle.Position = UDim2.new(1, -19, 0.5, 0)
+            ToggleCircle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         end
-        
-        -- Set initial state
-        UpdateToggle(ToggleSettings.Default)
         
         -- Toggle interaction
         Toggle.Interact.MouseEnter:Connect(function()
@@ -1446,15 +1422,39 @@ local function ApplyElementFunctions(SectionAPI)
             tween(Toggle, {BackgroundTransparency = 0.5})
         end)
         
+        -- Toggle function
+        local function SetToggle(Value)
+            ToggleAPI.Toggled = Value
+            
+            if Value then
+                tween(ToggleFrame, {BackgroundColor3 = VexTheme.Elements.ToggleOn})
+                tween(ToggleCircle, {Position = UDim2.new(1, -19, 0.5, 0)})
+                tween(ToggleCircle, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
+            else
+                tween(ToggleFrame, {BackgroundColor3 = VexTheme.Elements.ToggleOff})
+                tween(ToggleCircle, {Position = UDim2.new(0, 3, 0.5, 0)})
+                tween(ToggleCircle, {BackgroundColor3 = Color3.fromRGB(200, 200, 200)})
+            end
+            
+            task.spawn(function()
+                ToggleSettings.Callback(Value)
+            end)
+        end
+        
         Toggle.Interact.MouseButton1Click:Connect(function()
-            UpdateToggle(not ToggleAPI.Value)
+            SetToggle(not ToggleAPI.Toggled)
         end)
         
-        -- Set function
-        function ToggleAPI:Set(value)
-            if value ~= ToggleAPI.Value then
-                UpdateToggle(value)
-            end
+        -- Set value function
+        function ToggleAPI:Set(Value)
+            SetToggle(Value)
+        end
+        
+        -- Initial callback
+        if ToggleSettings.Default then
+            task.spawn(function()
+                ToggleSettings.Callback(true)
+            end)
         end
         
         -- Add to section elements
@@ -1479,13 +1479,14 @@ local function ApplyElementFunctions(SectionAPI)
         -- Create Label API
         local LabelAPI = {
             Instance = Label,
-            Settings = LabelSettings
+            Settings = LabelSettings,
+            Type = "Label"
         }
         
         -- Set text function
-        function LabelAPI:SetText(text)
-            Label.Title.Text = text
-            LabelSettings.Text = text
+        function LabelAPI:SetText(Text)
+            Label.Title.Text = Text
+            LabelSettings.Text = Text
         end
         
         -- Add to section elements
@@ -1494,17 +1495,7 @@ local function ApplyElementFunctions(SectionAPI)
         return LabelAPI
     end
     
-    return SectionAPI
-end
-
--- Override the section creation function to apply element functions
-local originalCreateSection = Tab.CreateSection
-function Tab:CreateSection(SectionSettings)
-    local SectionAPI = originalCreateSection(self, SectionSettings)
-    return ApplyElementFunctions(SectionAPI)
-end
-
--- Create slider and dropdown templates
+            return SectionAPIend-- Create slider and dropdown templates
 local function CreateAdvancedElementTemplates()
     local ElementTemplates = VexUI.Templates.Elements
     
