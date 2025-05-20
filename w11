@@ -1990,10 +1990,6 @@ local KeySystem : Frame = Main.KeySystem
 local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 	pcall(function()
 		local Dragging, DragInput, MousePos, FramePos
-		local dragVelocity = Vector2.new(0, 0)
-		local lastMousePos = Vector2.new(0, 0)
-		local dampingFactor = 0.85 -- Controls smoothness (higher = smoother but more floaty)
-		local springForce = 0.15 -- Controls responsiveness
 
 		local function connectFunctions()
 			if dragBar and enableTaptic then
@@ -2018,8 +2014,6 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 				Dragging = true
 				MousePos = Input.Position
 				FramePos = Window.Position
-				dragVelocity = Vector2.new(0, 0)
-				lastMousePos = Input.Position
 
 				if enableTaptic then
 					TweenService:Create(dragBarCosmetic, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 110, 0, 4), BackgroundTransparency = 0}):Play()
@@ -2044,36 +2038,20 @@ local function Draggable(Bar, Window, enableTaptic, tapticOffset)
 			end
 		end)
 
-		RunService.RenderStepped:Connect(function(deltaTime)
-			if Dragging and DragInput then
-				local currentMousePos = DragInput.Position
-				local mouseDelta = currentMousePos - lastMousePos
-				
-				-- Update velocity with spring force
-				dragVelocity = dragVelocity * dampingFactor + mouseDelta * springForce
-				
-				-- Apply velocity to window position
-				local newPos = Window.Position + UDim2.new(0, dragVelocity.X, 0, dragVelocity.Y)
-				Window.Position = newPos
-				
+		UserInputService.InputChanged:Connect(function(Input)
+			if Input == DragInput and Dragging then
+				local Delta = Input.Position - MousePos
+
+				local newMainPosition = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
+				TweenService:Create(Window, TweenInfo.new(0.35, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out), {Position = newMainPosition}):Play()
+
 				if dragBar then
-					dragBar.Position = UDim2.new(newPos.X.Scale, newPos.X.Offset, newPos.Y.Scale, newPos.Y.Offset + 240)
-				end
-				
-				lastMousePos = currentMousePos
-			else
-				-- Apply damping when not dragging
-				if dragVelocity.Magnitude > 0.01 then
-					dragVelocity = dragVelocity * dampingFactor
-					local newPos = Window.Position + UDim2.new(0, dragVelocity.X, 0, dragVelocity.Y)
-					Window.Position = newPos
-					
-					if dragBar then
-						dragBar.Position = UDim2.new(newPos.X.Scale, newPos.X.Offset, newPos.Y.Scale, newPos.Y.Offset + 240)
-					end
+					local newDragBarPosition = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y + 240)
+					dragBar.Position = newDragBarPosition
 				end
 			end
 		end)
+
 	end)
 end
 
