@@ -1225,49 +1225,19 @@ function VexHub:CreateWindow(options)
         return TabObj
     end
     
-    -- Improved tab selection with Luna-like animations
-    WindowObj.SelectTab = function(self, tabName)
-        if not self.Tabs[tabName] then
-            warn("VexHub: Tab '" .. tabName .. "' doesn't exist!")
-            return
-        end
-        
-        if self.ActiveTab then
-            local lastTab = self.ActiveTab
-            
-            -- Luna-style deselection animations
-            Utility:CreateTween(lastTab.Instance, {BackgroundTransparency = 1}):Play()
-            Utility:CreateTween(lastTab.UIStroke, {Transparency = 1}):Play()
-            Utility:CreateTween(lastTab.Icon, {ImageColor3 = self.Theme.TextDark}):Play()
-            Utility:CreateTween(lastTab.Label, {TextColor3 = self.Theme.TextDark}):Play()
-            Utility:CreateTween(lastTab.DropShadow, {ImageTransparency = 1}):Play()
-            
-            -- Hide last tab content with fade
-            Utility:CreateTween(lastTab.Page, {ScrollBarImageTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()
-            task.delay(0.1, function()
-                if self.ActiveTab ~= lastTab then
-                    lastTab.Page.Visible = false
-                end
-            end)
-            
-            -- Remove highlight if exists
-            if lastTab.Instance:FindFirstChild("Highlight") then
-                lastTab.Instance.Highlight:Destroy()
+        -- Improved tab selection with Luna-like animations    WindowObj.SelectTab = function(self, tabName)        if not self.Tabs[tabName] then            warn("VexHub: Tab '" .. tabName .. "' doesn't exist!")            return        end                if self.ActiveTab then            local lastTab = self.ActiveTab                        -- Luna-style deselection animations            Utility:CreateTween(lastTab.Instance, {BackgroundTransparency = 1}):Play()            Utility:CreateTween(lastTab.UIStroke, {Transparency = 1}):Play()            Utility:CreateTween(lastTab.Icon, {ImageColor3 = self.Theme.TextDark}):Play()            Utility:CreateTween(lastTab.Label, {TextColor3 = self.Theme.TextDark}):Play()            Utility:CreateTween(lastTab.DropShadow, {ImageTransparency = 1}):Play()                        -- Hide last tab content with fade            Utility:CreateTween(lastTab.Page, {ScrollBarImageTransparency = 1}, 0.3, Enum.EasingStyle.Quad):Play()            task.delay(0.1, function()                if self.ActiveTab ~= lastTab then                    lastTab.Page.Visible = false                end            end)                        -- Remove highlight if exists            if lastTab.Instance:FindFirstChild("Highlight") then                lastTab.Instance.Highlight:Destroy()            end                        -- Remove old tab glow            if lastTab.Instance:FindFirstChild("TabGlow") then                lastTab.Instance.TabGlow:Destroy()            end        end                local newTab = self.Tabs[tabName]        self.ActiveTab = newTab                -- Enhanced Luna-style selection animations        Utility:CreateTween(newTab.Instance, {BackgroundTransparency = 0.8, BackgroundColor3 = self.Theme.Accent}):Play()        Utility:CreateTween(newTab.UIStroke, {Transparency = 0.2}):Play()        Utility:CreateTween(newTab.Icon, {ImageColor3 = Color3.fromRGB(255, 255, 255)}):Play()        Utility:CreateTween(newTab.Label, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()        Utility:CreateTween(newTab.DropShadow, {ImageTransparency = 0.7, Size = UDim2.new(1, 36, 1, 36)}):Play()                -- Add a subtle glow effect to the selected tab (Luna-style)        local glow = Instance.new("ImageLabel")        glow.Name = "TabGlow"        glow.BackgroundTransparency = 1        glow.Position = UDim2.new(0.5, 0, 0.5, 0)        glow.Size = UDim2.new(1.2, 0, 1.2, 0)        glow.SizeConstraint = Enum.SizeConstraint.RelativeYY        glow.AnchorPoint = Vector2.new(0.5, 0.5)        glow.ZIndex = newTab.Instance.ZIndex - 1        glow.Image = "rbxassetid://6014261993"        glow.ImageColor3 = self.Theme.Accent        glow.ImageTransparency = 0.8        glow.Parent = newTab.Instance                -- Create pulsing animation        task.spawn(function()            while glow and glow.Parent do                Utility:CreateTween(glow, {ImageTransparency = 0.85}, 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut):Play()                wait(1.2)                if not glow or not glow.Parent then break end                Utility:CreateTween(glow, {ImageTransparency = 0.75}, 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut):Play()                wait(1.2)            end        end)                -- Show new tab content with fade-in        newTab.Page.Visible = true        Utility:CreateTween(newTab.Page, {ScrollBarImageTransparency = 0}, 0.3, Enum.EasingStyle.Quad):Play()                -- Enhanced Luna-style highlight bar        local highlight = Instance.new("Frame")        highlight.Name = "Highlight"        highlight.BackgroundColor3 = self.Theme.Accent        highlight.BackgroundTransparency = 0.5        highlight.BorderSizePixel = 0        highlight.Size = UDim2.new(0, 3, 1, -10)        highlight.Position = UDim2.new(0, 2, 0, 5)        highlight.Parent = newTab.Instance                -- Add a corner to the highlight        local highlightCorner = Instance.new("UICorner")        highlightCorner.CornerRadius = UDim.new(0, 2)        highlightCorner.Parent = highlight                -- Add Luna-style highlight gradient        local highlightGradient = Instance.new("UIGradient")        highlightGradient.Color = ColorSequence.new({            ColorSequenceKeypoint.new(0, self.Theme.Accent),            ColorSequenceKeypoint.new(1, Color3.fromRGB(                math.clamp(self.Theme.Accent.R * 1.4 * 255, 0, 255),                math.clamp(self.Theme.Accent.G * 1.4 * 255, 0, 255),                math.clamp(self.Theme.Accent.B * 1.4 * 255, 0, 255)            ))        })        highlightGradient.Rotation = 90        highlightGradient.Parent = highlight                -- Create pulsing animation for the highlight        task.spawn(function()            local t = 0            local connection = RunService.RenderStepped:Connect(function(dt)                if not highlight or not highlight.Parent then                    connection:Disconnect()                    return                end                                t = t + dt                highlightGradient.Offset = Vector2.new(0, math.sin(t * 1.5) * 0.2)            end)                        if newTab.Instance then                newTab.Instance.Destroying:Connect(function()                    connection:Disconnect()                end)            end        end)                -- Use the new TabIndicator from our Animations module if it exists
+        -- Use pcall to prevent errors if the function doesn't exist
+        pcall(function()
+            -- Check if we already have a tab indicator
+            if not WindowObj.TabIndicator then
+                -- Create a new tab indicator
+                WindowObj.TabIndicator = VexHub.Animations.CreateTabIndicator(WindowObj.TabList, newTab.Instance)
+            else
+                -- Update existing tab indicator
+                WindowObj.TabIndicator.SetActiveTab(newTab.Instance)
             end
-        end
-        
-        local newTab = self.Tabs[tabName]
-        self.ActiveTab = newTab
-        
-                -- Enhanced Luna-style selection animations        Utility:CreateTween(newTab.Instance, {BackgroundTransparency = 0.8, BackgroundColor3 = self.Theme.Accent}):Play()        Utility:CreateTween(newTab.UIStroke, {Transparency = 0.2}):Play()        Utility:CreateTween(newTab.Icon, {ImageColor3 = Color3.fromRGB(255, 255, 255)}):Play()        Utility:CreateTween(newTab.Label, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()        Utility:CreateTween(newTab.DropShadow, {ImageTransparency = 0.7, Size = UDim2.new(1, 36, 1, 36)}):Play()                -- Add a subtle glow effect to the selected tab (Luna-style)        local glow = Instance.new("ImageLabel")        glow.Name = "TabGlow"        glow.BackgroundTransparency = 1        glow.Position = UDim2.new(0.5, 0, 0.5, 0)        glow.Size = UDim2.new(1.2, 0, 1.2, 0)        glow.SizeConstraint = Enum.SizeConstraint.RelativeYY        glow.AnchorPoint = Vector2.new(0.5, 0.5)        glow.ZIndex = newTab.Instance.ZIndex - 1        glow.Image = "rbxassetid://6014261993"        glow.ImageColor3 = self.Theme.Accent        glow.ImageTransparency = 0.8        glow.Parent = newTab.Instance                -- Create pulsing animation        task.spawn(function()            while glow and glow.Parent do                Utility:CreateTween(glow, {ImageTransparency = 0.85}, 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut):Play()                wait(1.2)                if not glow or not glow.Parent then break end                Utility:CreateTween(glow, {ImageTransparency = 0.75}, 1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut):Play()                wait(1.2)            end        end)
-        
-        -- Show new tab content with fade-in
-        newTab.Page.Visible = true
-        Utility:CreateTween(newTab.Page, {ScrollBarImageTransparency = 0}, 0.3, Enum.EasingStyle.Quad):Play()
-        
-                -- Enhanced Luna-style highlight bar        local highlight = Instance.new("Frame")        highlight.Name = "Highlight"        highlight.BackgroundColor3 = self.Theme.Accent        highlight.BackgroundTransparency = 0.5        highlight.BorderSizePixel = 0        highlight.Size = UDim2.new(0, 3, 1, -10)        highlight.Position = UDim2.new(0, 2, 0, 5)        highlight.Parent = newTab.Instance                -- Add a corner to the highlight        local highlightCorner = Instance.new("UICorner")        highlightCorner.CornerRadius = UDim.new(0, 2)        highlightCorner.Parent = highlight                -- Add Luna-style highlight gradient        local highlightGradient = Instance.new("UIGradient")        highlightGradient.Color = ColorSequence.new({            ColorSequenceKeypoint.new(0, self.Theme.Accent),            ColorSequenceKeypoint.new(1, Color3.fromRGB(                math.clamp(self.Theme.Accent.R * 1.4 * 255, 0, 255),                math.clamp(self.Theme.Accent.G * 1.4 * 255, 0, 255),                math.clamp(self.Theme.Accent.B * 1.4 * 255, 0, 255)            ))        })        highlightGradient.Rotation = 90        highlightGradient.Parent = highlight                -- Create pulsing animation for the highlight        task.spawn(function()            local t = 0            local connection = RunService.RenderStepped:Connect(function(dt)                if not highlight or not highlight.Parent then                    connection:Disconnect()                    return                end                                t = t + dt                highlightGradient.Offset = Vector2.new(0, math.sin(t * 1.5) * 0.2)            end)                        if newTab.Instance then                newTab.Instance.Destroying:Connect(function()                    connection:Disconnect()                end)            end        end)
-        
-        -- Make it trackable from anywhere
+        end)
+                -- Make it trackable from anywhere
         self.CurrentTab = tabName
     end
     
