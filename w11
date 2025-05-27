@@ -209,7 +209,7 @@ function VexHub:CreateWindow(WindowSettings)
     Subtitle.TextSize = 12
     Subtitle.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Controls Container (right side)
+    -- Controls Container (right side) - Only minimize and close buttons
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
     Controls.Parent = TitleBar
@@ -225,7 +225,7 @@ function VexHub:CreateWindow(WindowSettings)
     ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ControlsLayout.Parent = Controls
     
-    -- Hamburger Menu Button (3 lines) - LEFT SIDE
+    -- Hamburger Menu Button (3 lines) - LEFT SIDE ONLY
     local MenuButton = Instance.new("Frame")
     MenuButton.Name = "MenuButton"
     MenuButton.Parent = TitleBar
