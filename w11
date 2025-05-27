@@ -507,7 +507,6 @@ function VexHub:CreateWindow(WindowSettings)
     local Window = { 
         CurrentTab = nil, 
         State = true, 
-        IsMinimized = false,
         OriginalSize = WindowSettings.Size,
         Bind = Enum.KeyCode.K, -- Default bind to show/hide UI
         Tabs = {},
@@ -596,9 +595,9 @@ function VexHub:CreateWindow(WindowSettings)
     Controls.Name = "Controls"
     Controls.Parent = TitleBar
     Controls.BackgroundTransparency = 1
-    Controls.Position = UDim2.new(1, -70, 0.5, 0)
+    Controls.Position = UDim2.new(1, -40, 0.5, 0)
     Controls.AnchorPoint = Vector2.new(0, 0.5)
-    Controls.Size = UDim2.fromOffset(60, 30)
+    Controls.Size = UDim2.fromOffset(30, 30)
     
     local ControlsLayout = Instance.new("UIListLayout")
     ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -609,36 +608,7 @@ function VexHub:CreateWindow(WindowSettings)
     
 
     
-    -- Minimize Button
-    local MinimizeButton = Instance.new("Frame")
-    MinimizeButton.Name = "MinimizeButton"
-    MinimizeButton.Parent = Controls
-    MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
-    MinimizeButton.BackgroundTransparency = 1
-    MinimizeButton.BorderSizePixel = 0
-    MinimizeButton.Size = UDim2.fromOffset(30, 30)
-    MinimizeButton.LayoutOrder = 1
-    
-    local MinimizeCorner = Instance.new("UICorner")
-    MinimizeCorner.CornerRadius = UDim.new(0, 6)
-    MinimizeCorner.Parent = MinimizeButton
-    
-    local MinimizeIcon = Instance.new("ImageLabel")
-    MinimizeIcon.Name = "Icon"
-    MinimizeIcon.Parent = MinimizeButton
-    MinimizeIcon.BackgroundTransparency = 1
-    MinimizeIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-    MinimizeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    MinimizeIcon.Size = UDim2.fromOffset(16, 16)
-    MinimizeIcon.Image = "rbxassetid://11036884234" -- Minimize icon
-    MinimizeIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
-    
-    local MinimizeInteract = Instance.new("TextButton")
-    MinimizeInteract.Name = "Interact"
-    MinimizeInteract.Parent = MinimizeButton
-    MinimizeInteract.BackgroundTransparency = 1
-    MinimizeInteract.Size = UDim2.new(1, 0, 1, 0)
-    MinimizeInteract.Text = ""
+
     
     -- Close Button
     local CloseButton = Instance.new("Frame")
@@ -648,7 +618,7 @@ function VexHub:CreateWindow(WindowSettings)
     CloseButton.BackgroundTransparency = 1
     CloseButton.BorderSizePixel = 0
     CloseButton.Size = UDim2.fromOffset(30, 30)
-    CloseButton.LayoutOrder = 2
+    CloseButton.LayoutOrder = 1
     
     local CloseCorner = Instance.new("UICorner")
     CloseCorner.CornerRadius = UDim.new(0, 6)
@@ -764,7 +734,7 @@ function VexHub:CreateWindow(WindowSettings)
     function Window:Show()
         Window.State = true
         Main.Visible = true
-        Main.Size = Window.IsMinimized and UDim2.fromOffset(Window.OriginalSize.X.Offset, 50) or Window.OriginalSize
+        Main.Size = Window.OriginalSize
         
         -- Tween all elements back to visible
         tween(Main, {BackgroundTransparency = 0})
@@ -784,69 +754,26 @@ function VexHub:CreateWindow(WindowSettings)
             end
         end
         
-        if not Window.IsMinimized then
-            -- Show navigation and content
-            tween(Navigation, {BackgroundTransparency = 0})
-            tween(Content, {BackgroundTransparency = 0})
-            
-            -- Show all tab buttons
-            for _, tab in pairs(Window.Tabs) do
-                if tab.Button then
-                    tween(tab.Button, {BackgroundTransparency = Window.CurrentTab == tab.Settings.Name and 0 or 1})
-                    tween(tab.Button.Icon, {ImageTransparency = 0})
-                    tween(tab.Button.Label, {TextTransparency = 0})
-                    tween(tab.Button.UIStroke, {Transparency = Window.CurrentTab == tab.Settings.Name and 0.4 or 1})
-                end
+        -- Show navigation and content
+        tween(Navigation, {BackgroundTransparency = 0})
+        tween(Content, {BackgroundTransparency = 0})
+        
+        -- Show all tab buttons
+        for _, tab in pairs(Window.Tabs) do
+            if tab.Button then
+                tween(tab.Button, {BackgroundTransparency = Window.CurrentTab == tab.Settings.Name and 0 or 1})
+                tween(tab.Button.Icon, {ImageTransparency = 0})
+                tween(tab.Button.Label, {TextTransparency = 0})
+                tween(tab.Button.UIStroke, {Transparency = Window.CurrentTab == tab.Settings.Name and 0.4 or 1})
             end
         end
     end
     
-    -- Minimize UI Function
-    function Window:Minimize()
-        Window.IsMinimized = true
-        MinimizeIcon.Image = "rbxassetid://10137941941" -- Change to maximize icon
-        
-        -- Hide navigation and content
-        Navigation.Visible = false
-        Content.Visible = false
-        
-        -- Resize to title bar only
-        tween(Main, {Size = UDim2.fromOffset(Window.OriginalSize.X.Offset, 50)})
-    end
-    
-    -- Maximize UI Function  
-    function Window:Maximize()
-        Window.IsMinimized = false
-        MinimizeIcon.Image = "rbxassetid://11036884234" -- Change back to minimize icon
-        
-        -- Show navigation and content
-        Navigation.Visible = true
-        Content.Visible = true
-        
-        -- Resize back to original
-        tween(Main, {Size = Window.OriginalSize})
-    end
+
     
 
     
-    -- Minimize button events
-    MinimizeInteract.MouseButton1Click:Connect(function()
-        if Window.IsMinimized then
-            Window:Maximize()
-        else
-            Window:Minimize()
-        end
-    end)
-    
-    MinimizeButton.MouseEnter:Connect(function()
-        tween(MinimizeButton, {BackgroundTransparency = 0.8})
-        tween(MinimizeIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-    end)
-    
-    MinimizeButton.MouseLeave:Connect(function()
-        tween(MinimizeButton, {BackgroundTransparency = 1})
-        tween(MinimizeIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
-    end)
+
     
     -- Close button events
     CloseInteract.MouseButton1Click:Connect(function()
