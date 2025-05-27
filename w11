@@ -1,1 +1,1058 @@
+local VexHub = {
+    Options = {},
+    ThemeGradient = ColorSequence.new{
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(45, 52, 64)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(59, 66, 82)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(76, 86, 106))
+    }
+}
 
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+
+local tweeninfo = TweenInfo.new(0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+
+local function tween(obj, props)
+    local tween = TweenService:Create(obj, tweeninfo, props)
+    tween:Play()
+    return tween
+end
+
+local function Kwargify(defaults, options)
+    options = options or {}
+    for option, value in pairs(defaults) do
+        if options[option] == nil then
+            options[option] = value
+        end
+    end
+    return options
+end
+
+function VexHub:CreateWindow(WindowSettings)
+    WindowSettings = Kwargify({
+        Name = "VexHub",
+        LoadingTitle = "VexHub Interface",
+        LoadingSubtitle = "by VexHub",
+        ConfigurationSaving = {
+            Enabled = false,
+            FolderName = nil,
+            FileName = "VexHub"
+        },
+        Discord = {
+            Enabled = false,
+            Invite = "",
+            RememberJoins = true
+        },
+        KeySystem = false,
+        TabWidth = 160,
+        Size = UDim2.fromOffset(580, 460),
+        Acrylic = false,
+        Theme = "Dark",
+        MinimizeKey = Enum.KeyCode.LeftControl
+    }, WindowSettings or {})
+
+    local WindowV = {
+        CurrentTab = nil,
+        Settings = WindowSettings,
+        Tabs = {}
+    }
+
+    local VexHubMain = Instance.new("ScreenGui")
+    VexHubMain.Name = "VexHubMain"
+    VexHubMain.Parent = CoreGui
+    VexHubMain.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local Main = Instance.new("Frame")
+    Main.Name = "Main"
+    Main.Parent = VexHubMain
+    Main.BackgroundColor3 = Color3.fromRGB(16, 20, 25)
+    Main.BorderSizePixel = 0
+    Main.Position = UDim2.fromScale(0.5, 0.5)
+    Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    Main.Size = WindowSettings.Size
+    Main.ClipsDescendants = true
+
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 12)
+    MainCorner.Parent = Main
+
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Color = Color3.fromRGB(40, 45, 52)
+    MainStroke.Thickness = 1
+    MainStroke.Parent = Main
+
+    local Topbar = Instance.new("Frame")
+    Topbar.Name = "Topbar"
+    Topbar.Parent = Main
+    Topbar.BackgroundColor3 = Color3.fromRGB(22, 27, 34)
+    Topbar.BorderSizePixel = 0
+    Topbar.Size = UDim2.new(1, 0, 0, 50)
+
+    local TopbarCorner = Instance.new("UICorner")
+    TopbarCorner.CornerRadius = UDim.new(0, 12)
+    TopbarCorner.Parent = Topbar
+
+    local TopbarCover = Instance.new("Frame")
+    TopbarCover.Name = "Cover"
+    TopbarCover.Parent = Topbar
+    TopbarCover.BackgroundColor3 = Color3.fromRGB(22, 27, 34)
+    TopbarCover.BorderSizePixel = 0
+    TopbarCover.Position = UDim2.fromOffset(0, 25)
+    TopbarCover.Size = UDim2.new(1, 0, 0, 25)
+
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Parent = Topbar
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.fromOffset(20, 0)
+    Title.Size = UDim2.new(1, -100, 1, 0)
+    Title.Font = Enum.Font.GothamBold
+    Title.Text = WindowSettings.Name
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 16
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "Close"
+    CloseButton.Parent = Topbar
+    CloseButton.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+    CloseButton.BorderSizePixel = 0
+    CloseButton.Position = UDim2.new(1, -40, 0.5, 0)
+    CloseButton.AnchorPoint = Vector2.new(0, 0.5)
+    CloseButton.Size = UDim2.fromOffset(16, 16)
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseButton.TextSize = 14
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 8)
+    CloseCorner.Parent = CloseButton
+
+    CloseButton.MouseButton1Click:Connect(function()
+        VexHubMain:Destroy()
+    end)
+
+    local TabBar = Instance.new("ScrollingFrame")
+    TabBar.Name = "TabBar"
+    TabBar.Parent = Main
+    TabBar.BackgroundColor3 = Color3.fromRGB(30, 36, 45)
+    TabBar.BorderSizePixel = 0
+    TabBar.Position = UDim2.fromOffset(0, 50)
+    TabBar.Size = UDim2.new(0, WindowSettings.TabWidth, 1, -50)
+    TabBar.ScrollBarThickness = 2
+    TabBar.ScrollBarImageColor3 = Color3.fromRGB(60, 67, 79)
+
+    local TabList = Instance.new("UIListLayout")
+    TabList.Parent = TabBar
+    TabList.SortOrder = Enum.SortOrder.LayoutOrder
+    TabList.Padding = UDim.new(0, 5)
+
+    local TabPadding = Instance.new("UIPadding")
+    TabPadding.Parent = TabBar
+    TabPadding.PaddingTop = UDim.new(0, 10)
+    TabPadding.PaddingLeft = UDim.new(0, 10)
+    TabPadding.PaddingRight = UDim.new(0, 10)
+
+    local Content = Instance.new("Frame")
+    Content.Name = "Content"
+    Content.Parent = Main
+    Content.BackgroundColor3 = Color3.fromRGB(24, 29, 36)
+    Content.BorderSizePixel = 0
+    Content.Position = UDim2.new(0, WindowSettings.TabWidth, 0, 50)
+    Content.Size = UDim2.new(1, -WindowSettings.TabWidth, 1, -50)
+
+    local ContentCorner = Instance.new("UICorner")
+    ContentCorner.CornerRadius = UDim.new(0, 8)
+    ContentCorner.Parent = Content
+
+    local function makeDraggable(frame)
+        local dragging, dragInput, dragStart, startPos
+        
+        local function update(input)
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+        
+        Topbar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+                
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+        
+        Topbar.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                dragInput = input
+            end
+        end)
+        
+        UserInputService.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                update(input)
+            end
+        end)
+    end
+    
+    makeDraggable(Main)
+
+    function WindowV:CreateTab(TabSettings)
+        TabSettings = Kwargify({
+            Name = "Tab",
+            Icon = nil
+        }, TabSettings or {})
+
+        local Tab = {
+            Name = TabSettings.Name,
+            Elements = {},
+            Window = WindowV
+        }
+
+        local TabButton = Instance.new("TextButton")
+        TabButton.Name = TabSettings.Name
+        TabButton.Parent = TabBar
+        TabButton.BackgroundColor3 = Color3.fromRGB(35, 41, 50)
+        TabButton.BorderSizePixel = 0
+        TabButton.Size = UDim2.new(1, 0, 0, 35)
+        TabButton.Font = Enum.Font.GothamSemibold
+        TabButton.Text = TabSettings.Name
+        TabButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+        TabButton.TextSize = 13
+        TabButton.AutoButtonColor = false
+
+        local TabCorner = Instance.new("UICorner")
+        TabCorner.CornerRadius = UDim.new(0, 6)
+        TabCorner.Parent = TabButton
+
+        local TabPage = Instance.new("ScrollingFrame")
+        TabPage.Name = TabSettings.Name
+        TabPage.Parent = Content
+        TabPage.BackgroundTransparency = 1
+        TabPage.BorderSizePixel = 0
+        TabPage.Size = UDim2.new(1, 0, 1, 0)
+        TabPage.ScrollBarThickness = 3
+        TabPage.ScrollBarImageColor3 = Color3.fromRGB(60, 67, 79)
+        TabPage.Visible = false
+
+        local TabList = Instance.new("UIListLayout")
+        TabList.Parent = TabPage
+        TabList.SortOrder = Enum.SortOrder.LayoutOrder
+        TabList.Padding = UDim.new(0, 8)
+
+        local TabPadding = Instance.new("UIPadding")
+        TabPadding.Parent = TabPage
+        TabPadding.PaddingTop = UDim.new(0, 15)
+        TabPadding.PaddingLeft = UDim.new(0, 15)
+        TabPadding.PaddingRight = UDim.new(0, 15)
+        TabPadding.PaddingBottom = UDim.new(0, 15)
+
+        TabButton.MouseButton1Click:Connect(function()
+            for _, tab in pairs(WindowV.Tabs) do
+                tab.Button.BackgroundColor3 = Color3.fromRGB(35, 41, 50)
+                tab.Button.TextColor3 = Color3.fromRGB(180, 180, 180)
+                tab.Page.Visible = false
+            end
+            
+            TabButton.BackgroundColor3 = Color3.fromRGB(45, 52, 64)
+            TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            TabPage.Visible = true
+            WindowV.CurrentTab = Tab
+        end)
+
+        TabButton.MouseEnter:Connect(function()
+            if WindowV.CurrentTab ~= Tab then
+                tween(TabButton, {BackgroundColor3 = Color3.fromRGB(40, 46, 57)})
+            end
+        end)
+
+        TabButton.MouseLeave:Connect(function()
+            if WindowV.CurrentTab ~= Tab then
+                tween(TabButton, {BackgroundColor3 = Color3.fromRGB(35, 41, 50)})
+            end
+        end)
+
+        Tab.Button = TabButton
+        Tab.Page = TabPage
+        WindowV.Tabs[#WindowV.Tabs + 1] = Tab
+
+        if #WindowV.Tabs == 1 then
+            TabButton.BackgroundColor3 = Color3.fromRGB(45, 52, 64)
+            TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            TabPage.Visible = true
+            WindowV.CurrentTab = Tab
+        end
+
+        function Tab:CreateButton(ButtonSettings)
+            ButtonSettings = Kwargify({
+                Name = "Button",
+                Description = nil,
+                Callback = function() end
+            }, ButtonSettings or {})
+
+            local ButtonV = {
+                Class = "Button",
+                Settings = ButtonSettings
+            }
+
+            local Button = Instance.new("Frame")
+            Button.Name = ButtonSettings.Name
+            Button.Parent = TabPage
+            Button.BackgroundColor3 = Color3.fromRGB(35, 41, 50)
+            Button.BorderSizePixel = 0
+            Button.Size = UDim2.new(1, 0, 0, ButtonSettings.Description and 60 or 45)
+
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 8)
+            ButtonCorner.Parent = Button
+
+            local ButtonStroke = Instance.new("UIStroke")
+            ButtonStroke.Color = Color3.fromRGB(55, 62, 73)
+            ButtonStroke.Thickness = 1
+            ButtonStroke.Parent = Button
+
+            local ButtonTitle = Instance.new("TextLabel")
+            ButtonTitle.Name = "Title"
+            ButtonTitle.Parent = Button
+            ButtonTitle.BackgroundTransparency = 1
+            ButtonTitle.Position = UDim2.new(0, 15, 0, ButtonSettings.Description and 8 or 0)
+            ButtonTitle.Size = UDim2.new(1, -30, 0, ButtonSettings.Description and 20 or 45)
+            ButtonTitle.Font = Enum.Font.GothamSemibold
+            ButtonTitle.Text = ButtonSettings.Name
+            ButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ButtonTitle.TextSize = 14
+            ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
+            ButtonTitle.TextYAlignment = ButtonSettings.Description and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
+
+            if ButtonSettings.Description then
+                local ButtonDesc = Instance.new("TextLabel")
+                ButtonDesc.Name = "Description"
+                ButtonDesc.Parent = Button
+                ButtonDesc.BackgroundTransparency = 1
+                ButtonDesc.Position = UDim2.new(0, 15, 0, 28)
+                ButtonDesc.Size = UDim2.new(1, -30, 0, 24)
+                ButtonDesc.Font = Enum.Font.Gotham
+                ButtonDesc.Text = ButtonSettings.Description
+                ButtonDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+                ButtonDesc.TextSize = 12
+                ButtonDesc.TextXAlignment = Enum.TextXAlignment.Left
+                ButtonDesc.TextYAlignment = Enum.TextYAlignment.Top
+                ButtonDesc.TextWrapped = true
+            end
+
+            local ButtonInteract = Instance.new("TextButton")
+            ButtonInteract.Name = "Interact"
+            ButtonInteract.Parent = Button
+            ButtonInteract.BackgroundTransparency = 1
+            ButtonInteract.Size = UDim2.new(1, 0, 1, 0)
+            ButtonInteract.Text = ""
+
+            ButtonInteract.MouseButton1Click:Connect(function()
+                local success, err = pcall(function()
+                    ButtonSettings.Callback()
+                end)
+                if not success then
+                    warn("VexHub | Button Callback Error: " .. tostring(err))
+                end
+            end)
+
+            Button.MouseEnter:Connect(function()
+                tween(ButtonStroke, {Color = Color3.fromRGB(75, 82, 93)})
+                tween(Button, {BackgroundColor3 = Color3.fromRGB(40, 46, 57)})
+            end)
+
+            Button.MouseLeave:Connect(function()
+                tween(ButtonStroke, {Color = Color3.fromRGB(55, 62, 73)})
+                tween(Button, {BackgroundColor3 = Color3.fromRGB(35, 41, 50)})
+            end)
+
+            Tab.Elements[#Tab.Elements + 1] = ButtonV
+            return ButtonV
+        end
+
+        function Tab:CreateToggle(ToggleSettings)
+            ToggleSettings = Kwargify({
+                Name = "Toggle",
+                Description = nil,
+                CurrentValue = false,
+                Flag = nil,
+                Callback = function() end
+            }, ToggleSettings or {})
+
+            local ToggleV = {
+                CurrentValue = ToggleSettings.CurrentValue,
+                Class = "Toggle",
+                Settings = ToggleSettings
+            }
+
+            local Toggle = Instance.new("Frame")
+            Toggle.Name = ToggleSettings.Name
+            Toggle.Parent = TabPage
+            Toggle.BackgroundColor3 = Color3.fromRGB(35, 41, 50)
+            Toggle.BorderSizePixel = 0
+            Toggle.Size = UDim2.new(1, 0, 0, ToggleSettings.Description and 60 or 45)
+
+            local ToggleCorner = Instance.new("UICorner")
+            ToggleCorner.CornerRadius = UDim.new(0, 8)
+            ToggleCorner.Parent = Toggle
+
+            local ToggleStroke = Instance.new("UIStroke")
+            ToggleStroke.Color = Color3.fromRGB(55, 62, 73)
+            ToggleStroke.Thickness = 1
+            ToggleStroke.Parent = Toggle
+
+            local ToggleTitle = Instance.new("TextLabel")
+            ToggleTitle.Name = "Title"
+            ToggleTitle.Parent = Toggle
+            ToggleTitle.BackgroundTransparency = 1
+            ToggleTitle.Position = UDim2.new(0, 15, 0, ToggleSettings.Description and 8 or 0)
+            ToggleTitle.Size = UDim2.new(1, -65, 0, ToggleSettings.Description and 20 or 45)
+            ToggleTitle.Font = Enum.Font.GothamSemibold
+            ToggleTitle.Text = ToggleSettings.Name
+            ToggleTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ToggleTitle.TextSize = 14
+            ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
+            ToggleTitle.TextYAlignment = ToggleSettings.Description and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
+
+            if ToggleSettings.Description then
+                local ToggleDesc = Instance.new("TextLabel")
+                ToggleDesc.Name = "Description"
+                ToggleDesc.Parent = Toggle
+                ToggleDesc.BackgroundTransparency = 1
+                ToggleDesc.Position = UDim2.new(0, 15, 0, 28)
+                ToggleDesc.Size = UDim2.new(1, -65, 0, 24)
+                ToggleDesc.Font = Enum.Font.Gotham
+                ToggleDesc.Text = ToggleSettings.Description
+                ToggleDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+                ToggleDesc.TextSize = 12
+                ToggleDesc.TextXAlignment = Enum.TextXAlignment.Left
+                ToggleDesc.TextYAlignment = Enum.TextYAlignment.Top
+                ToggleDesc.TextWrapped = true
+            end
+
+            local ToggleSwitch = Instance.new("Frame")
+            ToggleSwitch.Name = "Switch"
+            ToggleSwitch.Parent = Toggle
+            ToggleSwitch.BackgroundColor3 = Color3.fromRGB(45, 52, 64)
+            ToggleSwitch.BorderSizePixel = 0
+            ToggleSwitch.Position = UDim2.new(1, -45, 0.5, 0)
+            ToggleSwitch.AnchorPoint = Vector2.new(0, 0.5)
+            ToggleSwitch.Size = UDim2.fromOffset(35, 18)
+
+            local SwitchCorner = Instance.new("UICorner")
+            SwitchCorner.CornerRadius = UDim.new(0, 9)
+            SwitchCorner.Parent = ToggleSwitch
+
+            local SwitchKnob = Instance.new("Frame")
+            SwitchKnob.Name = "Knob"
+            SwitchKnob.Parent = ToggleSwitch
+            SwitchKnob.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+            SwitchKnob.BorderSizePixel = 0
+            SwitchKnob.Position = UDim2.new(0, 2, 0.5, 0)
+            SwitchKnob.AnchorPoint = Vector2.new(0, 0.5)
+            SwitchKnob.Size = UDim2.fromOffset(14, 14)
+
+            local KnobCorner = Instance.new("UICorner")
+            KnobCorner.CornerRadius = UDim.new(0, 7)
+            KnobCorner.Parent = SwitchKnob
+
+            local ToggleInteract = Instance.new("TextButton")
+            ToggleInteract.Name = "Interact"
+            ToggleInteract.Parent = Toggle
+            ToggleInteract.BackgroundTransparency = 1
+            ToggleInteract.Size = UDim2.new(1, 0, 1, 0)
+            ToggleInteract.Text = ""
+
+            local function SetToggle(value)
+                ToggleV.CurrentValue = value
+                if value then
+                    tween(ToggleSwitch, {BackgroundColor3 = Color3.fromRGB(88, 166, 255)})
+                    tween(SwitchKnob, {
+                        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                        Position = UDim2.new(1, -16, 0.5, 0)
+                    })
+                else
+                    tween(ToggleSwitch, {BackgroundColor3 = Color3.fromRGB(45, 52, 64)})
+                    tween(SwitchKnob, {
+                        BackgroundColor3 = Color3.fromRGB(120, 120, 120),
+                        Position = UDim2.new(0, 2, 0.5, 0)
+                    })
+                end
+            end
+
+            ToggleInteract.MouseButton1Click:Connect(function()
+                ToggleSettings.CurrentValue = not ToggleSettings.CurrentValue
+                SetToggle(ToggleSettings.CurrentValue)
+                local success, err = pcall(function()
+                    ToggleSettings.Callback(ToggleSettings.CurrentValue)
+                end)
+                if not success then
+                    warn("VexHub | Toggle Callback Error: " .. tostring(err))
+                end
+            end)
+
+            Toggle.MouseEnter:Connect(function()
+                tween(ToggleStroke, {Color = Color3.fromRGB(75, 82, 93)})
+            end)
+
+            Toggle.MouseLeave:Connect(function()
+                tween(ToggleStroke, {Color = Color3.fromRGB(55, 62, 73)})
+            end)
+
+            if ToggleSettings.CurrentValue then
+                SetToggle(ToggleSettings.CurrentValue)
+            end
+
+            function ToggleV:Set(value)
+                ToggleSettings.CurrentValue = value
+                SetToggle(value)
+            end
+
+            if ToggleSettings.Flag then
+                VexHub.Options[ToggleSettings.Flag] = ToggleV
+            end
+
+            Tab.Elements[#Tab.Elements + 1] = ToggleV
+            return ToggleV
+        end
+
+        function Tab:CreateSlider(SliderSettings)
+            SliderSettings = Kwargify({
+                Name = "Slider",
+                Description = nil,
+                Range = {0, 100},
+                Increment = 1,
+                CurrentValue = 50,
+                Flag = nil,
+                Callback = function() end
+            }, SliderSettings or {})
+
+            local SliderV = {
+                CurrentValue = SliderSettings.CurrentValue,
+                Class = "Slider",
+                Settings = SliderSettings
+            }
+
+            local Slider = Instance.new("Frame")
+            Slider.Name = SliderSettings.Name
+            Slider.Parent = TabPage
+            Slider.BackgroundColor3 = Color3.fromRGB(35, 41, 50)
+            Slider.BorderSizePixel = 0
+            Slider.Size = UDim2.new(1, 0, 0, SliderSettings.Description and 75 or 60)
+
+            local SliderCorner = Instance.new("UICorner")
+            SliderCorner.CornerRadius = UDim.new(0, 8)
+            SliderCorner.Parent = Slider
+
+            local SliderStroke = Instance.new("UIStroke")
+            SliderStroke.Color = Color3.fromRGB(55, 62, 73)
+            SliderStroke.Thickness = 1
+            SliderStroke.Parent = Slider
+
+            local SliderTitle = Instance.new("TextLabel")
+            SliderTitle.Name = "Title"
+            SliderTitle.Parent = Slider
+            SliderTitle.BackgroundTransparency = 1
+            SliderTitle.Position = UDim2.new(0, 15, 0, 8)
+            SliderTitle.Size = UDim2.new(1, -80, 0, 20)
+            SliderTitle.Font = Enum.Font.GothamSemibold
+            SliderTitle.Text = SliderSettings.Name
+            SliderTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            SliderTitle.TextSize = 14
+            SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+            local SliderValue = Instance.new("TextLabel")
+            SliderValue.Name = "Value"
+            SliderValue.Parent = Slider
+            SliderValue.BackgroundTransparency = 1
+            SliderValue.Position = UDim2.new(1, -65, 0, 8)
+            SliderValue.Size = UDim2.new(0, 50, 0, 20)
+            SliderValue.Font = Enum.Font.GothamSemibold
+            SliderValue.Text = tostring(SliderSettings.CurrentValue)
+            SliderValue.TextColor3 = Color3.fromRGB(180, 180, 180)
+            SliderValue.TextSize = 12
+            SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+
+            if SliderSettings.Description then
+                local SliderDesc = Instance.new("TextLabel")
+                SliderDesc.Name = "Description"
+                SliderDesc.Parent = Slider
+                SliderDesc.BackgroundTransparency = 1
+                SliderDesc.Position = UDim2.new(0, 15, 0, 28)
+                SliderDesc.Size = UDim2.new(1, -30, 0, 18)
+                SliderDesc.Font = Enum.Font.Gotham
+                SliderDesc.Text = SliderSettings.Description
+                SliderDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+                SliderDesc.TextSize = 12
+                SliderDesc.TextXAlignment = Enum.TextXAlignment.Left
+                SliderDesc.TextWrapped = true
+            end
+
+            local SliderTrack = Instance.new("Frame")
+            SliderTrack.Name = "Track"
+            SliderTrack.Parent = Slider
+            SliderTrack.BackgroundColor3 = Color3.fromRGB(45, 52, 64)
+            SliderTrack.BorderSizePixel = 0
+            SliderTrack.Position = UDim2.new(0, 15, 1, SliderSettings.Description and -22 or -18)
+            SliderTrack.Size = UDim2.new(1, -30, 0, 4)
+
+            local TrackCorner = Instance.new("UICorner")
+            TrackCorner.CornerRadius = UDim.new(0, 2)
+            TrackCorner.Parent = SliderTrack
+
+            local SliderFill = Instance.new("Frame")
+            SliderFill.Name = "Fill"
+            SliderFill.Parent = SliderTrack
+            SliderFill.BackgroundColor3 = Color3.fromRGB(88, 166, 255)
+            SliderFill.BorderSizePixel = 0
+            SliderFill.Size = UDim2.new(0, 0, 1, 0)
+
+            local FillCorner = Instance.new("UICorner")
+            FillCorner.CornerRadius = UDim.new(0, 2)
+            FillCorner.Parent = SliderFill
+
+            local SliderButton = Instance.new("TextButton")
+            SliderButton.Name = "Button"
+            SliderButton.Parent = Slider
+            SliderButton.BackgroundTransparency = 1
+            SliderButton.Size = UDim2.new(1, 0, 1, 0)
+            SliderButton.Text = ""
+
+            local dragging = false
+
+            local function UpdateSlider(input)
+                local pos = math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
+                local value = math.floor(((pos * (SliderSettings.Range[2] - SliderSettings.Range[1]) + SliderSettings.Range[1]) / SliderSettings.Increment + 0.5)) * SliderSettings.Increment
+                value = math.clamp(value, SliderSettings.Range[1], SliderSettings.Range[2])
+                
+                SliderV.CurrentValue = value
+                SliderValue.Text = tostring(value)
+                tween(SliderFill, {Size = UDim2.new(pos, 0, 1, 0)})
+                
+                local success, err = pcall(function()
+                    SliderSettings.Callback(value)
+                end)
+                if not success then
+                    warn("VexHub | Slider Callback Error: " .. tostring(err))
+                end
+            end
+
+            SliderButton.MouseButton1Down:Connect(function()
+                dragging = true
+                UpdateSlider(UserInputService:GetMouseLocation())
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = false
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                    UpdateSlider(input)
+                end
+            end)
+
+            Slider.MouseEnter:Connect(function()
+                tween(SliderStroke, {Color = Color3.fromRGB(75, 82, 93)})
+            end)
+
+            Slider.MouseLeave:Connect(function()
+                tween(SliderStroke, {Color = Color3.fromRGB(55, 62, 73)})
+            end)
+
+            local initialPos = (SliderSettings.CurrentValue - SliderSettings.Range[1]) / (SliderSettings.Range[2] - SliderSettings.Range[1])
+            SliderFill.Size = UDim2.new(initialPos, 0, 1, 0)
+
+            function SliderV:Set(value)
+                value = math.clamp(value, SliderSettings.Range[1], SliderSettings.Range[2])
+                SliderV.CurrentValue = value
+                SliderValue.Text = tostring(value)
+                local pos = (value - SliderSettings.Range[1]) / (SliderSettings.Range[2] - SliderSettings.Range[1])
+                tween(SliderFill, {Size = UDim2.new(pos, 0, 1, 0)})
+            end
+
+            if SliderSettings.Flag then
+                VexHub.Options[SliderSettings.Flag] = SliderV
+            end
+
+            Tab.Elements[#Tab.Elements + 1] = SliderV
+            return SliderV
+        end
+
+        function Tab:CreateDropdown(DropdownSettings)
+            DropdownSettings = Kwargify({
+                Name = "Dropdown",
+                Description = nil,
+                Options = {"Option 1", "Option 2"},
+                CurrentOption = nil,
+                MultipleOptions = false,
+                Flag = nil,
+                Callback = function() end
+            }, DropdownSettings or {})
+
+            local DropdownV = {
+                CurrentOption = DropdownSettings.CurrentOption or DropdownSettings.Options[1],
+                Class = "Dropdown",
+                Settings = DropdownSettings
+            }
+
+            local Dropdown = Instance.new("Frame")
+            Dropdown.Name = DropdownSettings.Name
+            Dropdown.Parent = TabPage
+            Dropdown.BackgroundColor3 = Color3.fromRGB(35, 41, 50)
+            Dropdown.BorderSizePixel = 0
+            Dropdown.Size = UDim2.new(1, 0, 0, DropdownSettings.Description and 60 or 45)
+            Dropdown.ClipsDescendants = true
+
+            local DropdownCorner = Instance.new("UICorner")
+            DropdownCorner.CornerRadius = UDim.new(0, 8)
+            DropdownCorner.Parent = Dropdown
+
+            local DropdownStroke = Instance.new("UIStroke")
+            DropdownStroke.Color = Color3.fromRGB(55, 62, 73)
+            DropdownStroke.Thickness = 1
+            DropdownStroke.Parent = Dropdown
+
+            local DropdownTitle = Instance.new("TextLabel")
+            DropdownTitle.Name = "Title"
+            DropdownTitle.Parent = Dropdown
+            DropdownTitle.BackgroundTransparency = 1
+            DropdownTitle.Position = UDim2.new(0, 15, 0, DropdownSettings.Description and 8 or 0)
+            DropdownTitle.Size = UDim2.new(1, -65, 0, DropdownSettings.Description and 20 or 45)
+            DropdownTitle.Font = Enum.Font.GothamSemibold
+            DropdownTitle.Text = DropdownSettings.Name
+            DropdownTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            DropdownTitle.TextSize = 14
+            DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
+            DropdownTitle.TextYAlignment = DropdownSettings.Description and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
+
+            if DropdownSettings.Description then
+                local DropdownDesc = Instance.new("TextLabel")
+                DropdownDesc.Name = "Description"
+                DropdownDesc.Parent = Dropdown
+                DropdownDesc.BackgroundTransparency = 1
+                DropdownDesc.Position = UDim2.new(0, 15, 0, 28)
+                DropdownDesc.Size = UDim2.new(1, -65, 0, 24)
+                DropdownDesc.Font = Enum.Font.Gotham
+                DropdownDesc.Text = DropdownSettings.Description
+                DropdownDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+                DropdownDesc.TextSize = 12
+                DropdownDesc.TextXAlignment = Enum.TextXAlignment.Left
+                DropdownDesc.TextYAlignment = Enum.TextYAlignment.Top
+                DropdownDesc.TextWrapped = true
+            end
+
+            local DropdownButton = Instance.new("TextButton")
+            DropdownButton.Name = "Button"
+            DropdownButton.Parent = Dropdown
+            DropdownButton.BackgroundColor3 = Color3.fromRGB(45, 52, 64)
+            DropdownButton.BorderSizePixel = 0
+            DropdownButton.Position = UDim2.new(1, -120, 0.5, 0)
+            DropdownButton.AnchorPoint = Vector2.new(0, 0.5)
+            DropdownButton.Size = UDim2.fromOffset(105, 25)
+            DropdownButton.Font = Enum.Font.Gotham
+            DropdownButton.Text = DropdownV.CurrentOption
+            DropdownButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            DropdownButton.TextSize = 12
+            DropdownButton.TextScaled = true
+
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 4)
+            ButtonCorner.Parent = DropdownButton
+
+            local DropdownList = Instance.new("Frame")
+            DropdownList.Name = "List"
+            DropdownList.Parent = Dropdown
+            DropdownList.BackgroundColor3 = Color3.fromRGB(30, 36, 45)
+            DropdownList.BorderSizePixel = 0
+            DropdownList.Position = UDim2.new(0, 15, 1, 5)
+            DropdownList.Size = UDim2.new(1, -30, 0, #DropdownSettings.Options * 30)
+            DropdownList.Visible = false
+
+            local ListCorner = Instance.new("UICorner")
+            ListCorner.CornerRadius = UDim.new(0, 6)
+            ListCorner.Parent = DropdownList
+
+            local ListStroke = Instance.new("UIStroke")
+            ListStroke.Color = Color3.fromRGB(55, 62, 73)
+            ListStroke.Thickness = 1
+            ListStroke.Parent = DropdownList
+
+            local ListLayout = Instance.new("UIListLayout")
+            ListLayout.Parent = DropdownList
+            ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+            for _, option in pairs(DropdownSettings.Options) do
+                local OptionButton = Instance.new("TextButton")
+                OptionButton.Name = option
+                OptionButton.Parent = DropdownList
+                OptionButton.BackgroundColor3 = Color3.fromRGB(30, 36, 45)
+                OptionButton.BorderSizePixel = 0
+                OptionButton.Size = UDim2.new(1, 0, 0, 30)
+                OptionButton.Font = Enum.Font.Gotham
+                OptionButton.Text = option
+                OptionButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+                OptionButton.TextSize = 12
+
+                OptionButton.MouseEnter:Connect(function()
+                    tween(OptionButton, {BackgroundColor3 = Color3.fromRGB(40, 46, 57)})
+                end)
+
+                OptionButton.MouseLeave:Connect(function()
+                    tween(OptionButton, {BackgroundColor3 = Color3.fromRGB(30, 36, 45)})
+                end)
+
+                OptionButton.MouseButton1Click:Connect(function()
+                    DropdownV.CurrentOption = option
+                    DropdownButton.Text = option
+                    DropdownList.Visible = false
+                    tween(Dropdown, {Size = UDim2.new(1, 0, 0, DropdownSettings.Description and 60 or 45)})
+                    
+                    local success, err = pcall(function()
+                        DropdownSettings.Callback(option)
+                    end)
+                    if not success then
+                        warn("VexHub | Dropdown Callback Error: " .. tostring(err))
+                    end
+                end)
+            end
+
+            DropdownButton.MouseButton1Click:Connect(function()
+                DropdownList.Visible = not DropdownList.Visible
+                if DropdownList.Visible then
+                    tween(Dropdown, {Size = UDim2.new(1, 0, 0, (DropdownSettings.Description and 60 or 45) + #DropdownSettings.Options * 30 + 10)})
+                else
+                    tween(Dropdown, {Size = UDim2.new(1, 0, 0, DropdownSettings.Description and 60 or 45)})
+                end
+            end)
+
+            Dropdown.MouseEnter:Connect(function()
+                tween(DropdownStroke, {Color = Color3.fromRGB(75, 82, 93)})
+            end)
+
+            Dropdown.MouseLeave:Connect(function()
+                tween(DropdownStroke, {Color = Color3.fromRGB(55, 62, 73)})
+            end)
+
+            function DropdownV:Set(option)
+                if table.find(DropdownSettings.Options, option) then
+                    DropdownV.CurrentOption = option
+                    DropdownButton.Text = option
+                end
+            end
+
+            if DropdownSettings.Flag then
+                VexHub.Options[DropdownSettings.Flag] = DropdownV
+            end
+
+            Tab.Elements[#Tab.Elements + 1] = DropdownV
+            return DropdownV
+        end
+
+        function Tab:CreateTextbox(TextboxSettings)
+            TextboxSettings = Kwargify({
+                Name = "Textbox",
+                Description = nil,
+                PlaceholderText = "Enter text...",
+                RemoveTextAfterFocusLost = false,
+                Flag = nil,
+                Callback = function() end
+            }, TextboxSettings or {})
+
+            local TextboxV = {
+                CurrentValue = "",
+                Class = "Textbox",
+                Settings = TextboxSettings
+            }
+
+            local Textbox = Instance.new("Frame")
+            Textbox.Name = TextboxSettings.Name
+            Textbox.Parent = TabPage
+            Textbox.BackgroundColor3 = Color3.fromRGB(35, 41, 50)
+            Textbox.BorderSizePixel = 0
+            Textbox.Size = UDim2.new(1, 0, 0, TextboxSettings.Description and 60 or 45)
+
+            local TextboxCorner = Instance.new("UICorner")
+            TextboxCorner.CornerRadius = UDim.new(0, 8)
+            TextboxCorner.Parent = Textbox
+
+            local TextboxStroke = Instance.new("UIStroke")
+            TextboxStroke.Color = Color3.fromRGB(55, 62, 73)
+            TextboxStroke.Thickness = 1
+            TextboxStroke.Parent = Textbox
+
+            local TextboxTitle = Instance.new("TextLabel")
+            TextboxTitle.Name = "Title"
+            TextboxTitle.Parent = Textbox
+            TextboxTitle.BackgroundTransparency = 1
+            TextboxTitle.Position = UDim2.new(0, 15, 0, TextboxSettings.Description and 8 or 0)
+            TextboxTitle.Size = UDim2.new(1, -130, 0, TextboxSettings.Description and 20 or 45)
+            TextboxTitle.Font = Enum.Font.GothamSemibold
+            TextboxTitle.Text = TextboxSettings.Name
+            TextboxTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            TextboxTitle.TextSize = 14
+            TextboxTitle.TextXAlignment = Enum.TextXAlignment.Left
+            TextboxTitle.TextYAlignment = TextboxSettings.Description and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
+
+            if TextboxSettings.Description then
+                local TextboxDesc = Instance.new("TextLabel")
+                TextboxDesc.Name = "Description"
+                TextboxDesc.Parent = Textbox
+                TextboxDesc.BackgroundTransparency = 1
+                TextboxDesc.Position = UDim2.new(0, 15, 0, 28)
+                TextboxDesc.Size = UDim2.new(1, -130, 0, 24)
+                TextboxDesc.Font = Enum.Font.Gotham
+                TextboxDesc.Text = TextboxSettings.Description
+                TextboxDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
+                TextboxDesc.TextSize = 12
+                TextboxDesc.TextXAlignment = Enum.TextXAlignment.Left
+                TextboxDesc.TextYAlignment = Enum.TextYAlignment.Top
+                TextboxDesc.TextWrapped = true
+            end
+
+            local TextboxInput = Instance.new("TextBox")
+            TextboxInput.Name = "Input"
+            TextboxInput.Parent = Textbox
+            TextboxInput.BackgroundColor3 = Color3.fromRGB(45, 52, 64)
+            TextboxInput.BorderSizePixel = 0
+            TextboxInput.Position = UDim2.new(1, -120, 0.5, 0)
+            TextboxInput.AnchorPoint = Vector2.new(0, 0.5)
+            TextboxInput.Size = UDim2.fromOffset(105, 25)
+            TextboxInput.Font = Enum.Font.Gotham
+            TextboxInput.PlaceholderText = TextboxSettings.PlaceholderText
+            TextboxInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+            TextboxInput.Text = ""
+            TextboxInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+            TextboxInput.TextSize = 12
+            TextboxInput.TextScaled = true
+            TextboxInput.ClearTextOnFocus = false
+
+            local InputCorner = Instance.new("UICorner")
+            InputCorner.CornerRadius = UDim.new(0, 4)
+            InputCorner.Parent = TextboxInput
+
+            TextboxInput.FocusLost:Connect(function(enterPressed)
+                if enterPressed then
+                    TextboxV.CurrentValue = TextboxInput.Text
+                    local success, err = pcall(function()
+                        TextboxSettings.Callback(TextboxInput.Text)
+                    end)
+                    if not success then
+                        warn("VexHub | Textbox Callback Error: " .. tostring(err))
+                    end
+                    
+                    if TextboxSettings.RemoveTextAfterFocusLost then
+                        TextboxInput.Text = ""
+                    end
+                end
+            end)
+
+            Textbox.MouseEnter:Connect(function()
+                tween(TextboxStroke, {Color = Color3.fromRGB(75, 82, 93)})
+            end)
+
+            Textbox.MouseLeave:Connect(function()
+                tween(TextboxStroke, {Color = Color3.fromRGB(55, 62, 73)})
+            end)
+
+            function TextboxV:Set(text)
+                TextboxInput.Text = text
+                TextboxV.CurrentValue = text
+            end
+
+            if TextboxSettings.Flag then
+                VexHub.Options[TextboxSettings.Flag] = TextboxV
+            end
+
+            Tab.Elements[#Tab.Elements + 1] = TextboxV
+            return TextboxV
+        end
+
+        return Tab
+    end
+
+    return WindowV
+end
+
+local ExampleWindow = VexHub:CreateWindow({
+    Name = "VexHub Example",
+    LoadingTitle = "VexHub Loading",
+    LoadingSubtitle = "Example Usage",
+    ConfigurationSaving = {
+        Enabled = false,
+        FolderName = "VexHub",
+        FileName = "ExampleConfig"
+    },
+    KeySystem = false
+})
+
+local MainTab = ExampleWindow:CreateTab({
+    Name = "Main"
+})
+
+MainTab:CreateButton({
+    Name = "Test Button",
+    Description = "This is a test button",
+    Callback = function()
+        print("Button clicked!")
+    end
+})
+
+MainTab:CreateToggle({
+    Name = "Test Toggle",
+    Description = "This is a test toggle",
+    CurrentValue = false,
+    Flag = "TestToggle",
+    Callback = function(value)
+        print("Toggle:", value)
+    end
+})
+
+MainTab:CreateSlider({
+    Name = "Test Slider",
+    Description = "This is a test slider",
+    Range = {1, 100},
+    Increment = 1,
+    CurrentValue = 50,
+    Flag = "TestSlider",
+    Callback = function(value)
+        print("Slider:", value)
+    end
+})
+
+MainTab:CreateDropdown({
+    Name = "Test Dropdown",
+    Description = "This is a test dropdown",
+    Options = {"Option 1", "Option 2", "Option 3"},
+    CurrentOption = "Option 1",
+    Flag = "TestDropdown",
+    Callback = function(option)
+        print("Dropdown:", option)
+    end
+})
+
+MainTab:CreateTextbox({
+    Name = "Test Textbox",
+    Description = "This is a test textbox",
+    PlaceholderText = "Enter something...",
+    RemoveTextAfterFocusLost = false,
+    Flag = "TestTextbox",
+    Callback = function(text)
+        print("Textbox:", text)
+    end
+})
+
+return VexHub
