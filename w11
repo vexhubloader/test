@@ -684,11 +684,11 @@ function VexHub:CreateWindow(WindowSettings)
     Navigation.Parent = Main
     Navigation.BackgroundTransparency = 1
     Navigation.Position = UDim2.new(0, 0, 0, 50)
-    Navigation.Size = UDim2.new(0, 55, 1, -50) -- Always minimal
+    Navigation.Size = UDim2.new(0, 55, 1, -50)
 
     local NavLayout = Instance.new("UIListLayout")
     NavLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    NavLayout.Padding = UDim.new(0, 5)
+    NavLayout.Padding = UDim.new(0, 2) -- Compact spacing
     NavLayout.Parent = Navigation
     
     -- Content Frame
@@ -896,7 +896,7 @@ function VexHub:CreateWindow(WindowSettings)
         TabButton.Parent = Navigation
         TabButton.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
         TabButton.BorderSizePixel = 0
-        TabButton.Size = UDim2.new(1, 0, 0, 40)
+        TabButton.Size = UDim2.new(1, 0, 0, 32) -- More compact
         
         local TabCorner = Instance.new("UICorner")
         TabCorner.CornerRadius = UDim.new(0, 8)
@@ -913,13 +913,10 @@ function VexHub:CreateWindow(WindowSettings)
         TabIcon.Parent = TabButton
         TabIcon.BackgroundTransparency = 1
         TabIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-        TabIcon.Position = UDim2.new(0.5, 0, 0.5, 0) -- Centered
-        TabIcon.Size = UDim2.fromOffset(20, 20)
+        TabIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+        TabIcon.Size = UDim2.fromOffset(18, 18) -- Slightly smaller
         TabIcon.Image = GetIcon(TabSettings.Icon, TabSettings.ImageSource)
         TabIcon.ImageColor3 = Color3.fromRGB(221, 221, 221)
-        
-        -- No label at all for icon-only mode
-        -- local TabLabel = ... (removed)
         
         local TabInteract = Instance.new("TextButton")
         TabInteract.Name = "Interact"
@@ -964,7 +961,7 @@ function VexHub:CreateWindow(WindowSettings)
             -- Show this tab
             TabPage.Visible = true
             tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-            tween(TabButton, {BackgroundTransparency = 0.15}) -- subtle highlight
+            tween(TabButton, {BackgroundTransparency = 0.10}) -- subtle highlight
             tween(TabStroke, {Transparency = 0.4})
             Window.CurrentTab = TabSettings.Name
         end
@@ -978,7 +975,7 @@ function VexHub:CreateWindow(WindowSettings)
         TabButton.MouseEnter:Connect(function()
             if Window.CurrentTab ~= TabSettings.Name then
                 tween(TabStroke, {Color = Color3.fromRGB(87, 84, 104), Transparency = 0.6})
-                tween(TabButton, {BackgroundTransparency = 0.3})
+                tween(TabButton, {BackgroundTransparency = 0.22})
             end
         end)
         
