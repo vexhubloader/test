@@ -124,6 +124,7 @@ function VexHub:CreateWindow(WindowSettings)
     local Window = { 
         CurrentTab = nil, 
         State = true, 
+        NavigationExpanded = true,
         Tabs = {},
         Elements = {}
     }
@@ -198,12 +199,49 @@ function VexHub:CreateWindow(WindowSettings)
     Subtitle.Parent = TitleBar
     Subtitle.BackgroundTransparency = 1
     Subtitle.Position = UDim2.new(0, 55, 0, 28)
-    Subtitle.Size = UDim2.new(1, -55, 0, 14)
+    Subtitle.Size = UDim2.new(1, -95, 0, 14)
     Subtitle.Font = Enum.Font.Gotham
     Subtitle.Text = WindowSettings.Subtitle
     Subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
     Subtitle.TextSize = 12
     Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+    
+    -- Hamburger Menu Button (3 lines)
+    local MenuButton = Instance.new("Frame")
+    MenuButton.Name = "MenuButton"
+    MenuButton.Parent = TitleBar
+    MenuButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
+    MenuButton.BackgroundTransparency = 1
+    MenuButton.BorderSizePixel = 0
+    MenuButton.Position = UDim2.new(1, -40, 0.5, 0)
+    MenuButton.AnchorPoint = Vector2.new(0, 0.5)
+    MenuButton.Size = UDim2.fromOffset(30, 30)
+    
+    local MenuCorner = Instance.new("UICorner")
+    MenuCorner.CornerRadius = UDim.new(0, 6)
+    MenuCorner.Parent = MenuButton
+    
+    -- Create the 3 lines
+    for i = 1, 3 do
+        local Line = Instance.new("Frame")
+        Line.Name = "Line" .. i
+        Line.Parent = MenuButton
+        Line.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        Line.BorderSizePixel = 0
+        Line.Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0)
+        Line.Size = UDim2.new(0.6, 0, 0, 2)
+        
+        local LineCorner = Instance.new("UICorner")
+        LineCorner.CornerRadius = UDim.new(0, 1)
+        LineCorner.Parent = Line
+    end
+    
+    local MenuInteract = Instance.new("TextButton")
+    MenuInteract.Name = "Interact"
+    MenuInteract.Parent = MenuButton
+    MenuInteract.BackgroundTransparency = 1
+    MenuInteract.Size = UDim2.new(1, 0, 1, 0)
+    MenuInteract.Text = ""
     
     -- Navigation Frame
     local Navigation = Instance.new("Frame")
@@ -242,10 +280,95 @@ function VexHub:CreateWindow(WindowSettings)
     -- Enable dragging
     Draggable(Main)
     
+    -- Toggle Navigation Function
+    function Window:ToggleNavigation()
+        Window.NavigationExpanded = not Window.NavigationExpanded
+        
+        if Window.NavigationExpanded then
+            -- Expand navigation
+            tween(Navigation, {Size = UDim2.new(0, 180, 1, -50)})
+            tween(Content, {
+                Position = UDim2.new(0, 180, 0, 50),
+                Size = UDim2.new(1, -180, 1, -50)
+            })
+            tween(MenuButton, {BackgroundTransparency = 1})
+            
+            -- Animate hamburger lines back to normal
+            for i = 1, 3 do
+                local line = MenuButton:FindFirstChild("Line" .. i)
+                if line then
+                    tween(line, {
+                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
+                        Rotation = 0,
+                        BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+                    })
+                end
+            end
+        else
+            -- Collapse navigation
+            tween(Navigation, {Size = UDim2.new(0, 0, 1, -50)})
+            tween(Content, {
+                Position = UDim2.new(0, 0, 0, 50),
+                Size = UDim2.new(1, 0, 1, -50)
+            })
+            tween(MenuButton, {BackgroundTransparency = 0.8})
+            
+            -- Animate hamburger lines to X shape
+            local line1 = MenuButton:FindFirstChild("Line1")
+            local line2 = MenuButton:FindFirstChild("Line2")
+            local line3 = MenuButton:FindFirstChild("Line3")
+            
+            if line1 then
+                tween(line1, {
+                    Position = UDim2.new(0.2, 0, 0.4, 0),
+                    Rotation = 45,
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                })
+            end
+            if line2 then
+                tween(line2, {
+                    Position = UDim2.new(0.2, 0, 0.4, 0),
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    BackgroundTransparency = 1
+                })
+            end
+            if line3 then
+                tween(line3, {
+                    Position = UDim2.new(0.2, 0, 0.4, 0),
+                    Rotation = -45,
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                })
+            end
+        end
+    end
+    
+    -- Menu button click handler
+    MenuInteract.MouseButton1Click:Connect(function()
+        Window:ToggleNavigation()
+    end)
+    
+    -- Menu button hover effects
+    MenuButton.MouseEnter:Connect(function()
+        if Window.NavigationExpanded then
+            tween(MenuButton, {BackgroundTransparency = 0.9})
+        else
+            tween(MenuButton, {BackgroundTransparency = 0.7})
+        end
+    end)
+    
+    MenuButton.MouseLeave:Connect(function()
+        if Window.NavigationExpanded then
+            tween(MenuButton, {BackgroundTransparency = 1})
+        else
+            tween(MenuButton, {BackgroundTransparency = 0.8})
+        end
+    end)
+    
     Window.GUI = ScreenGui
     Window.Main = Main
     Window.Navigation = Navigation
     Window.Content = Content
+    Window.MenuButton = MenuButton
     
     -- Create Tab Function
     function Window:CreateTab(TabSettings)
