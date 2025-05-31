@@ -509,7 +509,6 @@ function VexHub:CreateWindow(WindowSettings)
         State = true, 
         IsMinimized = false,
         OriginalSize = WindowSettings.Size,
-        Bind = Enum.KeyCode.K, -- Default bind to show/hide UI
         Tabs = {},
         Elements = {}
     }
@@ -596,9 +595,9 @@ function VexHub:CreateWindow(WindowSettings)
     Controls.Name = "Controls"
     Controls.Parent = TitleBar
     Controls.BackgroundTransparency = 1
-    Controls.Position = UDim2.new(1, -70, 0.5, 0)
+    Controls.Position = UDim2.new(1, -40, 0.5, 0)
     Controls.AnchorPoint = Vector2.new(0, 0.5)
-    Controls.Size = UDim2.fromOffset(60, 30)
+    Controls.Size = UDim2.fromOffset(30, 30)
     
     local ControlsLayout = Instance.new("UIListLayout")
     ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -607,69 +606,36 @@ function VexHub:CreateWindow(WindowSettings)
     ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ControlsLayout.Parent = Controls
     
-
+    -- Hide Button
+    local HideButton = Instance.new("Frame")
+    HideButton.Name = "HideButton"
+    HideButton.Parent = Controls
+    HideButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
+    HideButton.BackgroundTransparency = 1
+    HideButton.BorderSizePixel = 0
+    HideButton.Size = UDim2.fromOffset(30, 30)
+    HideButton.LayoutOrder = 1
     
-    -- Minimize Button
-    local MinimizeButton = Instance.new("Frame")
-    MinimizeButton.Name = "MinimizeButton"
-    MinimizeButton.Parent = Controls
-    MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
-    MinimizeButton.BackgroundTransparency = 1
-    MinimizeButton.BorderSizePixel = 0
-    MinimizeButton.Size = UDim2.fromOffset(30, 30)
-    MinimizeButton.LayoutOrder = 1
+    local HideCorner = Instance.new("UICorner")
+    HideCorner.CornerRadius = UDim.new(0, 6)
+    HideCorner.Parent = HideButton
     
-    local MinimizeCorner = Instance.new("UICorner")
-    MinimizeCorner.CornerRadius = UDim.new(0, 6)
-    MinimizeCorner.Parent = MinimizeButton
+    local HideIcon = Instance.new("ImageLabel")
+    HideIcon.Name = "Icon"
+    HideIcon.Parent = HideButton
+    HideIcon.BackgroundTransparency = 1
+    HideIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    HideIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    HideIcon.Size = UDim2.fromOffset(16, 16)
+    HideIcon.Image = "rbxassetid://6031094691" -- Minimize icon
+    HideIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
     
-    local MinimizeIcon = Instance.new("ImageLabel")
-    MinimizeIcon.Name = "Icon"
-    MinimizeIcon.Parent = MinimizeButton
-    MinimizeIcon.BackgroundTransparency = 1
-    MinimizeIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-    MinimizeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    MinimizeIcon.Size = UDim2.fromOffset(16, 16)
-    MinimizeIcon.Image = "rbxassetid://11036884234" -- Minimize icon
-    MinimizeIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
-    
-    local MinimizeInteract = Instance.new("TextButton")
-    MinimizeInteract.Name = "Interact"
-    MinimizeInteract.Parent = MinimizeButton
-    MinimizeInteract.BackgroundTransparency = 1
-    MinimizeInteract.Size = UDim2.new(1, 0, 1, 0)
-    MinimizeInteract.Text = ""
-    
-    -- Close Button
-    local CloseButton = Instance.new("Frame")
-    CloseButton.Name = "CloseButton"
-    CloseButton.Parent = Controls
-    CloseButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
-    CloseButton.BackgroundTransparency = 1
-    CloseButton.BorderSizePixel = 0
-    CloseButton.Size = UDim2.fromOffset(30, 30)
-    CloseButton.LayoutOrder = 2
-    
-    local CloseCorner = Instance.new("UICorner")
-    CloseCorner.CornerRadius = UDim.new(0, 6)
-    CloseCorner.Parent = CloseButton
-    
-    local CloseIcon = Instance.new("ImageLabel")
-    CloseIcon.Name = "Icon"
-    CloseIcon.Parent = CloseButton
-    CloseIcon.BackgroundTransparency = 1
-    CloseIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-    CloseIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    CloseIcon.Size = UDim2.fromOffset(16, 16)
-    CloseIcon.Image = "rbxassetid://10137941941" -- Close X icon
-    CloseIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
-    
-    local CloseInteract = Instance.new("TextButton")
-    CloseInteract.Name = "Interact"
-    CloseInteract.Parent = CloseButton
-    CloseInteract.BackgroundTransparency = 1
-    CloseInteract.Size = UDim2.new(1, 0, 1, 0)
-    CloseInteract.Text = ""
+    local HideInteract = Instance.new("TextButton")
+    HideInteract.Name = "Interact"
+    HideInteract.Parent = HideButton
+    HideInteract.BackgroundTransparency = 1
+    HideInteract.Size = UDim2.new(1, 0, 1, 0)
+    HideInteract.Text = ""
     
     -- Navigation Frame
     local Navigation = Instance.new("Frame")
@@ -726,13 +692,6 @@ function VexHub:CreateWindow(WindowSettings)
                 tween(control, {BackgroundTransparency = 1})
                 if control:FindFirstChild("Icon") then
                     tween(control.Icon, {ImageTransparency = 1})
-                end
-                -- Hide hamburger lines
-                for i = 1, 3 do
-                    local line = control:FindFirstChild("Line" .. i)
-                    if line then
-                        tween(line, {BackgroundTransparency = 1})
-                    end
                 end
             end
         end
@@ -801,10 +760,10 @@ function VexHub:CreateWindow(WindowSettings)
         end
     end
     
-    -- Minimize UI Function
+    -- Minimize UI Function (Luna-style)
     function Window:Minimize()
         Window.IsMinimized = true
-        MinimizeIcon.Image = "rbxassetid://10137941941" -- Change to maximize icon
+        HideIcon.Image = "rbxassetid://6031094687" -- Expand icon
         
         -- Hide navigation and content
         Navigation.Visible = false
@@ -814,10 +773,10 @@ function VexHub:CreateWindow(WindowSettings)
         tween(Main, {Size = UDim2.fromOffset(Window.OriginalSize.X.Offset, 50)})
     end
     
-    -- Maximize UI Function  
-    function Window:Maximize()
+    -- Restore UI Function
+    function Window:Restore()
         Window.IsMinimized = false
-        MinimizeIcon.Image = "rbxassetid://11036884234" -- Change back to minimize icon
+        HideIcon.Image = "rbxassetid://6031094691" -- Minimize icon
         
         -- Show navigation and content
         Navigation.Visible = true
@@ -827,52 +786,23 @@ function VexHub:CreateWindow(WindowSettings)
         tween(Main, {Size = Window.OriginalSize})
     end
     
-
-    
-    -- Minimize button events
-    MinimizeInteract.MouseButton1Click:Connect(function()
+    -- Hide button events
+    HideInteract.MouseButton1Click:Connect(function()
         if Window.IsMinimized then
-            Window:Maximize()
+            Window:Restore()
         else
             Window:Minimize()
         end
     end)
     
-    MinimizeButton.MouseEnter:Connect(function()
-        tween(MinimizeButton, {BackgroundTransparency = 0.8})
-        tween(MinimizeIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+    HideButton.MouseEnter:Connect(function()
+        tween(HideButton, {BackgroundTransparency = 0.8})
+        tween(HideIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
     end)
     
-    MinimizeButton.MouseLeave:Connect(function()
-        tween(MinimizeButton, {BackgroundTransparency = 1})
-        tween(MinimizeIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
-    end)
-    
-    -- Close button events
-    CloseInteract.MouseButton1Click:Connect(function()
-        Window:Hide(true)
-    end)
-    
-    CloseButton.MouseEnter:Connect(function()
-        tween(CloseButton, {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.fromRGB(232, 17, 35)})
-        tween(CloseIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-    end)
-    
-    CloseButton.MouseLeave:Connect(function()
-        tween(CloseButton, {BackgroundTransparency = 1, BackgroundColor3 = Color3.fromRGB(50, 48, 58)})
-        tween(CloseIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
-    end)
-    
-    -- Keyboard bind to show/hide UI
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        if input.KeyCode == Window.Bind then
-            if Window.State then
-                Window:Hide(true)
-            else
-                Window:Show()
-            end
-        end
+    HideButton.MouseLeave:Connect(function()
+        tween(HideButton, {BackgroundTransparency = 1})
+        tween(HideIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
     end)
     
     Window.GUI = ScreenGui
@@ -881,10 +811,7 @@ function VexHub:CreateWindow(WindowSettings)
     Window.Content = Content
     Window.Controls = Controls
     
-    -- Function to change bind key
-    function Window:SetBind(newBind)
-        Window.Bind = newBind
-    end
+
     
     -- Create Tab Function
     function Window:CreateTab(TabSettings)
@@ -1356,296 +1283,3 @@ function VexHub:CreateWindow(WindowSettings)
 end
 
 return VexHub
-
---[[
-    USAGE EXAMPLES:
-    
-    This section demonstrates how to use the VexHub UI Library.
-    Copy and modify these examples for your own scripts.
-]]
-
---[[
--- Basic Usage Example:
-
--- Load the library
-local VexHub = loadstring(game:HttpGet("YOUR_SCRIPT_URL_HERE"))()
-
--- Create main window
-local Window = VexHub:CreateWindow({
-    Name = "My Script Hub",
-    Subtitle = "Version 1.0",
-    LogoID = "6031097225", -- Roblox asset ID for logo
-    Size = UDim2.fromOffset(580, 460)
-})
-
--- Create first tab
-local MainTab = Window:CreateTab({
-    Name = "Main",
-    Icon = "home",
-    ImageSource = "Material"
-})
-
--- Create second tab
-local SettingsTab = Window:CreateTab({
-    Name = "Settings", 
-    Icon = "smart_button",
-    ImageSource = "Material"
-})
-
--- Add a simple button
-MainTab:CreateButton({
-    Name = "Test Button",
-    Description = "This button prints a message when clicked",
-    Callback = function()
-        print("Button was clicked!")
-    end
-})
-
--- Add a button without description
-MainTab:CreateButton({
-    Name = "Simple Button",
-    Callback = function()
-        print("Simple button clicked!")
-    end
-})
-
--- Add a toggle with description
-local MyToggle = MainTab:CreateToggle({
-    Name = "Auto Farm",
-    Description = "Automatically farms coins for you",
-    CurrentValue = false,
-    Callback = function(Value)
-        print("Toggle is now:", Value)
-        -- Add your toggle functionality here
-        if Value then
-            print("Auto farm enabled!")
-        else
-            print("Auto farm disabled!")
-        end
-    end
-}, "AutoFarmFlag") -- Optional flag for saving/loading
-
--- Add a toggle without description
-SettingsTab:CreateToggle({
-    Name = "Show Notifications",
-    CurrentValue = true,
-    Callback = function(Value)
-        print("Notifications:", Value and "Enabled" or "Disabled")
-    end
-})
-
--- Example of updating toggle state programmatically
--- MyToggle:UpdateState(true) -- This would enable the toggle
-
--- Example of modifying elements after creation
--- MyToggle:Set({
---     Name = "Updated Toggle Name",
---     Description = "Updated description",
---     CurrentValue = false,
---     Callback = function(Value)
---         print("Updated callback:", Value)
---     end
--- })
-
--- Example of destroying elements
--- MyToggle:Destroy() -- This would remove the toggle
-]]
-
---[[
--- Advanced Usage Example:
-
--- Create a more complex interface
-local AdvancedWindow = VexHub:CreateWindow({
-    Name = "Advanced Script",
-    Subtitle = "Professional Edition",
-    LogoID = "6031097225",
-    Size = UDim2.fromOffset(650, 500)
-})
-
--- Combat Tab
-local CombatTab = AdvancedWindow:CreateTab({
-    Name = "Combat",
-    Icon = "extension",
-    ImageSource = "Material"
-})
-
--- Add combat features
-CombatTab:CreateToggle({
-    Name = "Kill Aura",
-    Description = "Automatically attacks nearby enemies",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.KillAura = Value
-        if Value then
-            -- Start kill aura loop
-            spawn(function()
-                while _G.KillAura do
-                    wait(0.1)
-                    -- Your kill aura code here
-                    print("Attacking enemies...")
-                end
-            end)
-        end
-    end
-}, "KillAuraToggle")
-
-CombatTab:CreateButton({
-    Name = "Instant Kill All",
-    Description = "Instantly kills all enemies on the map",
-    Callback = function()
-        print("Killing all enemies...")
-        -- Your instant kill code here
-        for i = 1, 10 do
-            wait(0.1)
-            print("Killed enemy", i)
-        end
-        print("All enemies eliminated!")
-    end
-})
-
--- Player Tab
-local PlayerTab = AdvancedWindow:CreateTab({
-    Name = "Player",
-    Icon = "view_in_ar", 
-    ImageSource = "Material"
-})
-
-PlayerTab:CreateToggle({
-    Name = "Speed Hack",
-    Description = "Increases your movement speed",
-    CurrentValue = false,
-    Callback = function(Value)
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            if Value then
-                LocalPlayer.Character.Humanoid.WalkSpeed = 50
-                print("Speed hack enabled!")
-            else
-                LocalPlayer.Character.Humanoid.WalkSpeed = 16
-                print("Speed hack disabled!")
-            end
-        end
-    end
-})
-
-PlayerTab:CreateToggle({
-    Name = "Jump Power",
-    Description = "Increases your jump height",
-    CurrentValue = false,
-    Callback = function(Value)
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            if Value then
-                LocalPlayer.Character.Humanoid.JumpPower = 100
-                print("Jump boost enabled!")
-            else
-                LocalPlayer.Character.Humanoid.JumpPower = 50
-                print("Jump boost disabled!")
-            end
-        end
-    end
-})
-
-PlayerTab:CreateButton({
-    Name = "Teleport to Spawn",
-    Callback = function()
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 10, 0)
-            print("Teleported to spawn!")
-        end
-    end
-})
-
--- Misc Tab
-local MiscTab = AdvancedWindow:CreateTab({
-    Name = "Miscellaneous",
-    Icon = "tab",
-    ImageSource = "Material"
-})
-
-MiscTab:CreateToggle({
-    Name = "Anti-AFK",
-    Description = "Prevents you from being kicked for inactivity",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.AntiAFK = Value
-        if Value then
-            spawn(function()
-                local VirtualUser = game:GetService("VirtualUser")
-                while _G.AntiAFK do
-                    wait(300) -- Wait 5 minutes
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton2(Vector2.new())
-                    print("Anti-AFK activated")
-                end
-            end)
-        end
-    end
-})
-
-MiscTab:CreateButton({
-    Name = "Rejoin Server",
-    Description = "Leaves and rejoins the current server",
-    Callback = function()
-        local TeleportService = game:GetService("TeleportService")
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-    end
-})
-
-MiscTab:CreateButton({
-    Name = "Copy Game Link",
-    Description = "Copies the current game link to clipboard",
-    Callback = function()
-        local gameLink = "https://www.roblox.com/games/" .. game.PlaceId
-        setclipboard(gameLink)
-        print("Game link copied to clipboard!")
-    end
-})
-]]
-
---[[
--- Customization Examples:
-
--- Custom theme colors (modify the ThemeGradient at the top of the script)
-VexHub.ThemeGradient = ColorSequence.new{
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 100, 100)), -- Red
-    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(100, 255, 100)), -- Green  
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(100, 100, 255))  -- Blue
-}
-
--- Using custom icons
-local CustomTab = Window:CreateTab({
-    Name = "Custom",
-    Icon = "123456789", -- Your custom Roblox asset ID
-    ImageSource = "Custom"
-})
-
--- Error handling example
-local SafeButton = MainTab:CreateButton({
-    Name = "Safe Button",
-    Description = "This button has error handling",
-    Callback = function()
-        -- This might cause an error
-        local success, result = pcall(function()
-            -- Your potentially risky code here
-            error("This is a test error")
-        end)
-        
-        if success then
-            print("Operation completed successfully!")
-        else
-            print("Error occurred:", result)
-        end
-    end
-})
-]] 
