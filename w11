@@ -202,21 +202,21 @@ function VexHub:CreateWindow(WindowSettings)
     Subtitle.Parent = TitleBar
     Subtitle.BackgroundTransparency = 1
     Subtitle.Position = UDim2.new(0, 55, 0, 28)
-    Subtitle.Size = UDim2.new(1, -95, 0, 14)
+    Subtitle.Size = UDim2.new(1, -125, 0, 14)
     Subtitle.Font = Enum.Font.Gotham
     Subtitle.Text = WindowSettings.Subtitle
     Subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
     Subtitle.TextSize = 12
     Subtitle.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Controls Container
+    -- Controls Container (right side)
     local Controls = Instance.new("Frame")
     Controls.Name = "Controls"
     Controls.Parent = TitleBar
     Controls.BackgroundTransparency = 1
-    Controls.Position = UDim2.new(1, -130, 0.5, 0)
+    Controls.Position = UDim2.new(1, -70, 0.5, 0)
     Controls.AnchorPoint = Vector2.new(0, 0.5)
-    Controls.Size = UDim2.fromOffset(120, 30)
+    Controls.Size = UDim2.fromOffset(60, 30)
     
     local ControlsLayout = Instance.new("UIListLayout")
     ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -225,15 +225,16 @@ function VexHub:CreateWindow(WindowSettings)
     ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ControlsLayout.Parent = Controls
     
-    -- Hamburger Menu Button (3 lines)
+    -- Hamburger Menu Button (3 lines) - LEFT SIDE
     local MenuButton = Instance.new("Frame")
     MenuButton.Name = "MenuButton"
-    MenuButton.Parent = Controls
+    MenuButton.Parent = TitleBar
     MenuButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
     MenuButton.BackgroundTransparency = 1
     MenuButton.BorderSizePixel = 0
+    MenuButton.Position = UDim2.new(0, 180 + 15, 0.5, 0) -- Position after navigation area
+    MenuButton.AnchorPoint = Vector2.new(0, 0.5)
     MenuButton.Size = UDim2.fromOffset(30, 30)
-    MenuButton.LayoutOrder = 1
     
     local MenuCorner = Instance.new("UICorner")
     MenuCorner.CornerRadius = UDim.new(0, 6)
@@ -269,7 +270,7 @@ function VexHub:CreateWindow(WindowSettings)
     MinimizeButton.BackgroundTransparency = 1
     MinimizeButton.BorderSizePixel = 0
     MinimizeButton.Size = UDim2.fromOffset(30, 30)
-    MinimizeButton.LayoutOrder = 2
+    MinimizeButton.LayoutOrder = 1
     
     local MinimizeCorner = Instance.new("UICorner")
     MinimizeCorner.CornerRadius = UDim.new(0, 6)
@@ -300,7 +301,7 @@ function VexHub:CreateWindow(WindowSettings)
     CloseButton.BackgroundTransparency = 1
     CloseButton.BorderSizePixel = 0
     CloseButton.Size = UDim2.fromOffset(30, 30)
-    CloseButton.LayoutOrder = 3
+    CloseButton.LayoutOrder = 2
     
     local CloseCorner = Instance.new("UICorner")
     CloseCorner.CornerRadius = UDim.new(0, 6)
@@ -493,13 +494,21 @@ function VexHub:CreateWindow(WindowSettings)
         Window.NavigationExpanded = not Window.NavigationExpanded
         
         if Window.NavigationExpanded then
-            -- Expand navigation
+            -- Expand navigation (show icons + text)
             tween(Navigation, {Size = UDim2.new(0, 180, 1, -50)})
             tween(Content, {
                 Position = UDim2.new(0, 180, 0, 50),
                 Size = UDim2.new(1, -180, 1, -50)
             })
-            tween(MenuButton, {BackgroundTransparency = 1})
+            tween(MenuButton, {Position = UDim2.new(0, 180 + 15, 0.5, 0)})
+            
+            -- Show tab text labels
+            for _, tab in pairs(Window.Tabs) do
+                if tab.Button and tab.Button:FindFirstChild("Label") then
+                    tab.Button.Label.Visible = true
+                    tween(tab.Button.Label, {TextTransparency = 0})
+                end
+            end
             
             -- Animate hamburger lines back to normal
             for i = 1, 3 do
@@ -513,39 +522,33 @@ function VexHub:CreateWindow(WindowSettings)
                 end
             end
         else
-            -- Collapse navigation
-            tween(Navigation, {Size = UDim2.new(0, 0, 1, -50)})
+            -- Collapse navigation (show icons only)
+            tween(Navigation, {Size = UDim2.new(0, 55, 1, -50)})
             tween(Content, {
-                Position = UDim2.new(0, 0, 0, 50),
-                Size = UDim2.new(1, 0, 1, -50)
+                Position = UDim2.new(0, 55, 0, 50),
+                Size = UDim2.new(1, -55, 1, -50)
             })
-            tween(MenuButton, {BackgroundTransparency = 0.8})
+            tween(MenuButton, {Position = UDim2.new(0, 55 + 15, 0.5, 0)})
             
-            -- Animate hamburger lines to X shape
-            local line1 = MenuButton:FindFirstChild("Line1")
-            local line2 = MenuButton:FindFirstChild("Line2")
-            local line3 = MenuButton:FindFirstChild("Line3")
+            -- Hide tab text labels
+            for _, tab in pairs(Window.Tabs) do
+                if tab.Button and tab.Button:FindFirstChild("Label") then
+                    tween(tab.Button.Label, {TextTransparency = 1}, function()
+                        tab.Button.Label.Visible = false
+                    end)
+                end
+            end
             
-            if line1 then
-                tween(line1, {
-                    Position = UDim2.new(0.2, 0, 0.4, 0),
-                    Rotation = 45,
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                })
-            end
-            if line2 then
-                tween(line2, {
-                    Position = UDim2.new(0.2, 0, 0.4, 0),
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                    BackgroundTransparency = 1
-                })
-            end
-            if line3 then
-                tween(line3, {
-                    Position = UDim2.new(0.2, 0, 0.4, 0),
-                    Rotation = -45,
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                })
+            -- Keep hamburger lines normal (don't turn to X)
+            for i = 1, 3 do
+                local line = MenuButton:FindFirstChild("Line" .. i)
+                if line then
+                    tween(line, {
+                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
+                        Rotation = 0,
+                        BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    })
+                end
             end
         end
     end
@@ -557,18 +560,25 @@ function VexHub:CreateWindow(WindowSettings)
     
     -- Menu button hover effects
     MenuButton.MouseEnter:Connect(function()
-        if Window.NavigationExpanded then
-            tween(MenuButton, {BackgroundTransparency = 0.9})
-        else
-            tween(MenuButton, {BackgroundTransparency = 0.7})
+        tween(MenuButton, {BackgroundTransparency = 0.8})
+        -- Brighten lines on hover
+        for i = 1, 3 do
+            local line = MenuButton:FindFirstChild("Line" .. i)
+            if line then
+                tween(line, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
+            end
         end
     end)
     
     MenuButton.MouseLeave:Connect(function()
-        if Window.NavigationExpanded then
-            tween(MenuButton, {BackgroundTransparency = 1})
-        else
-            tween(MenuButton, {BackgroundTransparency = 0.8})
+        tween(MenuButton, {BackgroundTransparency = 1})
+        -- Return lines to normal color
+        for i = 1, 3 do
+            local line = MenuButton:FindFirstChild("Line" .. i)
+            if line then
+                local normalColor = Window.NavigationExpanded and Color3.fromRGB(200, 200, 200) or Color3.fromRGB(255, 255, 255)
+                tween(line, {BackgroundColor3 = normalColor})
+            end
         end
     end)
     
@@ -663,7 +673,7 @@ function VexHub:CreateWindow(WindowSettings)
         TabIcon.Name = "Icon"
         TabIcon.Parent = TabButton
         TabIcon.BackgroundTransparency = 1
-        TabIcon.Position = UDim2.new(0, 10, 0.5, 0)
+        TabIcon.Position = UDim2.new(0, Window.NavigationExpanded and 10 or 17.5, 0.5, 0)
         TabIcon.AnchorPoint = Vector2.new(0, 0.5)
         TabIcon.Size = UDim2.fromOffset(20, 20)
         TabIcon.Image = GetIcon(TabSettings.Icon, TabSettings.ImageSource)
@@ -680,6 +690,7 @@ function VexHub:CreateWindow(WindowSettings)
         TabLabel.TextColor3 = Color3.fromRGB(221, 221, 221)
         TabLabel.TextSize = 14
         TabLabel.TextXAlignment = Enum.TextXAlignment.Left
+        TabLabel.Visible = Window.NavigationExpanded
         
         local TabInteract = Instance.new("TextButton")
         TabInteract.Name = "Interact"
@@ -720,6 +731,10 @@ function VexHub:CreateWindow(WindowSettings)
                 tween(otherTab.Button.Icon, {ImageColor3 = Color3.fromRGB(221, 221, 221)})
                 tween(otherTab.Button, {BackgroundTransparency = 1})
                 tween(otherTab.Button.UIStroke, {Transparency = 1})
+                
+                -- Update icon position for other tabs
+                local iconPos = Window.NavigationExpanded and 10 or 17.5
+                tween(otherTab.Button.Icon, {Position = UDim2.new(0, iconPos, 0.5, 0)})
             end
             
             -- Show this tab
@@ -727,6 +742,10 @@ function VexHub:CreateWindow(WindowSettings)
             tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
             tween(TabButton, {BackgroundTransparency = 0})
             tween(TabStroke, {Transparency = 0.4})
+            
+            -- Update icon position for active tab
+            local iconPos = Window.NavigationExpanded and 10 or 17.5
+            tween(TabIcon, {Position = UDim2.new(0, iconPos, 0.5, 0)})
             
             Window.CurrentTab = TabSettings.Name
         end
