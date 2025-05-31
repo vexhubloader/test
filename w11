@@ -686,12 +686,6 @@ function VexHub:CreateWindow(WindowSettings)
     Navigation.Position = UDim2.new(0, 0, 0, 50)
     Navigation.Size = UDim2.new(0, 55, 1, -50) -- Always minimal
 
-    local NavPadding = Instance.new("UIPadding")
-    NavPadding.PaddingTop = UDim.new(0, 10)
-    NavPadding.PaddingLeft = UDim.new(0, 10)
-    NavPadding.PaddingRight = UDim.new(0, 10)
-    NavPadding.Parent = Navigation
-
     local NavLayout = Instance.new("UIListLayout")
     NavLayout.SortOrder = Enum.SortOrder.LayoutOrder
     NavLayout.Padding = UDim.new(0, 5)
