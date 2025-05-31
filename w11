@@ -8,1017 +8,7 @@ Simplified UI Library with Windows, Tabs, Buttons, and Toggles
 
 local VexHub = { 
     Options = {}, 
-    ThemeGradient = ColorSequence.new{--[[
-
-Vex Hub Lib
-Extracted from Luna Interface Suite
-Simplified UI Library with Windows, Tabs, Buttons, and Toggles
-
-]]
-
-local VexHub = { 
-    Options = {}, 
     ThemeGradient = ColorSequence.new{
-        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(117, 164, 206)), 
-        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(123, 201, 201)), 
-        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(224, 138, 175))
-    } 
-}
-
--- Services
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
-
--- Constants
-local tweeninfo = TweenInfo.new(0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
-
--- Material Icons (simplified version)
-local IconModule = {
-    Material = {
-        ["home"] = "http://www.roblox.com/asset/?id=6026568195",
-        ["view_in_ar"] = "http://www.roblox.com/asset/?id=6031079158",
-        ["smart_button"] = "http://www.roblox.com/asset/?id=6031265962",
-        ["toggle_on"] = "http://www.roblox.com/asset/?id=6031229341",
-        ["tab"] = "http://www.roblox.com/asset/?id=6031233851",
-        ["extension"] = "http://www.roblox.com/asset/?id=6023565892",
-    }
-}
-
--- Utility Functions
-local function Kwargify(defaults, passed)
-    for i, v in pairs(defaults) do
-        if passed[i] == nil then
-            passed[i] = v
-        end
-    end
-    return passed
-end
-
-local function GetIcon(icon, source)
-    if source == "Custom" then
-        return "rbxassetid://" .. icon
-    elseif IconModule[source] then
-        local sourceicon = IconModule[source]
-        return sourceicon[icon] or "rbxassetid://6031079158"
-    else
-        return "rbxassetid://6031079158"
-    end
-end
-
-function tween(object, goal, callback, tweenin)
-    local tween = TweenService:Create(object, tweenin or tweeninfo, goal)
-    tween.Completed:Connect(callback or function() end)
-    tween:Play()
-end
-
--- Dragging functionality
-local function Draggable(Frame)
-    local dragToggle = nil
-    local dragSpeed = 0.25
-    local dragStart = nil
-    local startPos = nil
-
-    local function updateInput(input)
-        local Delta = input.Position - dragStart
-        local Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + Delta.X, startPos.Y.Scale, startPos.Y.Offset + Delta.Y)
-        TweenService:Create(Frame, TweenInfo.new(dragSpeed), {Position = Position}):Play()
-    end
-
-    Frame.InputBegan:Connect(function(input)
-        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-            dragToggle = true
-            dragStart = input.Position
-            startPos = Frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragToggle = false
-                end
-            end)
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            if dragToggle then
-                updateInput(input)
-            end
-        end
-    end)
-end
-
--- Create GUI
-local function CreateGUI()
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "VexHubLib"
-    ScreenGui.Parent = CoreGui
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
-    return ScreenGui
-end
-
--- Main Window Creation
-function VexHub:CreateWindow(WindowSettings)
-    WindowSettings = Kwargify({
-        Name = "Vex Hub",
-        Subtitle = "UI Library",
-        LogoID = "6031097225",
-        Size = UDim2.fromOffset(580, 460)
-    }, WindowSettings or {})
-    
-    local Window = { 
-        CurrentTab = nil, 
-        State = true, 
-        Tabs = {},
-        Elements = {}
-    }
-    
-    -- Create main GUI
-    local ScreenGui = CreateGUI()
-    
-    -- Main Frame
-    local Main = Instance.new("Frame")
-    Main.Name = "Main"
-    Main.Parent = ScreenGui
-    Main.AnchorPoint = Vector2.new(0.5, 0.5)
-    Main.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
-    Main.BorderSizePixel = 0
-    Main.Position = UDim2.fromScale(0.5, 0.5)
-    Main.Size = WindowSettings.Size
-    
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 12)
-    UICorner.Parent = Main
-    
-    local UIStroke = Instance.new("UIStroke")
-    UIStroke.Color = Color3.fromRGB(64, 61, 76)
-    UIStroke.Thickness = 1
-    UIStroke.Parent = Main
-    
-    -- Title Bar
-    local TitleBar = Instance.new("Frame")
-    TitleBar.Name = "TitleBar"
-    TitleBar.Parent = Main
-    TitleBar.BackgroundColor3 = Color3.fromRGB(40, 38, 48)
-    TitleBar.BorderSizePixel = 0
-    TitleBar.Size = UDim2.new(1, 0, 0, 50)
-    
-    local TitleCorner = Instance.new("UICorner")
-    TitleCorner.CornerRadius = UDim.new(0, 12)
-    TitleCorner.Parent = TitleBar
-    
-    local TitleFix = Instance.new("Frame")
-    TitleFix.Parent = TitleBar
-    TitleFix.BackgroundColor3 = Color3.fromRGB(40, 38, 48)
-    TitleFix.BorderSizePixel = 0
-    TitleFix.Position = UDim2.new(0, 0, 0.5, 0)
-    TitleFix.Size = UDim2.new(1, 0, 0.5, 0)
-    
-    -- Logo
-    local Logo = Instance.new("ImageLabel")
-    Logo.Name = "Logo"
-    Logo.Parent = TitleBar
-    Logo.BackgroundTransparency = 1
-    Logo.Position = UDim2.new(0, 15, 0.5, 0)
-    Logo.AnchorPoint = Vector2.new(0, 0.5)
-    Logo.Size = UDim2.fromOffset(30, 30)
-    Logo.Image = "rbxassetid://" .. WindowSettings.LogoID
-    
-    -- Title Text
-    local Title = Instance.new("TextLabel")
-    Title.Name = "Title"
-    Title.Parent = TitleBar
-    Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0, 55, 0, 8)
-    Title.Size = UDim2.new(1, -55, 0, 20)
-    Title.Font = Enum.Font.GothamBold
-    Title.Text = WindowSettings.Name
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 16
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    
-    -- Subtitle
-    local Subtitle = Instance.new("TextLabel")
-    Subtitle.Name = "Subtitle"
-    Subtitle.Parent = TitleBar
-    Subtitle.BackgroundTransparency = 1
-    Subtitle.Position = UDim2.new(0, 55, 0, 28)
-    Subtitle.Size = UDim2.new(1, -55, 0, 14)
-    Subtitle.Font = Enum.Font.Gotham
-    Subtitle.Text = WindowSettings.Subtitle
-    Subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Subtitle.TextSize = 12
-    Subtitle.TextXAlignment = Enum.TextXAlignment.Left
-    
-    -- Navigation Frame
-    local Navigation = Instance.new("Frame")
-    Navigation.Name = "Navigation"
-    Navigation.Parent = Main
-    Navigation.BackgroundTransparency = 1
-    Navigation.Position = UDim2.new(0, 0, 0, 50)
-    Navigation.Size = UDim2.new(0, 180, 1, -50)
-    
-    local NavPadding = Instance.new("UIPadding")
-    NavPadding.PaddingTop = UDim.new(0, 10)
-    NavPadding.PaddingLeft = UDim.new(0, 10)
-    NavPadding.PaddingRight = UDim.new(0, 10)
-    NavPadding.Parent = Navigation
-    
-    local NavLayout = Instance.new("UIListLayout")
-    NavLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    NavLayout.Padding = UDim.new(0, 5)
-    NavLayout.Parent = Navigation
-    
-    -- Content Frame
-    local Content = Instance.new("Frame")
-    Content.Name = "Content"
-    Content.Parent = Main
-    Content.BackgroundTransparency = 1
-    Content.Position = UDim2.new(0, 180, 0, 50)
-    Content.Size = UDim2.new(1, -180, 1, -50)
-    
-    local ContentPadding = Instance.new("UIPadding")
-    ContentPadding.PaddingTop = UDim.new(0, 15)
-    ContentPadding.PaddingLeft = UDim.new(0, 15)
-    ContentPadding.PaddingRight = UDim.new(0, 15)
-    ContentPadding.PaddingBottom = UDim.new(0, 15)
-    ContentPadding.Parent = Content
-    
-    -- Enable dragging
-    Draggable(Main)
-    
-    Window.GUI = ScreenGui
-    Window.Main = Main
-    Window.Navigation = Navigation
-    Window.Content = Content
-    
-    -- Create Tab Function
-    function Window:CreateTab(TabSettings)
-        TabSettings = Kwargify({
-            Name = "Tab",
-            Icon = "view_in_ar",
-            ImageSource = "Material"
-        }, TabSettings or {})
-        
-        local Tab = {}
-        Tab.Elements = {}
-        
-        -- Tab Button
-        local TabButton = Instance.new("Frame")
-        TabButton.Name = TabSettings.Name
-        TabButton.Parent = Navigation
-        TabButton.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
-        TabButton.BorderSizePixel = 0
-        TabButton.Size = UDim2.new(1, 0, 0, 40)
-        
-        local TabCorner = Instance.new("UICorner")
-        TabCorner.CornerRadius = UDim.new(0, 8)
-        TabCorner.Parent = TabButton
-        
-        local TabStroke = Instance.new("UIStroke")
-        TabStroke.Color = Color3.fromRGB(64, 61, 76)
-        TabStroke.Thickness = 1
-        TabStroke.Transparency = 1
-        TabStroke.Parent = TabButton
-        
-        local TabIcon = Instance.new("ImageLabel")
-        TabIcon.Name = "Icon"
-        TabIcon.Parent = TabButton
-        TabIcon.BackgroundTransparency = 1
-        TabIcon.Position = UDim2.new(0, 10, 0.5, 0)
-        TabIcon.AnchorPoint = Vector2.new(0, 0.5)
-        TabIcon.Size = UDim2.fromOffset(20, 20)
-        TabIcon.Image = GetIcon(TabSettings.Icon, TabSettings.ImageSource)
-        TabIcon.ImageColor3 = Color3.fromRGB(221, 221, 221)
-        
-        local TabLabel = Instance.new("TextLabel")
-        TabLabel.Name = "Label"
-        TabLabel.Parent = TabButton
-        TabLabel.BackgroundTransparency = 1
-        TabLabel.Position = UDim2.new(0, 40, 0, 0)
-        TabLabel.Size = UDim2.new(1, -40, 1, 0)
-        TabLabel.Font = Enum.Font.Gotham
-        TabLabel.Text = TabSettings.Name
-        TabLabel.TextColor3 = Color3.fromRGB(221, 221, 221)
-        TabLabel.TextSize = 14
-        TabLabel.TextXAlignment = Enum.TextXAlignment.Left
-        
-        local TabInteract = Instance.new("TextButton")
-        TabInteract.Name = "Interact"
-        TabInteract.Parent = TabButton
-        TabInteract.BackgroundTransparency = 1
-        TabInteract.Size = UDim2.new(1, 0, 1, 0)
-        TabInteract.Text = ""
-        
-        -- Tab Content
-        local TabPage = Instance.new("ScrollingFrame")
-        TabPage.Name = TabSettings.Name
-        TabPage.Parent = Content
-        TabPage.BackgroundTransparency = 1
-        TabPage.BorderSizePixel = 0
-        TabPage.Size = UDim2.new(1, 0, 1, 0)
-        TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
-        TabPage.ScrollBarThickness = 0
-        TabPage.Visible = false
-        
-        local PageLayout = Instance.new("UIListLayout")
-        PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        PageLayout.Padding = UDim.new(0, 8)
-        PageLayout.Parent = TabPage
-        
-        PageLayout.Changed:Connect(function()
-            TabPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y)
-        end)
-        
-        Tab.Button = TabButton
-        Tab.Page = TabPage
-        Tab.Settings = TabSettings
-        
-        -- Activate function
-        function Tab:Activate()
-            -- Hide all other tabs
-            for _, otherTab in pairs(Window.Tabs) do
-                otherTab.Page.Visible = false
-                tween(otherTab.Button.Icon, {ImageColor3 = Color3.fromRGB(221, 221, 221)})
-                tween(otherTab.Button, {BackgroundTransparency = 1})
-                tween(otherTab.Button.UIStroke, {Transparency = 1})
-            end
-            
-            -- Show this tab
-            TabPage.Visible = true
-            tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-            tween(TabButton, {BackgroundTransparency = 0})
-            tween(TabStroke, {Transparency = 0.4})
-            
-            Window.CurrentTab = TabSettings.Name
-        end
-        
-        -- Click handler
-        TabInteract.MouseButton1Click:Connect(function()
-            Tab:Activate()
-        end)
-        
-        -- Hover effects
-        TabButton.MouseEnter:Connect(function()
-            if Window.CurrentTab ~= TabSettings.Name then
-                tween(TabStroke, {Color = Color3.fromRGB(87, 84, 104)})
-            end
-        end)
-        
-        TabButton.MouseLeave:Connect(function()
-            if Window.CurrentTab ~= TabSettings.Name then
-                tween(TabStroke, {Color = Color3.fromRGB(64, 61, 76)})
-            end
-        end)
-        
-        -- Auto-activate first tab
-        if #Window.Tabs == 0 then
-            Tab:Activate()
-        end
-        
-        Window.Tabs[#Window.Tabs + 1] = Tab
-        
-        -- Create Button Function
-        function Tab:CreateButton(ButtonSettings)
-            ButtonSettings = Kwargify({
-                Name = "Button",
-                Description = nil,
-                Callback = function() end,
-            }, ButtonSettings or {})
-            
-            local ButtonV = {
-                Hover = false,
-                Settings = ButtonSettings
-            }
-            
-            local Button = Instance.new("Frame")
-            Button.Name = ButtonSettings.Name
-            Button.Parent = TabPage
-            Button.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
-            Button.BackgroundTransparency = 0.5
-            Button.BorderSizePixel = 0
-            Button.Size = UDim2.new(1, 0, 0, ButtonSettings.Description and 60 or 45)
-            
-            local ButtonCorner = Instance.new("UICorner")
-            ButtonCorner.CornerRadius = UDim.new(0, 8)
-            ButtonCorner.Parent = Button
-            
-            local ButtonStroke = Instance.new("UIStroke")
-            ButtonStroke.Color = Color3.fromRGB(64, 61, 76)
-            ButtonStroke.Thickness = 1
-            ButtonStroke.Transparency = 0.5
-            ButtonStroke.Parent = Button
-            
-            local ButtonTitle = Instance.new("TextLabel")
-            ButtonTitle.Name = "Title"
-            ButtonTitle.Parent = Button
-            ButtonTitle.BackgroundTransparency = 1
-            ButtonTitle.Position = UDim2.new(0, 15, 0, ButtonSettings.Description and 8 or 0)
-            ButtonTitle.Size = UDim2.new(1, -30, 0, ButtonSettings.Description and 20 or 45)
-            ButtonTitle.Font = Enum.Font.GothamSemibold
-            ButtonTitle.Text = ButtonSettings.Name
-            ButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-            ButtonTitle.TextSize = 14
-            ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
-            ButtonTitle.TextYAlignment = ButtonSettings.Description and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
-            
-            if ButtonSettings.Description then
-                local ButtonDesc = Instance.new("TextLabel")
-                ButtonDesc.Name = "Description"
-                ButtonDesc.Parent = Button
-                ButtonDesc.BackgroundTransparency = 1
-                ButtonDesc.Position = UDim2.new(0, 15, 0, 28)
-                ButtonDesc.Size = UDim2.new(1, -30, 0, 24)
-                ButtonDesc.Font = Enum.Font.Gotham
-                ButtonDesc.Text = ButtonSettings.Description
-                ButtonDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
-                ButtonDesc.TextSize = 12
-                ButtonDesc.TextXAlignment = Enum.TextXAlignment.Left
-                ButtonDesc.TextYAlignment = Enum.TextYAlignment.Top
-                ButtonDesc.TextWrapped = true
-            end
-            
-            local ButtonInteract = Instance.new("TextButton")
-            ButtonInteract.Name = "Interact"
-            ButtonInteract.Parent = Button
-            ButtonInteract.BackgroundTransparency = 1
-            ButtonInteract.Size = UDim2.new(1, 0, 1, 0)
-            ButtonInteract.Text = ""
-            
-            -- Click handler
-            ButtonInteract.MouseButton1Click:Connect(function()
-                local Success, Response = pcall(ButtonSettings.Callback)
-                if not Success then
-                    print("VexHub | " .. ButtonSettings.Name .. " Callback Error: " .. tostring(Response))
-                    tween(Button, {BackgroundColor3 = Color3.fromRGB(85, 0, 0)})
-                    ButtonTitle.Text = "Callback Error"
-                    wait(0.5)
-                    ButtonTitle.Text = ButtonSettings.Name
-                    tween(Button, {BackgroundColor3 = Color3.fromRGB(32, 30, 38)})
-                else
-                    tween(ButtonStroke, {Color = Color3.fromRGB(136, 131, 163)})
-                    wait(0.2)
-                    if ButtonV.Hover then
-                        tween(ButtonStroke, {Color = Color3.fromRGB(87, 84, 104)})
-                    else
-                        tween(ButtonStroke, {Color = Color3.fromRGB(64, 61, 76)})
-                    end
-                end
-            end)
-            
-            -- Hover effects
-            Button.MouseEnter:Connect(function()
-                ButtonV.Hover = true
-                tween(ButtonStroke, {Color = Color3.fromRGB(87, 84, 104)})
-            end)
-            
-            Button.MouseLeave:Connect(function()
-                ButtonV.Hover = false
-                tween(ButtonStroke, {Color = Color3.fromRGB(64, 61, 76)})
-            end)
-            
-            function ButtonV:Set(NewButtonSettings)
-                NewButtonSettings = Kwargify({
-                    Name = ButtonSettings.Name,
-                    Description = ButtonSettings.Description,
-                    Callback = ButtonSettings.Callback
-                }, NewButtonSettings or {})
-                
-                ButtonSettings = NewButtonSettings
-                ButtonV.Settings = NewButtonSettings
-                
-                ButtonTitle.Text = ButtonSettings.Name
-                if ButtonSettings.Description and Button.Description then
-                    Button.Description.Text = ButtonSettings.Description
-                end
-            end
-            
-            function ButtonV:Destroy()
-                Button:Destroy()
-            end
-            
-            Tab.Elements[#Tab.Elements + 1] = ButtonV
-            return ButtonV
-        end
-        
-        -- Create Toggle Function
-        function Tab:CreateToggle(ToggleSettings, Flag)
-            ToggleSettings = Kwargify({
-                Name = "Toggle",
-                Description = nil,
-                CurrentValue = false,
-                Callback = function(Value) end,
-            }, ToggleSettings or {})
-            
-            local ToggleV = { 
-                IgnoreConfig = false, 
-                Class = "Toggle",
-                CurrentValue = ToggleSettings.CurrentValue,
-                Settings = ToggleSettings
-            }
-            
-            local Toggle = Instance.new("Frame")
-            Toggle.Name = ToggleSettings.Name
-            Toggle.Parent = TabPage
-            Toggle.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
-            Toggle.BackgroundTransparency = 0.5
-            Toggle.BorderSizePixel = 0
-            Toggle.Size = UDim2.new(1, 0, 0, ToggleSettings.Description and 60 or 45)
-            
-            local ToggleCorner = Instance.new("UICorner")
-            ToggleCorner.CornerRadius = UDim.new(0, 8)
-            ToggleCorner.Parent = Toggle
-            
-            local ToggleStroke = Instance.new("UIStroke")
-            ToggleStroke.Color = Color3.fromRGB(64, 61, 76)
-            ToggleStroke.Thickness = 1
-            ToggleStroke.Transparency = 0.5
-            ToggleStroke.Parent = Toggle
-            
-            local ToggleTitle = Instance.new("TextLabel")
-            ToggleTitle.Name = "Title"
-            ToggleTitle.Parent = Toggle
-            ToggleTitle.BackgroundTransparency = 1
-            ToggleTitle.Position = UDim2.new(0, 15, 0, ToggleSettings.Description and 8 or 0)
-            ToggleTitle.Size = UDim2.new(1, -65, 0, ToggleSettings.Description and 20 or 45)
-            ToggleTitle.Font = Enum.Font.GothamSemibold
-            ToggleTitle.Text = ToggleSettings.Name
-            ToggleTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-            ToggleTitle.TextSize = 14
-            ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
-            ToggleTitle.TextYAlignment = ToggleSettings.Description and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
-            
-            if ToggleSettings.Description then
-                local ToggleDesc = Instance.new("TextLabel")
-                ToggleDesc.Name = "Description"
-                ToggleDesc.Parent = Toggle
-                ToggleDesc.BackgroundTransparency = 1
-                ToggleDesc.Position = UDim2.new(0, 15, 0, 28)
-                ToggleDesc.Size = UDim2.new(1, -65, 0, 24)
-                ToggleDesc.Font = Enum.Font.Gotham
-                ToggleDesc.Text = ToggleSettings.Description
-                ToggleDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
-                ToggleDesc.TextSize = 12
-                ToggleDesc.TextXAlignment = Enum.TextXAlignment.Left
-                ToggleDesc.TextYAlignment = Enum.TextYAlignment.Top
-                ToggleDesc.TextWrapped = true
-            end
-            
-            -- Toggle Switch
-            local ToggleSwitch = Instance.new("Frame")
-            ToggleSwitch.Name = "Switch"
-            ToggleSwitch.Parent = Toggle
-            ToggleSwitch.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            ToggleSwitch.BackgroundTransparency = 1
-            ToggleSwitch.BorderSizePixel = 0
-            ToggleSwitch.Position = UDim2.new(1, -45, 0.5, 0)
-            ToggleSwitch.AnchorPoint = Vector2.new(0, 0.5)
-            ToggleSwitch.Size = UDim2.fromOffset(35, 18)
-            
-            local SwitchCorner = Instance.new("UICorner")
-            SwitchCorner.CornerRadius = UDim.new(0, 9)
-            SwitchCorner.Parent = ToggleSwitch
-            
-            local SwitchStroke = Instance.new("UIStroke")
-            SwitchStroke.Color = Color3.fromRGB(97, 97, 97)
-            SwitchStroke.Thickness = 1
-            SwitchStroke.Parent = ToggleSwitch
-            
-            local SwitchKnob = Instance.new("Frame")
-            SwitchKnob.Name = "Knob"
-            SwitchKnob.Parent = ToggleSwitch
-            SwitchKnob.BackgroundColor3 = Color3.fromRGB(97, 97, 97)
-            SwitchKnob.BorderSizePixel = 0
-            SwitchKnob.Position = UDim2.new(0, 2, 0.5, 0)
-            SwitchKnob.AnchorPoint = Vector2.new(0, 0.5)
-            SwitchKnob.Size = UDim2.fromOffset(14, 14)
-            
-            local KnobCorner = Instance.new("UICorner")
-            KnobCorner.CornerRadius = UDim.new(0, 7)
-            KnobCorner.Parent = SwitchKnob
-            
-            local ToggleInteract = Instance.new("TextButton")
-            ToggleInteract.Name = "Interact"
-            ToggleInteract.Parent = Toggle
-            ToggleInteract.BackgroundTransparency = 1
-            ToggleInteract.Size = UDim2.new(1, 0, 1, 0)
-            ToggleInteract.Text = ""
-            
-            -- Update toggle state
-            local function SetToggle(value)
-                ToggleV.CurrentValue = value
-                
-                if value then
-                    tween(ToggleSwitch, {BackgroundTransparency = 0})
-                    tween(SwitchStroke, {Color = Color3.fromRGB(255, 255, 255)})
-                    tween(SwitchKnob, {
-                        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                        Position = UDim2.new(1, -16, 0.5, 0),
-                        BackgroundTransparency = 0.45
-                    })
-                    
-                    -- Apply theme gradient
-                    local gradient = Instance.new("UIGradient")
-                    gradient.Color = VexHub.ThemeGradient
-                    gradient.Parent = ToggleSwitch
-                else
-                    tween(ToggleSwitch, {BackgroundTransparency = 1})
-                    tween(SwitchStroke, {Color = Color3.fromRGB(97, 97, 97)})
-                    tween(SwitchKnob, {
-                        BackgroundColor3 = Color3.fromRGB(97, 97, 97),
-                        Position = UDim2.new(0, 2, 0.5, 0),
-                        BackgroundTransparency = 0
-                    })
-                    
-                    -- Remove gradient
-                    if ToggleSwitch:FindFirstChild("UIGradient") then
-                        ToggleSwitch.UIGradient:Destroy()
-                    end
-                end
-            end
-            
-            -- Click handler
-            ToggleInteract.MouseButton1Click:Connect(function()
-                ToggleSettings.CurrentValue = not ToggleSettings.CurrentValue
-                SetToggle(ToggleSettings.CurrentValue)
-                
-                local Success, Response = pcall(function()
-                    ToggleSettings.Callback(ToggleSettings.CurrentValue)
-                end)
-                
-                if not Success then
-                    print("VexHub | " .. ToggleSettings.Name .. " Callback Error: " .. tostring(Response))
-                    tween(Toggle, {BackgroundColor3 = Color3.fromRGB(85, 0, 0)})
-                    ToggleTitle.Text = "Callback Error"
-                    wait(0.5)
-                    ToggleTitle.Text = ToggleSettings.Name
-                    tween(Toggle, {BackgroundColor3 = Color3.fromRGB(32, 30, 38)})
-                end
-            end)
-            
-            -- Hover effects
-            Toggle.MouseEnter:Connect(function()
-                tween(ToggleStroke, {Color = Color3.fromRGB(87, 84, 104)})
-            end)
-            
-            Toggle.MouseLeave:Connect(function()
-                tween(ToggleStroke, {Color = Color3.fromRGB(64, 61, 76)})
-            end)
-            
-            -- Set initial state
-            if ToggleSettings.CurrentValue then
-                SetToggle(ToggleSettings.CurrentValue)
-                pcall(function()
-                    ToggleSettings.Callback(ToggleSettings.CurrentValue)
-                end)
-            end
-            
-            function ToggleV:UpdateState(State)
-                ToggleSettings.CurrentValue = State
-                SetToggle(State)
-            end
-            
-            function ToggleV:Set(NewToggleSettings)
-                NewToggleSettings = Kwargify({
-                    Name = ToggleSettings.Name,
-                    Description = ToggleSettings.Description,
-                    CurrentValue = ToggleSettings.CurrentValue,
-                    Callback = ToggleSettings.Callback
-                }, NewToggleSettings or {})
-                
-                ToggleV.Settings = NewToggleSettings
-                ToggleSettings = NewToggleSettings
-                
-                ToggleTitle.Text = ToggleSettings.Name
-                if ToggleSettings.Description and Toggle.Description then
-                    Toggle.Description.Text = ToggleSettings.Description
-                end
-                
-                SetToggle(ToggleSettings.CurrentValue)
-                ToggleV.CurrentValue = ToggleSettings.CurrentValue
-                
-                pcall(function()
-                    ToggleSettings.Callback(ToggleSettings.CurrentValue)
-                end)
-            end
-            
-            function ToggleV:Destroy()
-                Toggle:Destroy()
-            end
-            
-            if Flag then
-                VexHub.Options[Flag] = ToggleV
-            end
-            
-            Tab.Elements[#Tab.Elements + 1] = ToggleV
-            return ToggleV
-        end
-        
-        return Tab
-    end
-    
-    return Window
-end
-
-return VexHub
-
---[[
-    USAGE EXAMPLES:
-    
-    This section demonstrates how to use the VexHub UI Library.
-    Copy and modify these examples for your own scripts.
-]]
-
---[[
--- Basic Usage Example:
-
--- Load the library
-local VexHub = loadstring(game:HttpGet("YOUR_SCRIPT_URL_HERE"))()
-
--- Create main window
-local Window = VexHub:CreateWindow({
-    Name = "My Script Hub",
-    Subtitle = "Version 1.0",
-    LogoID = "6031097225", -- Roblox asset ID for logo
-    Size = UDim2.fromOffset(580, 460)
-})
-
--- Create first tab
-local MainTab = Window:CreateTab({
-    Name = "Main",
-    Icon = "home",
-    ImageSource = "Material"
-})
-
--- Create second tab
-local SettingsTab = Window:CreateTab({
-    Name = "Settings", 
-    Icon = "smart_button",
-    ImageSource = "Material"
-})
-
--- Add a simple button
-MainTab:CreateButton({
-    Name = "Test Button",
-    Description = "This button prints a message when clicked",
-    Callback = function()
-        print("Button was clicked!")
-    end
-})
-
--- Add a button without description
-MainTab:CreateButton({
-    Name = "Simple Button",
-    Callback = function()
-        print("Simple button clicked!")
-    end
-})
-
--- Add a toggle with description
-local MyToggle = MainTab:CreateToggle({
-    Name = "Auto Farm",
-    Description = "Automatically farms coins for you",
-    CurrentValue = false,
-    Callback = function(Value)
-        print("Toggle is now:", Value)
-        -- Add your toggle functionality here
-        if Value then
-            print("Auto farm enabled!")
-        else
-            print("Auto farm disabled!")
-        end
-    end
-}, "AutoFarmFlag") -- Optional flag for saving/loading
-
--- Add a toggle without description
-SettingsTab:CreateToggle({
-    Name = "Show Notifications",
-    CurrentValue = true,
-    Callback = function(Value)
-        print("Notifications:", Value and "Enabled" or "Disabled")
-    end
-})
-
--- Example of updating toggle state programmatically
--- MyToggle:UpdateState(true) -- This would enable the toggle
-
--- Example of modifying elements after creation
--- MyToggle:Set({
---     Name = "Updated Toggle Name",
---     Description = "Updated description",
---     CurrentValue = false,
---     Callback = function(Value)
---         print("Updated callback:", Value)
---     end
--- })
-
--- Example of destroying elements
--- MyToggle:Destroy() -- This would remove the toggle
-]]
-
---[[
--- Advanced Usage Example:
-
--- Create a more complex interface
-local AdvancedWindow = VexHub:CreateWindow({
-    Name = "Advanced Script",
-    Subtitle = "Professional Edition",
-    LogoID = "6031097225",
-    Size = UDim2.fromOffset(650, 500)
-})
-
--- Combat Tab
-local CombatTab = AdvancedWindow:CreateTab({
-    Name = "Combat",
-    Icon = "extension",
-    ImageSource = "Material"
-})
-
--- Add combat features
-CombatTab:CreateToggle({
-    Name = "Kill Aura",
-    Description = "Automatically attacks nearby enemies",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.KillAura = Value
-        if Value then
-            -- Start kill aura loop
-            spawn(function()
-                while _G.KillAura do
-                    wait(0.1)
-                    -- Your kill aura code here
-                    print("Attacking enemies...")
-                end
-            end)
-        end
-    end
-}, "KillAuraToggle")
-
-CombatTab:CreateButton({
-    Name = "Instant Kill All",
-    Description = "Instantly kills all enemies on the map",
-    Callback = function()
-        print("Killing all enemies...")
-        -- Your instant kill code here
-        for i = 1, 10 do
-            wait(0.1)
-            print("Killed enemy", i)
-        end
-        print("All enemies eliminated!")
-    end
-})
-
--- Player Tab
-local PlayerTab = AdvancedWindow:CreateTab({
-    Name = "Player",
-    Icon = "view_in_ar", 
-    ImageSource = "Material"
-})
-
-PlayerTab:CreateToggle({
-    Name = "Speed Hack",
-    Description = "Increases your movement speed",
-    CurrentValue = false,
-    Callback = function(Value)
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            if Value then
-                LocalPlayer.Character.Humanoid.WalkSpeed = 50
-                print("Speed hack enabled!")
-            else
-                LocalPlayer.Character.Humanoid.WalkSpeed = 16
-                print("Speed hack disabled!")
-            end
-        end
-    end
-})
-
-PlayerTab:CreateToggle({
-    Name = "Jump Power",
-    Description = "Increases your jump height",
-    CurrentValue = false,
-    Callback = function(Value)
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            if Value then
-                LocalPlayer.Character.Humanoid.JumpPower = 100
-                print("Jump boost enabled!")
-            else
-                LocalPlayer.Character.Humanoid.JumpPower = 50
-                print("Jump boost disabled!")
-            end
-        end
-    end
-})
-
-PlayerTab:CreateButton({
-    Name = "Teleport to Spawn",
-    Callback = function()
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        if LocalPlayer and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 10, 0)
-            print("Teleported to spawn!")
-        end
-    end
-})
-
--- Misc Tab
-local MiscTab = AdvancedWindow:CreateTab({
-    Name = "Miscellaneous",
-    Icon = "tab",
-    ImageSource = "Material"
-})
-
-MiscTab:CreateToggle({
-    Name = "Anti-AFK",
-    Description = "Prevents you from being kicked for inactivity",
-    CurrentValue = false,
-    Callback = function(Value)
-        _G.AntiAFK = Value
-        if Value then
-            spawn(function()
-                local VirtualUser = game:GetService("VirtualUser")
-                while _G.AntiAFK do
-                    wait(300) -- Wait 5 minutes
-                    VirtualUser:CaptureController()
-                    VirtualUser:ClickButton2(Vector2.new())
-                    print("Anti-AFK activated")
-                end
-            end)
-        end
-    end
-})
-
-MiscTab:CreateButton({
-    Name = "Rejoin Server",
-    Description = "Leaves and rejoins the current server",
-    Callback = function()
-        local TeleportService = game:GetService("TeleportService")
-        local Players = game:GetService("Players")
-        local LocalPlayer = Players.LocalPlayer
-        
-        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-    end
-})
-
-MiscTab:CreateButton({
-    Name = "Copy Game Link",
-    Description = "Copies the current game link to clipboard",
-    Callback = function()
-        local gameLink = "https://www.roblox.com/games/" .. game.PlaceId
-        setclipboard(gameLink)
-        print("Game link copied to clipboard!")
-    end
-})
-]]
-
---[[
--- Customization Examples:
-
--- Custom theme colors (modify the ThemeGradient at the top of the script)
-VexHub.ThemeGradient = ColorSequence.new{
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 100, 100)), -- Red
-    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(100, 255, 100)), -- Green  
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(100, 100, 255))  -- Blue
-}
-
--- Using custom icons
-local CustomTab = Window:CreateTab({
-    Name = "Custom",
-    Icon = "123456789", -- Your custom Roblox asset ID
-    ImageSource = "Custom"
-})
-
--- Error handling example
-local SafeButton = MainTab:CreateButton({
-    Name = "Safe Button",
-    Description = "This button has error handling",
-    Callback = function()
-        -- This might cause an error
-        local success, result = pcall(function()
-            -- Your potentially risky code here
-            error("This is a test error")
-        end)
-        
-        if success then
-            print("Operation completed successfully!")
-        else
-            print("Error occurred:", result)
-        end
-    end
-})
-]] 
         ColorSequenceKeypoint.new(0.00, Color3.fromRGB(117, 164, 206)), 
         ColorSequenceKeypoint.new(0.50, Color3.fromRGB(123, 201, 201)), 
         ColorSequenceKeypoint.new(1.00, Color3.fromRGB(224, 138, 175))
@@ -1517,6 +507,8 @@ function VexHub:CreateWindow(WindowSettings)
     local Window = { 
         CurrentTab = nil, 
         State = true, 
+        NavigationExpanded = true,
+        IsMinimized = false,
         OriginalSize = WindowSettings.Size,
         Bind = Enum.KeyCode.K, -- Default bind to show/hide UI
         Tabs = {},
@@ -1605,9 +597,9 @@ function VexHub:CreateWindow(WindowSettings)
     Controls.Name = "Controls"
     Controls.Parent = TitleBar
     Controls.BackgroundTransparency = 1
-    Controls.Position = UDim2.new(1, -40, 0.5, 0)
+    Controls.Position = UDim2.new(1, -70, 0.5, 0)
     Controls.AnchorPoint = Vector2.new(0, 0.5)
-    Controls.Size = UDim2.fromOffset(30, 30)
+    Controls.Size = UDim2.fromOffset(60, 30)
     
     local ControlsLayout = Instance.new("UIListLayout")
     ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -1616,9 +608,73 @@ function VexHub:CreateWindow(WindowSettings)
     ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ControlsLayout.Parent = Controls
     
-
+    -- Hamburger Menu Button (3 lines) - LEFT SIDE
+    local MenuButton = Instance.new("Frame")
+    MenuButton.Name = "MenuButton"
+    MenuButton.Parent = TitleBar
+    MenuButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
+    MenuButton.BackgroundTransparency = 1
+    MenuButton.BorderSizePixel = 0
+    MenuButton.Position = UDim2.new(0, 180 + 15, 0.5, 0) -- Position after navigation area
+    MenuButton.AnchorPoint = Vector2.new(0, 0.5)
+    MenuButton.Size = UDim2.fromOffset(30, 30)
     
-
+    local MenuCorner = Instance.new("UICorner")
+    MenuCorner.CornerRadius = UDim.new(0, 6)
+    MenuCorner.Parent = MenuButton
+    
+    -- Create the 3 lines
+    for i = 1, 3 do
+        local Line = Instance.new("Frame")
+        Line.Name = "Line" .. i
+        Line.Parent = MenuButton
+        Line.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        Line.BorderSizePixel = 0
+        Line.Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0)
+        Line.Size = UDim2.new(0.6, 0, 0, 2)
+        
+        local LineCorner = Instance.new("UICorner")
+        LineCorner.CornerRadius = UDim.new(0, 1)
+        LineCorner.Parent = Line
+    end
+    
+    local MenuInteract = Instance.new("TextButton")
+    MenuInteract.Name = "Interact"
+    MenuInteract.Parent = MenuButton
+    MenuInteract.BackgroundTransparency = 1
+    MenuInteract.Size = UDim2.new(1, 0, 1, 0)
+    MenuInteract.Text = ""
+    
+    -- Minimize Button
+    local MinimizeButton = Instance.new("Frame")
+    MinimizeButton.Name = "MinimizeButton"
+    MinimizeButton.Parent = Controls
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
+    MinimizeButton.BackgroundTransparency = 1
+    MinimizeButton.BorderSizePixel = 0
+    MinimizeButton.Size = UDim2.fromOffset(30, 30)
+    MinimizeButton.LayoutOrder = 1
+    
+    local MinimizeCorner = Instance.new("UICorner")
+    MinimizeCorner.CornerRadius = UDim.new(0, 6)
+    MinimizeCorner.Parent = MinimizeButton
+    
+    local MinimizeIcon = Instance.new("ImageLabel")
+    MinimizeIcon.Name = "Icon"
+    MinimizeIcon.Parent = MinimizeButton
+    MinimizeIcon.BackgroundTransparency = 1
+    MinimizeIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    MinimizeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    MinimizeIcon.Size = UDim2.fromOffset(16, 16)
+    MinimizeIcon.Image = "rbxassetid://11036884234" -- Minimize icon
+    MinimizeIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
+    
+    local MinimizeInteract = Instance.new("TextButton")
+    MinimizeInteract.Name = "Interact"
+    MinimizeInteract.Parent = MinimizeButton
+    MinimizeInteract.BackgroundTransparency = 1
+    MinimizeInteract.Size = UDim2.new(1, 0, 1, 0)
+    MinimizeInteract.Text = ""
     
     -- Close Button
     local CloseButton = Instance.new("Frame")
@@ -1628,7 +684,7 @@ function VexHub:CreateWindow(WindowSettings)
     CloseButton.BackgroundTransparency = 1
     CloseButton.BorderSizePixel = 0
     CloseButton.Size = UDim2.fromOffset(30, 30)
-    CloseButton.LayoutOrder = 1
+    CloseButton.LayoutOrder = 2
     
     local CloseCorner = Instance.new("UICorner")
     CloseCorner.CornerRadius = UDim.new(0, 6)
@@ -1744,7 +800,7 @@ function VexHub:CreateWindow(WindowSettings)
     function Window:Show()
         Window.State = true
         Main.Visible = true
-        Main.Size = Window.OriginalSize
+        Main.Size = Window.IsMinimized and UDim2.fromOffset(Window.OriginalSize.X.Offset, 50) or Window.OriginalSize
         
         -- Tween all elements back to visible
         tween(Main, {BackgroundTransparency = 0})
@@ -1757,33 +813,176 @@ function VexHub:CreateWindow(WindowSettings)
         -- Show controls
         for _, control in pairs(Controls:GetChildren()) do
             if control:IsA("Frame") then
-                tween(control, {BackgroundTransparency = 1})
+                if Window.NavigationExpanded or control.Name == "CloseButton" or control.Name == "MinimizeButton" then
+                    tween(control, {BackgroundTransparency = control.Name == "MenuButton" and 1 or 1})
+                end
                 if control:FindFirstChild("Icon") then
                     tween(control.Icon, {ImageTransparency = 0})
+                end
+                -- Show hamburger lines
+                for i = 1, 3 do
+                    local line = control:FindFirstChild("Line" .. i)
+                    if line then
+                        tween(line, {BackgroundTransparency = 0})
+                    end
                 end
             end
         end
         
-        -- Show navigation and content
-        tween(Navigation, {BackgroundTransparency = 0})
-        tween(Content, {BackgroundTransparency = 0})
-        
-        -- Show all tab buttons
-        for _, tab in pairs(Window.Tabs) do
-            if tab.Button then
-                tween(tab.Button, {BackgroundTransparency = Window.CurrentTab == tab.Settings.Name and 0 or 1})
-                tween(tab.Button.Icon, {ImageTransparency = 0})
-                tween(tab.Button.Label, {TextTransparency = 0})
-                tween(tab.Button.UIStroke, {Transparency = Window.CurrentTab == tab.Settings.Name and 0.4 or 1})
+        if not Window.IsMinimized then
+            -- Show navigation and content
+            tween(Navigation, {BackgroundTransparency = 0})
+            tween(Content, {BackgroundTransparency = 0})
+            
+            -- Show all tab buttons
+            for _, tab in pairs(Window.Tabs) do
+                if tab.Button then
+                    tween(tab.Button, {BackgroundTransparency = Window.CurrentTab == tab.Settings.Name and 0 or 1})
+                    tween(tab.Button.Icon, {ImageTransparency = 0})
+                    tween(tab.Button.Label, {TextTransparency = 0})
+                    tween(tab.Button.UIStroke, {Transparency = Window.CurrentTab == tab.Settings.Name and 0.4 or 1})
+                end
             end
         end
     end
     
-
+    -- Minimize UI Function
+    function Window:Minimize()
+        Window.IsMinimized = true
+        MinimizeIcon.Image = "rbxassetid://10137941941" -- Change to maximize icon
+        
+        -- Hide navigation and content
+        Navigation.Visible = false
+        Content.Visible = false
+        
+        -- Resize to title bar only
+        tween(Main, {Size = UDim2.fromOffset(Window.OriginalSize.X.Offset, 50)})
+    end
     
-
+    -- Maximize UI Function  
+    function Window:Maximize()
+        Window.IsMinimized = false
+        MinimizeIcon.Image = "rbxassetid://11036884234" -- Change back to minimize icon
+        
+        -- Show navigation and content
+        Navigation.Visible = true
+        Content.Visible = true
+        
+        -- Resize back to original
+        tween(Main, {Size = Window.OriginalSize})
+    end
     
-
+    -- Toggle Navigation Function
+    function Window:ToggleNavigation()
+        Window.NavigationExpanded = not Window.NavigationExpanded
+        
+        if Window.NavigationExpanded then
+            -- Expand navigation (show icons + text)
+            tween(Navigation, {Size = UDim2.new(0, 180, 1, -50)})
+            tween(Content, {
+                Position = UDim2.new(0, 180, 0, 50),
+                Size = UDim2.new(1, -180, 1, -50)
+            })
+            tween(MenuButton, {Position = UDim2.new(0, 180 + 15, 0.5, 0)})
+            
+            -- Show tab text labels
+            for _, tab in pairs(Window.Tabs) do
+                if tab.Button and tab.Button:FindFirstChild("Label") then
+                    tab.Button.Label.Visible = true
+                    tween(tab.Button.Label, {TextTransparency = 0})
+                end
+            end
+            
+            -- Animate hamburger lines back to normal
+            for i = 1, 3 do
+                local line = MenuButton:FindFirstChild("Line" .. i)
+                if line then
+                    tween(line, {
+                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
+                        Rotation = 0,
+                        BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+                    })
+                end
+            end
+        else
+            -- Collapse navigation (show icons only)
+            tween(Navigation, {Size = UDim2.new(0, 55, 1, -50)})
+            tween(Content, {
+                Position = UDim2.new(0, 55, 0, 50),
+                Size = UDim2.new(1, -55, 1, -50)
+            })
+            tween(MenuButton, {Position = UDim2.new(0, 55 + 15, 0.5, 0)})
+            
+            -- Hide tab text labels
+            for _, tab in pairs(Window.Tabs) do
+                if tab.Button and tab.Button:FindFirstChild("Label") then
+                    tween(tab.Button.Label, {TextTransparency = 1}, function()
+                        tab.Button.Label.Visible = false
+                    end)
+                end
+            end
+            
+            -- Keep hamburger lines normal (don't turn to X)
+            for i = 1, 3 do
+                local line = MenuButton:FindFirstChild("Line" .. i)
+                if line then
+                    tween(line, {
+                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
+                        Rotation = 0,
+                        BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    })
+                end
+            end
+        end
+    end
+    
+    -- Menu button click handler
+    MenuInteract.MouseButton1Click:Connect(function()
+        Window:ToggleNavigation()
+    end)
+    
+    -- Menu button hover effects
+    MenuButton.MouseEnter:Connect(function()
+        tween(MenuButton, {BackgroundTransparency = 0.8})
+        -- Brighten lines on hover
+        for i = 1, 3 do
+            local line = MenuButton:FindFirstChild("Line" .. i)
+            if line then
+                tween(line, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
+            end
+        end
+    end)
+    
+    MenuButton.MouseLeave:Connect(function()
+        tween(MenuButton, {BackgroundTransparency = 1})
+        -- Return lines to normal color
+        for i = 1, 3 do
+            local line = MenuButton:FindFirstChild("Line" .. i)
+            if line then
+                local normalColor = Window.NavigationExpanded and Color3.fromRGB(200, 200, 200) or Color3.fromRGB(255, 255, 255)
+                tween(line, {BackgroundColor3 = normalColor})
+            end
+        end
+    end)
+    
+    -- Minimize button events
+    MinimizeInteract.MouseButton1Click:Connect(function()
+        if Window.IsMinimized then
+            Window:Maximize()
+        else
+            Window:Minimize()
+        end
+    end)
+    
+    MinimizeButton.MouseEnter:Connect(function()
+        tween(MinimizeButton, {BackgroundTransparency = 0.8})
+        tween(MinimizeIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+    end)
+    
+    MinimizeButton.MouseLeave:Connect(function()
+        tween(MinimizeButton, {BackgroundTransparency = 1})
+        tween(MinimizeIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
+    end)
     
     -- Close button events
     CloseInteract.MouseButton1Click:Connect(function()
@@ -1816,6 +1015,7 @@ function VexHub:CreateWindow(WindowSettings)
     Window.Main = Main
     Window.Navigation = Navigation
     Window.Content = Content
+    Window.MenuButton = MenuButton
     Window.Controls = Controls
     
     -- Function to change bind key
@@ -1856,7 +1056,7 @@ function VexHub:CreateWindow(WindowSettings)
         TabIcon.Name = "Icon"
         TabIcon.Parent = TabButton
         TabIcon.BackgroundTransparency = 1
-        TabIcon.Position = UDim2.new(0, 10, 0.5, 0)
+        TabIcon.Position = UDim2.new(0, Window.NavigationExpanded and 10 or 17.5, 0.5, 0)
         TabIcon.AnchorPoint = Vector2.new(0, 0.5)
         TabIcon.Size = UDim2.fromOffset(20, 20)
         TabIcon.Image = GetIcon(TabSettings.Icon, TabSettings.ImageSource)
@@ -1873,7 +1073,7 @@ function VexHub:CreateWindow(WindowSettings)
         TabLabel.TextColor3 = Color3.fromRGB(221, 221, 221)
         TabLabel.TextSize = 14
         TabLabel.TextXAlignment = Enum.TextXAlignment.Left
-        TabLabel.Visible = true
+        TabLabel.Visible = Window.NavigationExpanded
         
         local TabInteract = Instance.new("TextButton")
         TabInteract.Name = "Interact"
@@ -1914,6 +1114,10 @@ function VexHub:CreateWindow(WindowSettings)
                 tween(otherTab.Button.Icon, {ImageColor3 = Color3.fromRGB(221, 221, 221)})
                 tween(otherTab.Button, {BackgroundTransparency = 1})
                 tween(otherTab.Button.UIStroke, {Transparency = 1})
+                
+                -- Update icon position for other tabs
+                local iconPos = Window.NavigationExpanded and 10 or 17.5
+                tween(otherTab.Button.Icon, {Position = UDim2.new(0, iconPos, 0.5, 0)})
             end
             
             -- Show this tab
@@ -1921,6 +1125,10 @@ function VexHub:CreateWindow(WindowSettings)
             tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
             tween(TabButton, {BackgroundTransparency = 0})
             tween(TabStroke, {Transparency = 0.4})
+            
+            -- Update icon position for active tab
+            local iconPos = Window.NavigationExpanded and 10 or 17.5
+            tween(TabIcon, {Position = UDim2.new(0, iconPos, 0.5, 0)})
             
             Window.CurrentTab = TabSettings.Name
         end
