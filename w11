@@ -507,7 +507,6 @@ function VexHub:CreateWindow(WindowSettings)
     local Window = { 
         CurrentTab = nil, 
         State = true, 
-        NavigationExpanded = true,
         IsMinimized = false,
         OriginalSize = WindowSettings.Size,
         Bind = Enum.KeyCode.K, -- Default bind to show/hide UI
@@ -775,10 +774,6 @@ function VexHub:CreateWindow(WindowSettings)
         tween(Subtitle, {TextTransparency = 0})
         tween(UIStroke, {Transparency = 0})
         
-        -- Set Logo color based on navigation state
-        local logoColor = Window.NavigationExpanded and Color3.fromRGB(221, 221, 221) or Color3.fromRGB(170, 170, 170)
-        tween(Logo, {ImageColor3 = logoColor})
-        
         -- Show controls
         for _, control in pairs(Controls:GetChildren()) do
             if control:IsA("Frame") then
@@ -832,65 +827,15 @@ function VexHub:CreateWindow(WindowSettings)
         tween(Main, {Size = Window.OriginalSize})
     end
     
-    -- Toggle Navigation Function
-    function Window:ToggleNavigation()
-        Window.NavigationExpanded = not Window.NavigationExpanded
-        
-        if Window.NavigationExpanded then
-            -- Expand navigation (show icons + text)
-            tween(Navigation, {Size = UDim2.new(0, 180, 1, -50)})
-            tween(Content, {
-                Position = UDim2.new(0, 180, 0, 50),
-                Size = UDim2.new(1, -180, 1, -50)
-            })
-            tween(Logo, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-            
-            -- Show tab text labels
-            for _, tab in pairs(Window.Tabs) do
-                if tab.Button and tab.Button:FindFirstChild("Label") then
-                    tab.Button.Label.Visible = true
-                    tween(tab.Button.Label, {TextTransparency = 0})
-                end
+    -- Keyboard bind to show/hide UI
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == Window.Bind then
+            if Window.State then
+                Window:Hide(true)
+            else
+                Window:Show()
             end
-        else
-            -- Collapse navigation (show icons only)
-            tween(Navigation, {Size = UDim2.new(0, 55, 1, -50)})
-            tween(Content, {
-                Position = UDim2.new(0, 55, 0, 50),
-                Size = UDim2.new(1, -55, 1, -50)
-            })
-            tween(Logo, {ImageColor3 = Color3.fromRGB(170, 170, 170)})
-            
-            -- Hide tab text labels
-            for _, tab in pairs(Window.Tabs) do
-                if tab.Button and tab.Button:FindFirstChild("Label") then
-                    tween(tab.Button.Label, {TextTransparency = 1}, function()
-                        tab.Button.Label.Visible = false
-                    end)
-                end
-            end
-        end
-    end
-    
-    -- Logo click handler
-    LogoInteract.MouseButton1Click:Connect(function()
-        Window:ToggleNavigation()
-    end)
-    
-    -- Logo hover effects
-    Logo.MouseEnter:Connect(function()
-        if Window.NavigationExpanded then
-            tween(Logo, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-        else
-            tween(Logo, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-        end
-    end)
-    
-    Logo.MouseLeave:Connect(function()
-        if Window.NavigationExpanded then
-            tween(Logo, {ImageColor3 = Color3.fromRGB(221, 221, 221)})
-        else
-            tween(Logo, {ImageColor3 = Color3.fromRGB(170, 170, 170)})
         end
     end)
     
@@ -926,18 +871,6 @@ function VexHub:CreateWindow(WindowSettings)
     CloseButton.MouseLeave:Connect(function()
         tween(CloseButton, {BackgroundTransparency = 1, BackgroundColor3 = Color3.fromRGB(50, 48, 58)})
         tween(CloseIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
-    end)
-    
-    -- Keyboard bind to show/hide UI
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        if input.KeyCode == Window.Bind then
-            if Window.State then
-                Window:Hide(true)
-            else
-                Window:Show()
-            end
-        end
     end)
     
     Window.GUI = ScreenGui
@@ -984,7 +917,7 @@ function VexHub:CreateWindow(WindowSettings)
         TabIcon.Name = "Icon"
         TabIcon.Parent = TabButton
         TabIcon.BackgroundTransparency = 1
-        TabIcon.Position = UDim2.new(0, Window.NavigationExpanded and 10 or 17.5, 0.5, 0)
+        TabIcon.Position = UDim2.new(0, 10, 0.5, 0)
         TabIcon.AnchorPoint = Vector2.new(0, 0.5)
         TabIcon.Size = UDim2.fromOffset(20, 20)
         TabIcon.Image = GetIcon(TabSettings.Icon, TabSettings.ImageSource)
@@ -1001,7 +934,6 @@ function VexHub:CreateWindow(WindowSettings)
         TabLabel.TextColor3 = Color3.fromRGB(221, 221, 221)
         TabLabel.TextSize = 14
         TabLabel.TextXAlignment = Enum.TextXAlignment.Left
-        TabLabel.Visible = Window.NavigationExpanded
         
         local TabInteract = Instance.new("TextButton")
         TabInteract.Name = "Interact"
@@ -1042,10 +974,6 @@ function VexHub:CreateWindow(WindowSettings)
                 tween(otherTab.Button.Icon, {ImageColor3 = Color3.fromRGB(221, 221, 221)})
                 tween(otherTab.Button, {BackgroundTransparency = 1})
                 tween(otherTab.Button.UIStroke, {Transparency = 1})
-                
-                -- Update icon position for other tabs
-                local iconPos = Window.NavigationExpanded and 10 or 17.5
-                tween(otherTab.Button.Icon, {Position = UDim2.new(0, iconPos, 0.5, 0)})
             end
             
             -- Show this tab
@@ -1053,10 +981,6 @@ function VexHub:CreateWindow(WindowSettings)
             tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
             tween(TabButton, {BackgroundTransparency = 0})
             tween(TabStroke, {Transparency = 0.4})
-            
-            -- Update icon position for active tab
-            local iconPos = Window.NavigationExpanded and 10 or 17.5
-            tween(TabIcon, {Position = UDim2.new(0, iconPos, 0.5, 0)})
             
             Window.CurrentTab = TabSettings.Name
         end
