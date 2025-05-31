@@ -879,6 +879,12 @@ function VexHub:CreateWindow(WindowSettings)
     Window.Navigation = Navigation
     Window.Content = Content
     Window.Controls = Controls
+    Window.Logo = Logo
+    
+    -- Logo click handler (fix: must be in scope)
+    LogoInteract.MouseButton1Click:Connect(function()
+        VexHub:ToggleNavigation(Window)
+    end)
     
     -- Function to change bind key
     function Window:SetBind(newBind)
@@ -1397,11 +1403,6 @@ function VexHub:ToggleNavigation(Window)
         end
     end
 end
-
--- Logo click handler
-LogoInteract.MouseButton1Click:Connect(function()
-    VexHub:ToggleNavigation(Window)
-end)
 
 return VexHub
 
