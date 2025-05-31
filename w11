@@ -918,24 +918,14 @@ function VexHub:CreateWindow(WindowSettings)
         TabIcon.Name = "Icon"
         TabIcon.Parent = TabButton
         TabIcon.BackgroundTransparency = 1
-        TabIcon.Position = UDim2.new(0, 17.5, 0.5, 0) -- Always minimal
-        TabIcon.AnchorPoint = Vector2.new(0, 0.5)
+        TabIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+        TabIcon.Position = UDim2.new(0.5, 0, 0.5, 0) -- Centered
         TabIcon.Size = UDim2.fromOffset(20, 20)
         TabIcon.Image = GetIcon(TabSettings.Icon, TabSettings.ImageSource)
         TabIcon.ImageColor3 = Color3.fromRGB(221, 221, 221)
         
-        local TabLabel = Instance.new("TextLabel")
-        TabLabel.Name = "Label"
-        TabLabel.Parent = TabButton
-        TabLabel.BackgroundTransparency = 1
-        TabLabel.Position = UDim2.new(0, 40, 0, 0)
-        TabLabel.Size = UDim2.new(1, -40, 1, 0)
-        TabLabel.Font = Enum.Font.Gotham
-        TabLabel.Text = TabSettings.Name
-        TabLabel.TextColor3 = Color3.fromRGB(221, 221, 221)
-        TabLabel.TextSize = 14
-        TabLabel.TextXAlignment = Enum.TextXAlignment.Left
-        TabLabel.Visible = false -- Always hidden
+        -- No label at all for icon-only mode
+        -- local TabLabel = ... (removed)
         
         local TabInteract = Instance.new("TextButton")
         TabInteract.Name = "Interact"
@@ -976,19 +966,12 @@ function VexHub:CreateWindow(WindowSettings)
                 tween(otherTab.Button.Icon, {ImageColor3 = Color3.fromRGB(221, 221, 221)})
                 tween(otherTab.Button, {BackgroundTransparency = 1})
                 tween(otherTab.Button.UIStroke, {Transparency = 1})
-                -- Update icon position for other tabs
-                local iconPos = 17.5
-                tween(otherTab.Button.Icon, {Position = UDim2.new(0, iconPos, 0.5, 0)})
             end
-            
             -- Show this tab
             TabPage.Visible = true
             tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-            tween(TabButton, {BackgroundTransparency = 0})
+            tween(TabButton, {BackgroundTransparency = 0.15}) -- subtle highlight
             tween(TabStroke, {Transparency = 0.4})
-            -- Update icon position for active tab
-            local iconPos = 17.5
-            tween(TabIcon, {Position = UDim2.new(0, iconPos, 0.5, 0)})
             Window.CurrentTab = TabSettings.Name
         end
         
@@ -1000,13 +983,15 @@ function VexHub:CreateWindow(WindowSettings)
         -- Hover effects
         TabButton.MouseEnter:Connect(function()
             if Window.CurrentTab ~= TabSettings.Name then
-                tween(TabStroke, {Color = Color3.fromRGB(87, 84, 104)})
+                tween(TabStroke, {Color = Color3.fromRGB(87, 84, 104), Transparency = 0.6})
+                tween(TabButton, {BackgroundTransparency = 0.3})
             end
         end)
         
         TabButton.MouseLeave:Connect(function()
             if Window.CurrentTab ~= TabSettings.Name then
-                tween(TabStroke, {Color = Color3.fromRGB(64, 61, 76)})
+                tween(TabStroke, {Color = Color3.fromRGB(64, 61, 76), Transparency = 1})
+                tween(TabButton, {BackgroundTransparency = 1})
             end
         end)
         
