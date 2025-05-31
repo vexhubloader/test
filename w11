@@ -125,6 +125,9 @@ function VexHub:CreateWindow(WindowSettings)
         CurrentTab = nil, 
         State = true, 
         NavigationExpanded = true,
+        IsMinimized = false,
+        OriginalSize = WindowSettings.Size,
+        Bind = Enum.KeyCode.K, -- Default bind to show/hide UI
         Tabs = {},
         Elements = {}
     }
@@ -206,16 +209,31 @@ function VexHub:CreateWindow(WindowSettings)
     Subtitle.TextSize = 12
     Subtitle.TextXAlignment = Enum.TextXAlignment.Left
     
+    -- Controls Container
+    local Controls = Instance.new("Frame")
+    Controls.Name = "Controls"
+    Controls.Parent = TitleBar
+    Controls.BackgroundTransparency = 1
+    Controls.Position = UDim2.new(1, -130, 0.5, 0)
+    Controls.AnchorPoint = Vector2.new(0, 0.5)
+    Controls.Size = UDim2.fromOffset(120, 30)
+    
+    local ControlsLayout = Instance.new("UIListLayout")
+    ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
+    ControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    ControlsLayout.Padding = UDim.new(0, 5)
+    ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ControlsLayout.Parent = Controls
+    
     -- Hamburger Menu Button (3 lines)
     local MenuButton = Instance.new("Frame")
     MenuButton.Name = "MenuButton"
-    MenuButton.Parent = TitleBar
+    MenuButton.Parent = Controls
     MenuButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
     MenuButton.BackgroundTransparency = 1
     MenuButton.BorderSizePixel = 0
-    MenuButton.Position = UDim2.new(1, -40, 0.5, 0)
-    MenuButton.AnchorPoint = Vector2.new(0, 0.5)
     MenuButton.Size = UDim2.fromOffset(30, 30)
+    MenuButton.LayoutOrder = 1
     
     local MenuCorner = Instance.new("UICorner")
     MenuCorner.CornerRadius = UDim.new(0, 6)
@@ -242,6 +260,68 @@ function VexHub:CreateWindow(WindowSettings)
     MenuInteract.BackgroundTransparency = 1
     MenuInteract.Size = UDim2.new(1, 0, 1, 0)
     MenuInteract.Text = ""
+    
+    -- Minimize Button
+    local MinimizeButton = Instance.new("Frame")
+    MinimizeButton.Name = "MinimizeButton"
+    MinimizeButton.Parent = Controls
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
+    MinimizeButton.BackgroundTransparency = 1
+    MinimizeButton.BorderSizePixel = 0
+    MinimizeButton.Size = UDim2.fromOffset(30, 30)
+    MinimizeButton.LayoutOrder = 2
+    
+    local MinimizeCorner = Instance.new("UICorner")
+    MinimizeCorner.CornerRadius = UDim.new(0, 6)
+    MinimizeCorner.Parent = MinimizeButton
+    
+    local MinimizeIcon = Instance.new("ImageLabel")
+    MinimizeIcon.Name = "Icon"
+    MinimizeIcon.Parent = MinimizeButton
+    MinimizeIcon.BackgroundTransparency = 1
+    MinimizeIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    MinimizeIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    MinimizeIcon.Size = UDim2.fromOffset(16, 16)
+    MinimizeIcon.Image = "rbxassetid://11036884234" -- Minimize icon
+    MinimizeIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
+    
+    local MinimizeInteract = Instance.new("TextButton")
+    MinimizeInteract.Name = "Interact"
+    MinimizeInteract.Parent = MinimizeButton
+    MinimizeInteract.BackgroundTransparency = 1
+    MinimizeInteract.Size = UDim2.new(1, 0, 1, 0)
+    MinimizeInteract.Text = ""
+    
+    -- Close Button
+    local CloseButton = Instance.new("Frame")
+    CloseButton.Name = "CloseButton"
+    CloseButton.Parent = Controls
+    CloseButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
+    CloseButton.BackgroundTransparency = 1
+    CloseButton.BorderSizePixel = 0
+    CloseButton.Size = UDim2.fromOffset(30, 30)
+    CloseButton.LayoutOrder = 3
+    
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 6)
+    CloseCorner.Parent = CloseButton
+    
+    local CloseIcon = Instance.new("ImageLabel")
+    CloseIcon.Name = "Icon"
+    CloseIcon.Parent = CloseButton
+    CloseIcon.BackgroundTransparency = 1
+    CloseIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    CloseIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    CloseIcon.Size = UDim2.fromOffset(16, 16)
+    CloseIcon.Image = "rbxassetid://10137941941" -- Close X icon
+    CloseIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
+    
+    local CloseInteract = Instance.new("TextButton")
+    CloseInteract.Name = "Interact"
+    CloseInteract.Parent = CloseButton
+    CloseInteract.BackgroundTransparency = 1
+    CloseInteract.Size = UDim2.new(1, 0, 1, 0)
+    CloseInteract.Text = ""
     
     -- Navigation Frame
     local Navigation = Instance.new("Frame")
@@ -279,6 +359,134 @@ function VexHub:CreateWindow(WindowSettings)
     
     -- Enable dragging
     Draggable(Main)
+    
+    -- Hide UI Function (like Luna's Hide function)
+    function Window:Hide(showNotification)
+        Window.State = false
+        
+        -- Tween all elements to invisible
+        tween(Main, {BackgroundTransparency = 1})
+        tween(TitleBar, {BackgroundTransparency = 1})
+        tween(Logo, {ImageTransparency = 1})
+        tween(Title, {TextTransparency = 1})
+        tween(Subtitle, {TextTransparency = 1})
+        tween(UIStroke, {Transparency = 1})
+        
+        -- Hide controls
+        for _, control in pairs(Controls:GetChildren()) do
+            if control:IsA("Frame") then
+                tween(control, {BackgroundTransparency = 1})
+                if control:FindFirstChild("Icon") then
+                    tween(control.Icon, {ImageTransparency = 1})
+                end
+                -- Hide hamburger lines
+                for i = 1, 3 do
+                    local line = control:FindFirstChild("Line" .. i)
+                    if line then
+                        tween(line, {BackgroundTransparency = 1})
+                    end
+                end
+            end
+        end
+        
+        -- Hide navigation and content
+        tween(Navigation, {BackgroundTransparency = 1})
+        tween(Content, {BackgroundTransparency = 1})
+        
+        -- Hide all tab buttons
+        for _, tab in pairs(Window.Tabs) do
+            if tab.Button then
+                tween(tab.Button, {BackgroundTransparency = 1})
+                tween(tab.Button.Icon, {ImageTransparency = 1})
+                tween(tab.Button.Label, {TextTransparency = 1})
+                tween(tab.Button.UIStroke, {Transparency = 1})
+            end
+        end
+        
+        wait(0.3)
+        Main.Size = UDim2.fromOffset(0, 0)
+        Main.Visible = false
+        
+        if showNotification then
+            print("VexHub | Interface Hidden - Press K to reopen")
+        end
+    end
+    
+    -- Show UI Function
+    function Window:Show()
+        Window.State = true
+        Main.Visible = true
+        Main.Size = Window.IsMinimized and UDim2.fromOffset(Window.OriginalSize.X.Offset, 50) or Window.OriginalSize
+        
+        -- Tween all elements back to visible
+        tween(Main, {BackgroundTransparency = 0})
+        tween(TitleBar, {BackgroundTransparency = 0})
+        tween(Logo, {ImageTransparency = 0})
+        tween(Title, {TextTransparency = 0})
+        tween(Subtitle, {TextTransparency = 0})
+        tween(UIStroke, {Transparency = 0})
+        
+        -- Show controls
+        for _, control in pairs(Controls:GetChildren()) do
+            if control:IsA("Frame") then
+                if Window.NavigationExpanded or control.Name == "CloseButton" or control.Name == "MinimizeButton" then
+                    tween(control, {BackgroundTransparency = control.Name == "MenuButton" and 1 or 1})
+                end
+                if control:FindFirstChild("Icon") then
+                    tween(control.Icon, {ImageTransparency = 0})
+                end
+                -- Show hamburger lines
+                for i = 1, 3 do
+                    local line = control:FindFirstChild("Line" .. i)
+                    if line then
+                        tween(line, {BackgroundTransparency = 0})
+                    end
+                end
+            end
+        end
+        
+        if not Window.IsMinimized then
+            -- Show navigation and content
+            tween(Navigation, {BackgroundTransparency = 0})
+            tween(Content, {BackgroundTransparency = 0})
+            
+            -- Show all tab buttons
+            for _, tab in pairs(Window.Tabs) do
+                if tab.Button then
+                    tween(tab.Button, {BackgroundTransparency = Window.CurrentTab == tab.Settings.Name and 0 or 1})
+                    tween(tab.Button.Icon, {ImageTransparency = 0})
+                    tween(tab.Button.Label, {TextTransparency = 0})
+                    tween(tab.Button.UIStroke, {Transparency = Window.CurrentTab == tab.Settings.Name and 0.4 or 1})
+                end
+            end
+        end
+    end
+    
+    -- Minimize UI Function
+    function Window:Minimize()
+        Window.IsMinimized = true
+        MinimizeIcon.Image = "rbxassetid://10137941941" -- Change to maximize icon
+        
+        -- Hide navigation and content
+        Navigation.Visible = false
+        Content.Visible = false
+        
+        -- Resize to title bar only
+        tween(Main, {Size = UDim2.fromOffset(Window.OriginalSize.X.Offset, 50)})
+    end
+    
+    -- Maximize UI Function  
+    function Window:Maximize()
+        Window.IsMinimized = false
+        MinimizeIcon.Image = "rbxassetid://11036884234" -- Change back to minimize icon
+        
+        -- Show navigation and content
+        Navigation.Visible = true
+        Content.Visible = true
+        
+        -- Resize back to original
+        tween(Main, {Size = Window.OriginalSize})
+    end
     
     -- Toggle Navigation Function
     function Window:ToggleNavigation()
@@ -364,11 +572,63 @@ function VexHub:CreateWindow(WindowSettings)
         end
     end)
     
+    -- Minimize button events
+    MinimizeInteract.MouseButton1Click:Connect(function()
+        if Window.IsMinimized then
+            Window:Maximize()
+        else
+            Window:Minimize()
+        end
+    end)
+    
+    MinimizeButton.MouseEnter:Connect(function()
+        tween(MinimizeButton, {BackgroundTransparency = 0.8})
+        tween(MinimizeIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+    end)
+    
+    MinimizeButton.MouseLeave:Connect(function()
+        tween(MinimizeButton, {BackgroundTransparency = 1})
+        tween(MinimizeIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
+    end)
+    
+    -- Close button events
+    CloseInteract.MouseButton1Click:Connect(function()
+        Window:Hide(true)
+    end)
+    
+    CloseButton.MouseEnter:Connect(function()
+        tween(CloseButton, {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.fromRGB(232, 17, 35)})
+        tween(CloseIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+    end)
+    
+    CloseButton.MouseLeave:Connect(function()
+        tween(CloseButton, {BackgroundTransparency = 1, BackgroundColor3 = Color3.fromRGB(50, 48, 58)})
+        tween(CloseIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
+    end)
+    
+    -- Keyboard bind to show/hide UI
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.KeyCode == Window.Bind then
+            if Window.State then
+                Window:Hide(true)
+            else
+                Window:Show()
+            end
+        end
+    end)
+    
     Window.GUI = ScreenGui
     Window.Main = Main
     Window.Navigation = Navigation
     Window.Content = Content
     Window.MenuButton = MenuButton
+    Window.Controls = Controls
+    
+    -- Function to change bind key
+    function Window:SetBind(newBind)
+        Window.Bind = newBind
+    end
     
     -- Create Tab Function
     function Window:CreateTab(TabSettings)
