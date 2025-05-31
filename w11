@@ -565,15 +565,6 @@ function VexHub:CreateWindow(WindowSettings)
     Logo.AnchorPoint = Vector2.new(0, 0.5)
     Logo.Size = UDim2.fromOffset(30, 30)
     Logo.Image = "rbxassetid://" .. WindowSettings.LogoID
-    Logo.ImageColor3 = Color3.fromRGB(221, 221, 221)
-    
-    -- Add logo button behavior
-    local LogoInteract = Instance.new("TextButton")
-    LogoInteract.Name = "Interact"
-    LogoInteract.Parent = Logo
-    LogoInteract.BackgroundTransparency = 1
-    LogoInteract.Size = UDim2.new(1, 0, 1, 0)
-    LogoInteract.Text = ""
     
     -- Title Text
     local Title = Instance.new("TextLabel")
@@ -617,6 +608,43 @@ function VexHub:CreateWindow(WindowSettings)
     ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ControlsLayout.Parent = Controls
     
+    -- Hamburger Menu Button (3 lines) - LEFT SIDE
+    local MenuButton = Instance.new("Frame")
+    MenuButton.Name = "MenuButton"
+    MenuButton.Parent = TitleBar
+    MenuButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
+    MenuButton.BackgroundTransparency = 1
+    MenuButton.BorderSizePixel = 0
+    MenuButton.Position = UDim2.new(0, 180 + 15, 0.5, 0) -- Position after navigation area
+    MenuButton.AnchorPoint = Vector2.new(0, 0.5)
+    MenuButton.Size = UDim2.fromOffset(30, 30)
+    
+    local MenuCorner = Instance.new("UICorner")
+    MenuCorner.CornerRadius = UDim.new(0, 6)
+    MenuCorner.Parent = MenuButton
+    
+    -- Create the 3 lines
+    for i = 1, 3 do
+        local Line = Instance.new("Frame")
+        Line.Name = "Line" .. i
+        Line.Parent = MenuButton
+        Line.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        Line.BorderSizePixel = 0
+        Line.Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0)
+        Line.Size = UDim2.new(0.6, 0, 0, 2)
+        
+        local LineCorner = Instance.new("UICorner")
+        LineCorner.CornerRadius = UDim.new(0, 1)
+        LineCorner.Parent = Line
+    end
+    
+    local MenuInteract = Instance.new("TextButton")
+    MenuInteract.Name = "Interact"
+    MenuInteract.Parent = MenuButton
+    MenuInteract.BackgroundTransparency = 1
+    MenuInteract.Size = UDim2.new(1, 0, 1, 0)
+    MenuInteract.Text = ""
+    
     -- Minimize Button
     local MinimizeButton = Instance.new("Frame")
     MinimizeButton.Name = "MinimizeButton"
@@ -626,11 +654,11 @@ function VexHub:CreateWindow(WindowSettings)
     MinimizeButton.BorderSizePixel = 0
     MinimizeButton.Size = UDim2.fromOffset(30, 30)
     MinimizeButton.LayoutOrder = 1
-
+    
     local MinimizeCorner = Instance.new("UICorner")
     MinimizeCorner.CornerRadius = UDim.new(0, 6)
     MinimizeCorner.Parent = MinimizeButton
-
+    
     local MinimizeIcon = Instance.new("ImageLabel")
     MinimizeIcon.Name = "Icon"
     MinimizeIcon.Parent = MinimizeButton
@@ -640,14 +668,14 @@ function VexHub:CreateWindow(WindowSettings)
     MinimizeIcon.Size = UDim2.fromOffset(16, 16)
     MinimizeIcon.Image = "rbxassetid://11036884234" -- Minimize icon
     MinimizeIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
-
+    
     local MinimizeInteract = Instance.new("TextButton")
     MinimizeInteract.Name = "Interact"
     MinimizeInteract.Parent = MinimizeButton
     MinimizeInteract.BackgroundTransparency = 1
     MinimizeInteract.Size = UDim2.new(1, 0, 1, 0)
     MinimizeInteract.Text = ""
-
+    
     -- Close Button
     local CloseButton = Instance.new("Frame")
     CloseButton.Name = "CloseButton"
@@ -657,11 +685,11 @@ function VexHub:CreateWindow(WindowSettings)
     CloseButton.BorderSizePixel = 0
     CloseButton.Size = UDim2.fromOffset(30, 30)
     CloseButton.LayoutOrder = 2
-
+    
     local CloseCorner = Instance.new("UICorner")
     CloseCorner.CornerRadius = UDim.new(0, 6)
     CloseCorner.Parent = CloseButton
-
+    
     local CloseIcon = Instance.new("ImageLabel")
     CloseIcon.Name = "Icon"
     CloseIcon.Parent = CloseButton
@@ -671,7 +699,7 @@ function VexHub:CreateWindow(WindowSettings)
     CloseIcon.Size = UDim2.fromOffset(16, 16)
     CloseIcon.Image = "rbxassetid://10137941941" -- Close X icon
     CloseIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
-
+    
     local CloseInteract = Instance.new("TextButton")
     CloseInteract.Name = "Interact"
     CloseInteract.Parent = CloseButton
@@ -686,13 +714,13 @@ function VexHub:CreateWindow(WindowSettings)
     Navigation.BackgroundTransparency = 1
     Navigation.Position = UDim2.new(0, 0, 0, 50)
     Navigation.Size = UDim2.new(0, 180, 1, -50)
-
+    
     local NavPadding = Instance.new("UIPadding")
     NavPadding.PaddingTop = UDim.new(0, 10)
     NavPadding.PaddingLeft = UDim.new(0, 10)
     NavPadding.PaddingRight = UDim.new(0, 10)
     NavPadding.Parent = Navigation
-
+    
     local NavLayout = Instance.new("UIListLayout")
     NavLayout.SortOrder = Enum.SortOrder.LayoutOrder
     NavLayout.Padding = UDim.new(0, 5)
@@ -705,7 +733,7 @@ function VexHub:CreateWindow(WindowSettings)
     Content.BackgroundTransparency = 1
     Content.Position = UDim2.new(0, 180, 0, 50)
     Content.Size = UDim2.new(1, -180, 1, -50)
-
+    
     local ContentPadding = Instance.new("UIPadding")
     ContentPadding.PaddingTop = UDim.new(0, 15)
     ContentPadding.PaddingLeft = UDim.new(0, 15)
@@ -734,6 +762,13 @@ function VexHub:CreateWindow(WindowSettings)
                 tween(control, {BackgroundTransparency = 1})
                 if control:FindFirstChild("Icon") then
                     tween(control.Icon, {ImageTransparency = 1})
+                end
+                -- Hide hamburger lines
+                for i = 1, 3 do
+                    local line = control:FindFirstChild("Line" .. i)
+                    if line then
+                        tween(line, {BackgroundTransparency = 1})
+                    end
                 end
             end
         end
@@ -775,16 +810,21 @@ function VexHub:CreateWindow(WindowSettings)
         tween(Subtitle, {TextTransparency = 0})
         tween(UIStroke, {Transparency = 0})
         
-        -- Set Logo color based on navigation state
-        local logoColor = Window.NavigationExpanded and Color3.fromRGB(221, 221, 221) or Color3.fromRGB(170, 170, 170)
-        tween(Logo, {ImageColor3 = logoColor})
-        
         -- Show controls
         for _, control in pairs(Controls:GetChildren()) do
             if control:IsA("Frame") then
-                tween(control, {BackgroundTransparency = 1})
+                if Window.NavigationExpanded or control.Name == "CloseButton" or control.Name == "MinimizeButton" then
+                    tween(control, {BackgroundTransparency = control.Name == "MenuButton" and 1 or 1})
+                end
                 if control:FindFirstChild("Icon") then
                     tween(control.Icon, {ImageTransparency = 0})
+                end
+                -- Show hamburger lines
+                for i = 1, 3 do
+                    local line = control:FindFirstChild("Line" .. i)
+                    if line then
+                        tween(line, {BackgroundTransparency = 0})
+                    end
                 end
             end
         end
@@ -843,13 +883,25 @@ function VexHub:CreateWindow(WindowSettings)
                 Position = UDim2.new(0, 180, 0, 50),
                 Size = UDim2.new(1, -180, 1, -50)
             })
-            tween(Logo, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+            tween(MenuButton, {Position = UDim2.new(0, 180 + 15, 0.5, 0)})
             
             -- Show tab text labels
             for _, tab in pairs(Window.Tabs) do
                 if tab.Button and tab.Button:FindFirstChild("Label") then
                     tab.Button.Label.Visible = true
                     tween(tab.Button.Label, {TextTransparency = 0})
+                end
+            end
+            
+            -- Animate hamburger lines back to normal
+            for i = 1, 3 do
+                local line = MenuButton:FindFirstChild("Line" .. i)
+                if line then
+                    tween(line, {
+                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
+                        Rotation = 0,
+                        BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+                    })
                 end
             end
         else
@@ -859,7 +911,7 @@ function VexHub:CreateWindow(WindowSettings)
                 Position = UDim2.new(0, 55, 0, 50),
                 Size = UDim2.new(1, -55, 1, -50)
             })
-            tween(Logo, {ImageColor3 = Color3.fromRGB(170, 170, 170)})
+            tween(MenuButton, {Position = UDim2.new(0, 55 + 15, 0.5, 0)})
             
             -- Hide tab text labels
             for _, tab in pairs(Window.Tabs) do
@@ -869,28 +921,47 @@ function VexHub:CreateWindow(WindowSettings)
                     end)
                 end
             end
+            
+            -- Keep hamburger lines normal (don't turn to X)
+            for i = 1, 3 do
+                local line = MenuButton:FindFirstChild("Line" .. i)
+                if line then
+                    tween(line, {
+                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
+                        Rotation = 0,
+                        BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    })
+                end
+            end
         end
     end
     
-    -- Logo click handler
-    LogoInteract.MouseButton1Click:Connect(function()
+    -- Menu button click handler
+    MenuInteract.MouseButton1Click:Connect(function()
         Window:ToggleNavigation()
     end)
     
-    -- Logo hover effects
-    Logo.MouseEnter:Connect(function()
-        if Window.NavigationExpanded then
-            tween(Logo, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-        else
-            tween(Logo, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+    -- Menu button hover effects
+    MenuButton.MouseEnter:Connect(function()
+        tween(MenuButton, {BackgroundTransparency = 0.8})
+        -- Brighten lines on hover
+        for i = 1, 3 do
+            local line = MenuButton:FindFirstChild("Line" .. i)
+            if line then
+                tween(line, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
+            end
         end
     end)
     
-    Logo.MouseLeave:Connect(function()
-        if Window.NavigationExpanded then
-            tween(Logo, {ImageColor3 = Color3.fromRGB(221, 221, 221)})
-        else
-            tween(Logo, {ImageColor3 = Color3.fromRGB(170, 170, 170)})
+    MenuButton.MouseLeave:Connect(function()
+        tween(MenuButton, {BackgroundTransparency = 1})
+        -- Return lines to normal color
+        for i = 1, 3 do
+            local line = MenuButton:FindFirstChild("Line" .. i)
+            if line then
+                local normalColor = Window.NavigationExpanded and Color3.fromRGB(200, 200, 200) or Color3.fromRGB(255, 255, 255)
+                tween(line, {BackgroundColor3 = normalColor})
+            end
         end
     end)
     
@@ -944,6 +1015,7 @@ function VexHub:CreateWindow(WindowSettings)
     Window.Main = Main
     Window.Navigation = Navigation
     Window.Content = Content
+    Window.MenuButton = MenuButton
     Window.Controls = Controls
     
     -- Function to change bind key
