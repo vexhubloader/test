@@ -623,16 +623,20 @@ function VexHub:CreateWindow(WindowSettings)
     MenuCorner.CornerRadius = UDim.new(0, 6)
     MenuCorner.Parent = MenuButton
     
-    -- Replace the 3 lines with an icon
-    local MenuIcon = Instance.new("ImageLabel")
-    MenuIcon.Name = "Icon"
-    MenuIcon.Parent = MenuButton
-    MenuIcon.BackgroundTransparency = 1
-    MenuIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
-    MenuIcon.AnchorPoint = Vector2.new(0.5, 0.5)
-    MenuIcon.Size = UDim2.fromOffset(20, 20)
-    MenuIcon.Image = GetIcon("visibility", "Material") -- Use visibility icon
-    MenuIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
+    -- Create the 3 lines
+    for i = 1, 3 do
+        local Line = Instance.new("Frame")
+        Line.Name = "Line" .. i
+        Line.Parent = MenuButton
+        Line.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+        Line.BorderSizePixel = 0
+        Line.Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0)
+        Line.Size = UDim2.new(0.6, 0, 0, 2)
+        
+        local LineCorner = Instance.new("UICorner")
+        LineCorner.CornerRadius = UDim.new(0, 1)
+        LineCorner.Parent = Line
+    end
     
     local MenuInteract = Instance.new("TextButton")
     MenuInteract.Name = "Interact"
@@ -744,11 +748,6 @@ function VexHub:CreateWindow(WindowSettings)
     function Window:Hide(showNotification)
         Window.State = false
         
-        -- Update the icon
-        if MenuIcon then
-            MenuIcon.Image = GetIcon("visibility_off", "Material")
-        end
-        
         -- Tween all elements to invisible
         tween(Main, {BackgroundTransparency = 1})
         tween(TitleBar, {BackgroundTransparency = 1})
@@ -764,12 +763,15 @@ function VexHub:CreateWindow(WindowSettings)
                 if control:FindFirstChild("Icon") then
                     tween(control.Icon, {ImageTransparency = 1})
                 end
+                -- Hide hamburger lines
+                for i = 1, 3 do
+                    local line = control:FindFirstChild("Line" .. i)
+                    if line then
+                        tween(line, {BackgroundTransparency = 1})
+                    end
+                end
             end
         end
-        
-        -- Keep the menu button partially visible
-        tween(MenuButton, {BackgroundTransparency = 0.8})
-        tween(MenuIcon, {ImageTransparency = 0})
         
         -- Hide navigation and content
         tween(Navigation, {BackgroundTransparency = 1})
@@ -786,53 +788,19 @@ function VexHub:CreateWindow(WindowSettings)
         end
         
         wait(0.3)
-        Main.Size = UDim2.fromOffset(40, 40) -- Leave just enough for the toggle button
-        Main.Position = UDim2.new(0.98, 0, 0.1, 0) -- Move to top-right corner
-        
-        -- Keep only the menu button visible
-        MenuButton.Visible = true
-        MenuButton.Position = UDim2.new(0.5, 0, 0.5, 0)
-        MenuButton.AnchorPoint = Vector2.new(0.5, 0.5)
-        TitleBar.Visible = true
-        
-        -- Hide other elements
-        Navigation.Visible = false
-        Content.Visible = false
-        Controls.Visible = false
-        Logo.Visible = false
-        Title.Visible = false
-        Subtitle.Visible = false
+        Main.Size = UDim2.fromOffset(0, 0)
+        Main.Visible = false
         
         if showNotification then
-            print("VexHub | Interface Hidden - Click icon to reopen")
+            print("VexHub | Interface Hidden - Press K to reopen")
         end
     end
     
     -- Show UI Function
     function Window:Show()
         Window.State = true
-        
-        -- Update the icon
-        if MenuIcon then
-            MenuIcon.Image = GetIcon("visibility", "Material")
-        end
-        
-        -- Restore position and size
-        Main.Position = UDim2.fromScale(0.5, 0.5)
+        Main.Visible = true
         Main.Size = Window.IsMinimized and UDim2.fromOffset(Window.OriginalSize.X.Offset, 50) or Window.OriginalSize
-        
-        -- Make all elements visible again
-        TitleBar.Visible = true
-        Navigation.Visible = true
-        Content.Visible = true
-        Controls.Visible = true
-        Logo.Visible = true
-        Title.Visible = true
-        Subtitle.Visible = true
-        
-        -- Reset menu button position
-        MenuButton.Position = Window.NavigationExpanded and UDim2.new(0, 180 + 15, 0.5, 0) or UDim2.new(0, 55 + 15, 0.5, 0)
-        MenuButton.AnchorPoint = Vector2.new(0, 0.5)
         
         -- Tween all elements back to visible
         tween(Main, {BackgroundTransparency = 0})
@@ -850,6 +818,13 @@ function VexHub:CreateWindow(WindowSettings)
                 end
                 if control:FindFirstChild("Icon") then
                     tween(control.Icon, {ImageTransparency = 0})
+                end
+                -- Show hamburger lines
+                for i = 1, 3 do
+                    local line = control:FindFirstChild("Line" .. i)
+                    if line then
+                        tween(line, {BackgroundTransparency = 0})
+                    end
                 end
             end
         end
@@ -917,6 +892,18 @@ function VexHub:CreateWindow(WindowSettings)
                     tween(tab.Button.Label, {TextTransparency = 0})
                 end
             end
+            
+            -- Animate hamburger lines back to normal
+            for i = 1, 3 do
+                local line = MenuButton:FindFirstChild("Line" .. i)
+                if line then
+                    tween(line, {
+                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
+                        Rotation = 0,
+                        BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+                    })
+                end
+            end
         else
             -- Collapse navigation (show icons only)
             tween(Navigation, {Size = UDim2.new(0, 55, 1, -50)})
@@ -934,29 +921,48 @@ function VexHub:CreateWindow(WindowSettings)
                     end)
                 end
             end
+            
+            -- Keep hamburger lines normal (don't turn to X)
+            for i = 1, 3 do
+                local line = MenuButton:FindFirstChild("Line" .. i)
+                if line then
+                    tween(line, {
+                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
+                        Rotation = 0,
+                        BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    })
+                end
+            end
         end
     end
     
     -- Menu button click handler
     MenuInteract.MouseButton1Click:Connect(function()
-        if Window.State then
-            Window:Hide(true)
-            MenuIcon.Image = GetIcon("visibility_off", "Material") -- Change to visibility_off icon when hidden
-        else
-            Window:Show()
-            MenuIcon.Image = GetIcon("visibility", "Material") -- Change back to visibility icon when shown
-        end
+        Window:ToggleNavigation()
     end)
     
     -- Menu button hover effects
     MenuButton.MouseEnter:Connect(function()
         tween(MenuButton, {BackgroundTransparency = 0.8})
-        tween(MenuIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+        -- Brighten lines on hover
+        for i = 1, 3 do
+            local line = MenuButton:FindFirstChild("Line" .. i)
+            if line then
+                tween(line, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
+            end
+        end
     end)
     
     MenuButton.MouseLeave:Connect(function()
         tween(MenuButton, {BackgroundTransparency = 1})
-        tween(MenuIcon, {ImageColor3 = Color3.fromRGB(200, 200, 200)})
+        -- Return lines to normal color
+        for i = 1, 3 do
+            local line = MenuButton:FindFirstChild("Line" .. i)
+            if line then
+                local normalColor = Window.NavigationExpanded and Color3.fromRGB(200, 200, 200) or Color3.fromRGB(255, 255, 255)
+                tween(line, {BackgroundColor3 = normalColor})
+            end
+        end
     end)
     
     -- Minimize button events
