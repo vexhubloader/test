@@ -657,7 +657,7 @@ function VexHub:CreateWindow(WindowSettings)
         
         Window.Tabs[#Window.Tabs + 1] = Tab
         
-        -- Create Button Function
+        -- Create Button Function (original)
         function Tab:CreateButton(ButtonSettings)
             ButtonSettings = Kwargify({
                 Name = "Button",
@@ -674,59 +674,35 @@ function VexHub:CreateWindow(WindowSettings)
             Button.Name = ButtonSettings.Name
             Button.Parent = TabPage
             Button.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
-            Button.BackgroundTransparency = 0
+            Button.BackgroundTransparency = 0.5
             Button.BorderSizePixel = 0
-            Button.Size = UDim2.new(1, -10, 0, ButtonSettings.Description and 65 or 42) -- Adjusted height
-            Button.LayoutOrder = #TabPage:GetChildren() -- Set layout order for proper sorting
+            Button.Size = UDim2.new(1, -10, 0, ButtonSettings.Description and 65 or 45)
+            Button.LayoutOrder = #TabPage:GetChildren()
             
             local ButtonCorner = Instance.new("UICorner")
-            ButtonCorner.CornerRadius = UDim.new(0, 20) -- Fully rounded corners like in the image
+            ButtonCorner.CornerRadius = UDim.new(0, 10)
             ButtonCorner.Parent = Button
             
-            -- Remove stroke and use gradient instead
-            local ButtonGradient = Instance.new("UIGradient")
-            ButtonGradient.Rotation = 90
-            ButtonGradient.Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(42, 40, 48)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 30, 38))
-            }
-            ButtonGradient.Parent = Button
+            local ButtonStroke = Instance.new("UIStroke")
+            ButtonStroke.Color = Color3.fromRGB(64, 61, 76)
+            ButtonStroke.Thickness = 1
+            ButtonStroke.Transparency = 0.5
+            ButtonStroke.Parent = Button
             
-            -- Center the text
             local ButtonTitle = Instance.new("TextLabel")
             ButtonTitle.Name = "Title"
             ButtonTitle.Parent = Button
             ButtonTitle.BackgroundTransparency = 1
-            ButtonTitle.Position = UDim2.new(0, 0, 0, 0)
-            ButtonTitle.Size = UDim2.new(1, 0, 1, 0)
+            ButtonTitle.Position = UDim2.new(0, 15, 0, ButtonSettings.Description and 8 or 0)
+            ButtonTitle.Size = UDim2.new(1, -30, 0, ButtonSettings.Description and 20 or 45)
             ButtonTitle.Font = Enum.Font.GothamSemibold
             ButtonTitle.Text = ButtonSettings.Name
             ButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
             ButtonTitle.TextSize = 14
-            ButtonTitle.TextXAlignment = Enum.TextXAlignment.Center
-            ButtonTitle.TextYAlignment = Enum.TextYAlignment.Center
-            
-            -- Add arrow icon if needed
-            local ArrowIcon = Instance.new("ImageLabel")
-            ArrowIcon.Name = "ArrowIcon"
-            ArrowIcon.Parent = Button
-            ArrowIcon.BackgroundTransparency = 1
-            ArrowIcon.Position = UDim2.new(1, -25, 0.5, 0)
-            ArrowIcon.AnchorPoint = Vector2.new(0, 0.5)
-            ArrowIcon.Size = UDim2.fromOffset(16, 16)
-            ArrowIcon.Image = "rbxassetid://7072706620" -- Right arrow icon
-            ArrowIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-            ArrowIcon.ImageTransparency = 0.4
-            ArrowIcon.Visible = false -- Hidden by default, can be enabled via settings
+            ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
+            ButtonTitle.TextYAlignment = ButtonSettings.Description and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
             
             if ButtonSettings.Description then
-                Button.Size = UDim2.new(1, -10, 0, 65)
-                
-                ButtonTitle.Position = UDim2.new(0, 15, 0, 8)
-                ButtonTitle.Size = UDim2.new(1, -30, 0, 20)
-                ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
-                ButtonTitle.TextYAlignment = Enum.TextYAlignment.Top
-                
                 local ButtonDesc = Instance.new("TextLabel")
                 ButtonDesc.Name = "Description"
                 ButtonDesc.Parent = Button
@@ -741,6 +717,132 @@ function VexHub:CreateWindow(WindowSettings)
                 ButtonDesc.TextYAlignment = Enum.TextYAlignment.Top
                 ButtonDesc.TextWrapped = true
             end
+            
+            local ButtonInteract = Instance.new("TextButton")
+            ButtonInteract.Name = "Interact"
+            ButtonInteract.Parent = Button
+            ButtonInteract.BackgroundTransparency = 1
+            ButtonInteract.Size = UDim2.new(1, 0, 1, 0)
+            ButtonInteract.Text = ""
+            
+            -- Click handler
+            ButtonInteract.MouseButton1Click:Connect(function()
+                local Success, Response = pcall(ButtonSettings.Callback)
+                if not Success then
+                    print("VexHub | " .. ButtonSettings.Name .. " Callback Error: " .. tostring(Response))
+                    tween(Button, {BackgroundColor3 = Color3.fromRGB(85, 0, 0)})
+                    ButtonTitle.Text = "Callback Error"
+                    wait(0.5)
+                    ButtonTitle.Text = ButtonSettings.Name
+                    tween(Button, {BackgroundColor3 = Color3.fromRGB(32, 30, 38)})
+                else
+                    tween(ButtonStroke, {Color = Color3.fromRGB(136, 131, 163)})
+                    wait(0.2)
+                    if ButtonV.Hover then
+                        tween(ButtonStroke, {Color = Color3.fromRGB(87, 84, 104)})
+                    else
+                        tween(ButtonStroke, {Color = Color3.fromRGB(64, 61, 76)})
+                    end
+                end
+            end)
+            
+            -- Hover effects
+            Button.MouseEnter:Connect(function()
+                ButtonV.Hover = true
+                tween(ButtonStroke, {Color = Color3.fromRGB(87, 84, 104)})
+            end)
+            
+            Button.MouseLeave:Connect(function()
+                ButtonV.Hover = false
+                tween(ButtonStroke, {Color = Color3.fromRGB(64, 61, 76)})
+            end)
+            
+            function ButtonV:Set(NewButtonSettings)
+                NewButtonSettings = Kwargify({
+                    Name = ButtonSettings.Name,
+                    Description = ButtonSettings.Description,
+                    Callback = ButtonSettings.Callback
+                }, NewButtonSettings or {})
+                
+                ButtonSettings = NewButtonSettings
+                ButtonV.Settings = NewButtonSettings
+                
+                ButtonTitle.Text = ButtonSettings.Name
+                if ButtonSettings.Description and Button:FindFirstChild("Description") then
+                    Button.Description.Text = ButtonSettings.Description
+                end
+            end
+            
+            function ButtonV:Destroy()
+                Button:Destroy()
+            end
+            
+            Tab.Elements[#Tab.Elements + 1] = ButtonV
+            return ButtonV
+        end
+        
+        -- Create special action button (like "Connect Wallet" in the image)
+        function Tab:CreateActionButton(ButtonSettings)
+            ButtonSettings = Kwargify({
+                Name = "Action Button",
+                ShowArrow = false, -- Option to show arrow icon
+                Callback = function() end,
+            }, ButtonSettings or {})
+            
+            local ButtonV = {
+                Hover = false,
+                Settings = ButtonSettings
+            }
+            
+            local Button = Instance.new("Frame")
+            Button.Name = ButtonSettings.Name
+            Button.Parent = TabPage
+            Button.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
+            Button.BackgroundTransparency = 0
+            Button.BorderSizePixel = 0
+            Button.Size = UDim2.new(1, -10, 0, 42) -- Fixed height for action buttons
+            Button.LayoutOrder = #TabPage:GetChildren()
+            
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 20) -- Fully rounded corners
+            ButtonCorner.Parent = Button
+            
+            -- Use gradient for button
+            local ButtonGradient = Instance.new("UIGradient")
+            ButtonGradient.Rotation = 90
+            ButtonGradient.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(42, 40, 48)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 30, 38))
+            }
+            ButtonGradient.Parent = Button
+            
+            -- Center the text
+            local ButtonTitle = Instance.new("TextLabel")
+            ButtonTitle.Name = "Title"
+            ButtonTitle.Parent = Button
+            ButtonTitle.BackgroundTransparency = 1
+            ButtonTitle.AnchorPoint = Vector2.new(0.5, 0.5)
+            ButtonTitle.Position = UDim2.new(0.5, 0, 0.5, 0)
+            ButtonTitle.Size = UDim2.new(1, -20, 1, 0)
+            ButtonTitle.Font = Enum.Font.GothamSemibold
+            ButtonTitle.Text = ButtonSettings.Name
+            ButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ButtonTitle.TextSize = 14
+            ButtonTitle.TextXAlignment = Enum.TextXAlignment.Center
+            ButtonTitle.TextYAlignment = Enum.TextYAlignment.Center
+            
+            -- Add arrow icon (optional)
+            local ArrowIcon = Instance.new("ImageLabel")
+            ArrowIcon.Name = "ArrowIcon"
+            ArrowIcon.Parent = Button
+            ArrowIcon.BackgroundTransparency = 1
+            ArrowIcon.Position = UDim2.new(1, -25, 0.5, 0)
+            ArrowIcon.AnchorPoint = Vector2.new(0, 0.5)
+            ArrowIcon.Size = UDim2.fromOffset(16, 16)
+            ArrowIcon.Image = "rbxassetid://7072706620" -- Right arrow icon
+            ArrowIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            ArrowIcon.ImageTransparency = 0.2
+            ArrowIcon.Visible = ButtonSettings.ShowArrow
             
             local ButtonInteract = Instance.new("TextButton")
             ButtonInteract.Name = "Interact"
@@ -781,7 +883,7 @@ function VexHub:CreateWindow(WindowSettings)
             function ButtonV:Set(NewButtonSettings)
                 NewButtonSettings = Kwargify({
                     Name = ButtonSettings.Name,
-                    Description = ButtonSettings.Description,
+                    ShowArrow = ButtonSettings.ShowArrow,
                     Callback = ButtonSettings.Callback
                 }, NewButtonSettings or {})
                 
@@ -789,9 +891,7 @@ function VexHub:CreateWindow(WindowSettings)
                 ButtonV.Settings = NewButtonSettings
                 
                 ButtonTitle.Text = ButtonSettings.Name
-                if ButtonSettings.Description and Button:FindFirstChild("Description") then
-                    Button.Description.Text = ButtonSettings.Description
-                end
+                ArrowIcon.Visible = ButtonSettings.ShowArrow
             end
             
             function ButtonV:Destroy()
