@@ -9,9 +9,9 @@ Simplified UI Library with Windows, Tabs, Buttons, and Toggles
 local VexHub = { 
     Options = {}, 
     ThemeGradient = ColorSequence.new{
-        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(117, 164, 206)), 
-        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(123, 201, 201)), 
-        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(224, 138, 175))
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(65, 79, 230)), 
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(99, 86, 233)), 
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(133, 93, 236))
     } 
 }
 
@@ -26,6 +26,7 @@ local CoreGui = game:GetService("CoreGui")
 
 -- Constants
 local tweeninfo = TweenInfo.new(0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+local toggleTweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
 -- Material Icons (simplified version)
 local IconModule = {
@@ -124,7 +125,7 @@ function VexHub:CreateWindow(WindowSettings)
     local Window = { 
         CurrentTab = nil, 
         State = true, 
-        NavigationExpanded = true,
+        NavigationExpanded = true, -- Always keep this true
         IsMinimized = false,
         OriginalSize = WindowSettings.Size,
         Bind = Enum.KeyCode.K, -- Default bind to show/hide UI
@@ -214,9 +215,9 @@ function VexHub:CreateWindow(WindowSettings)
     Controls.Name = "Controls"
     Controls.Parent = TitleBar
     Controls.BackgroundTransparency = 1
-    Controls.Position = UDim2.new(1, -130, 0.5, 0)
+    Controls.Position = UDim2.new(1, -80, 0.5, 0) -- Adjusted position since we removed one button
     Controls.AnchorPoint = Vector2.new(0, 0.5)
-    Controls.Size = UDim2.fromOffset(120, 30)
+    Controls.Size = UDim2.fromOffset(80, 30) -- Adjusted size since we removed one button
     
     local ControlsLayout = Instance.new("UIListLayout")
     ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -224,42 +225,6 @@ function VexHub:CreateWindow(WindowSettings)
     ControlsLayout.Padding = UDim.new(0, 5)
     ControlsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ControlsLayout.Parent = Controls
-    
-    -- Hamburger Menu Button (3 lines)
-    local MenuButton = Instance.new("Frame")
-    MenuButton.Name = "MenuButton"
-    MenuButton.Parent = Controls
-    MenuButton.BackgroundColor3 = Color3.fromRGB(50, 48, 58)
-    MenuButton.BackgroundTransparency = 1
-    MenuButton.BorderSizePixel = 0
-    MenuButton.Size = UDim2.fromOffset(30, 30)
-    MenuButton.LayoutOrder = 1
-    
-    local MenuCorner = Instance.new("UICorner")
-    MenuCorner.CornerRadius = UDim.new(0, 6)
-    MenuCorner.Parent = MenuButton
-    
-    -- Create the 3 lines
-    for i = 1, 3 do
-        local Line = Instance.new("Frame")
-        Line.Name = "Line" .. i
-        Line.Parent = MenuButton
-        Line.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-        Line.BorderSizePixel = 0
-        Line.Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0)
-        Line.Size = UDim2.new(0.6, 0, 0, 2)
-        
-        local LineCorner = Instance.new("UICorner")
-        LineCorner.CornerRadius = UDim.new(0, 1)
-        LineCorner.Parent = Line
-    end
-    
-    local MenuInteract = Instance.new("TextButton")
-    MenuInteract.Name = "Interact"
-    MenuInteract.Parent = MenuButton
-    MenuInteract.BackgroundTransparency = 1
-    MenuInteract.Size = UDim2.new(1, 0, 1, 0)
-    MenuInteract.Text = ""
     
     -- Minimize Button
     local MinimizeButton = Instance.new("Frame")
@@ -269,7 +234,7 @@ function VexHub:CreateWindow(WindowSettings)
     MinimizeButton.BackgroundTransparency = 1
     MinimizeButton.BorderSizePixel = 0
     MinimizeButton.Size = UDim2.fromOffset(30, 30)
-    MinimizeButton.LayoutOrder = 2
+    MinimizeButton.LayoutOrder = 1 -- Changed from 2 to 1
     
     local MinimizeCorner = Instance.new("UICorner")
     MinimizeCorner.CornerRadius = UDim.new(0, 6)
@@ -300,7 +265,7 @@ function VexHub:CreateWindow(WindowSettings)
     CloseButton.BackgroundTransparency = 1
     CloseButton.BorderSizePixel = 0
     CloseButton.Size = UDim2.fromOffset(30, 30)
-    CloseButton.LayoutOrder = 3
+    CloseButton.LayoutOrder = 2 -- Changed from 3 to 2
     
     local CloseCorner = Instance.new("UICorner")
     CloseCorner.CornerRadius = UDim.new(0, 6)
@@ -379,13 +344,6 @@ function VexHub:CreateWindow(WindowSettings)
                 if control:FindFirstChild("Icon") then
                     tween(control.Icon, {ImageTransparency = 1})
                 end
-                -- Hide hamburger lines
-                for i = 1, 3 do
-                    local line = control:FindFirstChild("Line" .. i)
-                    if line then
-                        tween(line, {BackgroundTransparency = 1})
-                    end
-                end
             end
         end
         
@@ -429,18 +387,11 @@ function VexHub:CreateWindow(WindowSettings)
         -- Show controls
         for _, control in pairs(Controls:GetChildren()) do
             if control:IsA("Frame") then
-                if Window.NavigationExpanded or control.Name == "CloseButton" or control.Name == "MinimizeButton" then
-                    tween(control, {BackgroundTransparency = control.Name == "MenuButton" and 1 or 1})
+                if control.Name == "CloseButton" or control.Name == "MinimizeButton" then
+                    tween(control, {BackgroundTransparency = 1})
                 end
                 if control:FindFirstChild("Icon") then
                     tween(control.Icon, {ImageTransparency = 0})
-                end
-                -- Show hamburger lines
-                for i = 1, 3 do
-                    local line = control:FindFirstChild("Line" .. i)
-                    if line then
-                        tween(line, {BackgroundTransparency = 0})
-                    end
                 end
             end
         end
@@ -487,90 +438,6 @@ function VexHub:CreateWindow(WindowSettings)
         -- Resize back to original
         tween(Main, {Size = Window.OriginalSize})
     end
-    
-    -- Toggle Navigation Function
-    function Window:ToggleNavigation()
-        Window.NavigationExpanded = not Window.NavigationExpanded
-        
-        if Window.NavigationExpanded then
-            -- Expand navigation
-            tween(Navigation, {Size = UDim2.new(0, 180, 1, -50)})
-            tween(Content, {
-                Position = UDim2.new(0, 180, 0, 50),
-                Size = UDim2.new(1, -180, 1, -50)
-            })
-            tween(MenuButton, {BackgroundTransparency = 1})
-            
-            -- Animate hamburger lines back to normal
-            for i = 1, 3 do
-                local line = MenuButton:FindFirstChild("Line" .. i)
-                if line then
-                    tween(line, {
-                        Position = UDim2.new(0.2, 0, 0.15 + (i-1) * 0.25, 0),
-                        Rotation = 0,
-                        BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-                    })
-                end
-            end
-        else
-            -- Collapse navigation
-            tween(Navigation, {Size = UDim2.new(0, 0, 1, -50)})
-            tween(Content, {
-                Position = UDim2.new(0, 0, 0, 50),
-                Size = UDim2.new(1, 0, 1, -50)
-            })
-            tween(MenuButton, {BackgroundTransparency = 0.8})
-            
-            -- Animate hamburger lines to X shape
-            local line1 = MenuButton:FindFirstChild("Line1")
-            local line2 = MenuButton:FindFirstChild("Line2")
-            local line3 = MenuButton:FindFirstChild("Line3")
-            
-            if line1 then
-                tween(line1, {
-                    Position = UDim2.new(0.2, 0, 0.4, 0),
-                    Rotation = 45,
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                })
-            end
-            if line2 then
-                tween(line2, {
-                    Position = UDim2.new(0.2, 0, 0.4, 0),
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                    BackgroundTransparency = 1
-                })
-            end
-            if line3 then
-                tween(line3, {
-                    Position = UDim2.new(0.2, 0, 0.4, 0),
-                    Rotation = -45,
-                    BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                })
-            end
-        end
-    end
-    
-    -- Menu button click handler
-    MenuInteract.MouseButton1Click:Connect(function()
-        Window:ToggleNavigation()
-    end)
-    
-    -- Menu button hover effects
-    MenuButton.MouseEnter:Connect(function()
-        if Window.NavigationExpanded then
-            tween(MenuButton, {BackgroundTransparency = 0.9})
-        else
-            tween(MenuButton, {BackgroundTransparency = 0.7})
-        end
-    end)
-    
-    MenuButton.MouseLeave:Connect(function()
-        if Window.NavigationExpanded then
-            tween(MenuButton, {BackgroundTransparency = 1})
-        else
-            tween(MenuButton, {BackgroundTransparency = 0.8})
-        end
-    end)
     
     -- Minimize button events
     MinimizeInteract.MouseButton1Click:Connect(function()
@@ -622,7 +489,6 @@ function VexHub:CreateWindow(WindowSettings)
     Window.Main = Main
     Window.Navigation = Navigation
     Window.Content = Content
-    Window.MenuButton = MenuButton
     Window.Controls = Controls
     
     -- Function to change bind key
@@ -951,10 +817,10 @@ function VexHub:CreateWindow(WindowSettings)
             ToggleSwitch.BorderSizePixel = 0
             ToggleSwitch.Position = UDim2.new(1, -45, 0.5, 0)
             ToggleSwitch.AnchorPoint = Vector2.new(0, 0.5)
-            ToggleSwitch.Size = UDim2.fromOffset(35, 18)
+            ToggleSwitch.Size = UDim2.fromOffset(40, 20) -- Slightly larger toggle
             
             local SwitchCorner = Instance.new("UICorner")
-            SwitchCorner.CornerRadius = UDim.new(0, 9)
+            SwitchCorner.CornerRadius = UDim.new(0, 10) -- Rounded corners
             SwitchCorner.Parent = ToggleSwitch
             
             local SwitchStroke = Instance.new("UIStroke")
@@ -969,11 +835,24 @@ function VexHub:CreateWindow(WindowSettings)
             SwitchKnob.BorderSizePixel = 0
             SwitchKnob.Position = UDim2.new(0, 2, 0.5, 0)
             SwitchKnob.AnchorPoint = Vector2.new(0, 0.5)
-            SwitchKnob.Size = UDim2.fromOffset(14, 14)
+            SwitchKnob.Size = UDim2.fromOffset(16, 16) -- Slightly larger knob
             
             local KnobCorner = Instance.new("UICorner")
-            KnobCorner.CornerRadius = UDim.new(0, 7)
+            KnobCorner.CornerRadius = UDim.new(0, 8) -- Fully rounded knob
             KnobCorner.Parent = SwitchKnob
+            
+            -- Add shadow effect to knob
+            local KnobShadow = Instance.new("ImageLabel")
+            KnobShadow.Name = "Shadow"
+            KnobShadow.Parent = SwitchKnob
+            KnobShadow.BackgroundTransparency = 1
+            KnobShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+            KnobShadow.AnchorPoint = Vector2.new(0.5, 0.5)
+            KnobShadow.Size = UDim2.fromScale(1.2, 1.2)
+            KnobShadow.ZIndex = -1
+            KnobShadow.Image = "rbxassetid://1316045217" -- Radial gradient image
+            KnobShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+            KnobShadow.ImageTransparency = 0.7
             
             local ToggleInteract = Instance.new("TextButton")
             ToggleInteract.Name = "Interact"
@@ -987,26 +866,28 @@ function VexHub:CreateWindow(WindowSettings)
                 ToggleV.CurrentValue = value
                 
                 if value then
-                    tween(ToggleSwitch, {BackgroundTransparency = 0})
-                    tween(SwitchStroke, {Color = Color3.fromRGB(255, 255, 255)})
+                    tween(ToggleSwitch, {BackgroundTransparency = 0}, nil, toggleTweenInfo)
+                    tween(SwitchStroke, {Color = Color3.fromRGB(255, 255, 255), Transparency = 1}, nil, toggleTweenInfo) -- Hide stroke when enabled
                     tween(SwitchKnob, {
                         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-                        Position = UDim2.new(1, -16, 0.5, 0),
-                        BackgroundTransparency = 0.45
-                    })
+                        Position = UDim2.new(1, -18, 0.5, 0), -- Adjusted for new size
+                        BackgroundTransparency = 0 -- Make knob fully opaque
+                    }, nil, toggleTweenInfo)
                     
                     -- Apply theme gradient
-                    local gradient = Instance.new("UIGradient")
-                    gradient.Color = VexHub.ThemeGradient
-                    gradient.Parent = ToggleSwitch
+                    if not ToggleSwitch:FindFirstChild("UIGradient") then
+                        local gradient = Instance.new("UIGradient")
+                        gradient.Color = VexHub.ThemeGradient
+                        gradient.Parent = ToggleSwitch
+                    end
                 else
-                    tween(ToggleSwitch, {BackgroundTransparency = 1})
-                    tween(SwitchStroke, {Color = Color3.fromRGB(97, 97, 97)})
+                    tween(ToggleSwitch, {BackgroundTransparency = 1}, nil, toggleTweenInfo)
+                    tween(SwitchStroke, {Color = Color3.fromRGB(97, 97, 97), Transparency = 0}, nil, toggleTweenInfo)
                     tween(SwitchKnob, {
                         BackgroundColor3 = Color3.fromRGB(97, 97, 97),
                         Position = UDim2.new(0, 2, 0.5, 0),
                         BackgroundTransparency = 0
-                    })
+                    }, nil, toggleTweenInfo)
                     
                     -- Remove gradient
                     if ToggleSwitch:FindFirstChild("UIGradient") then
