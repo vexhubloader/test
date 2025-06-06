@@ -27,6 +27,7 @@ local CoreGui = game:GetService("CoreGui")
 -- Constants
 local tweeninfo = TweenInfo.new(0.2, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
 local toggleTweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local tabTweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
 -- Material Icons (simplified version)
 local IconModule = {
@@ -119,7 +120,7 @@ function VexHub:CreateWindow(WindowSettings)
         Name = "Vex Hub",
         Subtitle = "UI Library",
         LogoID = "6031097225",
-        Size = UDim2.fromOffset(580, 460)
+        Size = UDim2.fromOffset(600, 470) -- Adjusted from 580, 460 for better fit
     }, WindowSettings or {})
     
     local Window = { 
@@ -294,17 +295,18 @@ function VexHub:CreateWindow(WindowSettings)
     Navigation.Parent = Main
     Navigation.BackgroundTransparency = 1
     Navigation.Position = UDim2.new(0, 0, 0, 50)
-    Navigation.Size = UDim2.new(0, 180, 1, -50)
+    Navigation.Size = UDim2.new(0, 160, 1, -50) -- Adjusted from 180 to 160 for better proportions
     
     local NavPadding = Instance.new("UIPadding")
     NavPadding.PaddingTop = UDim.new(0, 10)
     NavPadding.PaddingLeft = UDim.new(0, 10)
     NavPadding.PaddingRight = UDim.new(0, 10)
+    NavPadding.PaddingBottom = UDim.new(0, 10) -- Added bottom padding
     NavPadding.Parent = Navigation
     
     local NavLayout = Instance.new("UIListLayout")
     NavLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    NavLayout.Padding = UDim.new(0, 5)
+    NavLayout.Padding = UDim.new(0, 8) -- Increased from 5 to 8 for better spacing
     NavLayout.Parent = Navigation
     
     -- Content Frame
@@ -312,8 +314,8 @@ function VexHub:CreateWindow(WindowSettings)
     Content.Name = "Content"
     Content.Parent = Main
     Content.BackgroundTransparency = 1
-    Content.Position = UDim2.new(0, 180, 0, 50)
-    Content.Size = UDim2.new(1, -180, 1, -50)
+    Content.Position = UDim2.new(0, 160, 0, 50) -- Adjusted from 180 to 160
+    Content.Size = UDim2.new(1, -160, 1, -50) -- Adjusted from -180 to -160
     
     local ContentPadding = Instance.new("UIPadding")
     ContentPadding.PaddingTop = UDim.new(0, 15)
@@ -513,10 +515,10 @@ function VexHub:CreateWindow(WindowSettings)
         TabButton.Parent = Navigation
         TabButton.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
         TabButton.BorderSizePixel = 0
-        TabButton.Size = UDim2.new(1, 0, 0, 40)
+        TabButton.Size = UDim2.new(1, 0, 0, 38) -- Adjusted from 40 to 38 for better fit
         
         local TabCorner = Instance.new("UICorner")
-        TabCorner.CornerRadius = UDim.new(0, 8)
+        TabCorner.CornerRadius = UDim.new(0, 10) -- More rounded corners
         TabCorner.Parent = TabButton
         
         local TabStroke = Instance.new("UIStroke")
@@ -529,7 +531,7 @@ function VexHub:CreateWindow(WindowSettings)
         TabIcon.Name = "Icon"
         TabIcon.Parent = TabButton
         TabIcon.BackgroundTransparency = 1
-        TabIcon.Position = UDim2.new(0, 10, 0.5, 0)
+        TabIcon.Position = UDim2.new(0, 12, 0.5, 0) -- Slightly more padding
         TabIcon.AnchorPoint = Vector2.new(0, 0.5)
         TabIcon.Size = UDim2.fromOffset(20, 20)
         TabIcon.Image = GetIcon(TabSettings.Icon, TabSettings.ImageSource)
@@ -539,9 +541,9 @@ function VexHub:CreateWindow(WindowSettings)
         TabLabel.Name = "Label"
         TabLabel.Parent = TabButton
         TabLabel.BackgroundTransparency = 1
-        TabLabel.Position = UDim2.new(0, 40, 0, 0)
-        TabLabel.Size = UDim2.new(1, -40, 1, 0)
-        TabLabel.Font = Enum.Font.Gotham
+        TabLabel.Position = UDim2.new(0, 42, 0, 0) -- Adjusted for new icon position
+        TabLabel.Size = UDim2.new(1, -42, 1, 0)
+        TabLabel.Font = Enum.Font.GothamSemibold -- Make text semibold
         TabLabel.Text = TabSettings.Name
         TabLabel.TextColor3 = Color3.fromRGB(221, 221, 221)
         TabLabel.TextSize = 14
@@ -560,18 +562,31 @@ function VexHub:CreateWindow(WindowSettings)
         TabPage.Parent = Content
         TabPage.BackgroundTransparency = 1
         TabPage.BorderSizePixel = 0
-        TabPage.Size = UDim2.new(1, 0, 1, 0)
+        TabPage.Size = UDim2.new(1, -5, 1, 0) -- Added small offset to prevent horizontal scrolling
         TabPage.CanvasSize = UDim2.new(0, 0, 0, 0)
-        TabPage.ScrollBarThickness = 0
+        TabPage.ScrollBarThickness = 4
+        TabPage.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+        TabPage.ScrollingDirection = Enum.ScrollingDirection.Y
+        TabPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
         TabPage.Visible = false
+        TabPage.ElasticBehavior = Enum.ElasticBehavior.Always -- Add elastic scrolling
+        TabPage.ScrollingEnabled = true -- Ensure scrolling is enabled
+        
+        local PagePadding = Instance.new("UIPadding") -- Add padding to tab page
+        PagePadding.PaddingTop = UDim.new(0, 5)
+        PagePadding.PaddingBottom = UDim.new(0, 5)
+        PagePadding.PaddingLeft = UDim.new(0, 5)
+        PagePadding.PaddingRight = UDim.new(0, 5)
+        PagePadding.Parent = TabPage
         
         local PageLayout = Instance.new("UIListLayout")
         PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        PageLayout.Padding = UDim.new(0, 8)
+        PageLayout.Padding = UDim.new(0, 10)
         PageLayout.Parent = TabPage
         
+        -- We'll still keep this for compatibility, but AutomaticCanvasSize should handle it
         PageLayout.Changed:Connect(function()
-            TabPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y)
+            TabPage.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 10) -- Added small padding
         end)
         
         Tab.Button = TabButton
@@ -583,16 +598,36 @@ function VexHub:CreateWindow(WindowSettings)
             -- Hide all other tabs
             for _, otherTab in pairs(Window.Tabs) do
                 otherTab.Page.Visible = false
-                tween(otherTab.Button.Icon, {ImageColor3 = Color3.fromRGB(221, 221, 221)})
-                tween(otherTab.Button, {BackgroundTransparency = 1})
-                tween(otherTab.Button.UIStroke, {Transparency = 1})
+                tween(otherTab.Button.Icon, {ImageColor3 = Color3.fromRGB(221, 221, 221)}, nil, tabTweenInfo)
+                tween(otherTab.Button, {BackgroundTransparency = 1}, nil, tabTweenInfo)
+                tween(otherTab.Button.UIStroke, {Transparency = 1}, nil, tabTweenInfo)
+                
+                -- Remove gradient from other tabs
+                if otherTab.Button:FindFirstChild("UIGradient") then
+                    otherTab.Button.UIGradient:Destroy()
+                end
             end
             
             -- Show this tab
             TabPage.Visible = true
-            tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
-            tween(TabButton, {BackgroundTransparency = 0})
-            tween(TabStroke, {Transparency = 0.4})
+            tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)}, nil, tabTweenInfo)
+            tween(TabButton, {BackgroundTransparency = 0}, nil, tabTweenInfo)
+            tween(TabStroke, {Transparency = 1}, nil, tabTweenInfo) -- Hide stroke when selected
+            
+            -- Apply gradient to selected tab
+            if not TabButton:FindFirstChild("UIGradient") then
+                local gradient = Instance.new("UIGradient")
+                gradient.Color = VexHub.ThemeGradient
+                gradient.Transparency = NumberSequence.new({
+                    NumberSequenceKeypoint.new(0, 0),
+                    NumberSequenceKeypoint.new(1, 0)
+                })
+                gradient.Offset = Vector2.new(-1, 0)
+                gradient.Parent = TabButton
+                
+                -- Animate gradient
+                tween(gradient, {Offset = Vector2.new(0, 0)}, nil, tabTweenInfo)
+            end
             
             Window.CurrentTab = TabSettings.Name
         end
@@ -641,10 +676,11 @@ function VexHub:CreateWindow(WindowSettings)
             Button.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
             Button.BackgroundTransparency = 0.5
             Button.BorderSizePixel = 0
-            Button.Size = UDim2.new(1, 0, 0, ButtonSettings.Description and 60 or 45)
+            Button.Size = UDim2.new(1, -10, 0, ButtonSettings.Description and 65 or 45) -- Adjusted width and height
+            Button.LayoutOrder = #TabPage:GetChildren() -- Set layout order for proper sorting
             
             local ButtonCorner = Instance.new("UICorner")
-            ButtonCorner.CornerRadius = UDim.new(0, 8)
+            ButtonCorner.CornerRadius = UDim.new(0, 10) -- Increased from 8 to 10 for consistency
             ButtonCorner.Parent = Button
             
             local ButtonStroke = Instance.new("UIStroke")
@@ -672,7 +708,7 @@ function VexHub:CreateWindow(WindowSettings)
                 ButtonDesc.Parent = Button
                 ButtonDesc.BackgroundTransparency = 1
                 ButtonDesc.Position = UDim2.new(0, 15, 0, 28)
-                ButtonDesc.Size = UDim2.new(1, -30, 0, 24)
+                ButtonDesc.Size = UDim2.new(1, -30, 0, 30) -- Adjusted height from 24 to 30
                 ButtonDesc.Font = Enum.Font.Gotham
                 ButtonDesc.Text = ButtonSettings.Description
                 ButtonDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -767,10 +803,11 @@ function VexHub:CreateWindow(WindowSettings)
             Toggle.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
             Toggle.BackgroundTransparency = 0.5
             Toggle.BorderSizePixel = 0
-            Toggle.Size = UDim2.new(1, 0, 0, ToggleSettings.Description and 60 or 45)
+            Toggle.Size = UDim2.new(1, -10, 0, ToggleSettings.Description and 65 or 45) -- Adjusted width and height
+            Toggle.LayoutOrder = #TabPage:GetChildren() -- Set layout order for proper sorting
             
             local ToggleCorner = Instance.new("UICorner")
-            ToggleCorner.CornerRadius = UDim.new(0, 8)
+            ToggleCorner.CornerRadius = UDim.new(0, 10) -- Increased from 8 to 10 for consistency
             ToggleCorner.Parent = Toggle
             
             local ToggleStroke = Instance.new("UIStroke")
@@ -784,7 +821,7 @@ function VexHub:CreateWindow(WindowSettings)
             ToggleTitle.Parent = Toggle
             ToggleTitle.BackgroundTransparency = 1
             ToggleTitle.Position = UDim2.new(0, 15, 0, ToggleSettings.Description and 8 or 0)
-            ToggleTitle.Size = UDim2.new(1, -65, 0, ToggleSettings.Description and 20 or 45)
+            ToggleTitle.Size = UDim2.new(1, -70, 0, ToggleSettings.Description and 20 or 45) -- Adjusted from -65 to -70
             ToggleTitle.Font = Enum.Font.GothamSemibold
             ToggleTitle.Text = ToggleSettings.Name
             ToggleTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -798,7 +835,7 @@ function VexHub:CreateWindow(WindowSettings)
                 ToggleDesc.Parent = Toggle
                 ToggleDesc.BackgroundTransparency = 1
                 ToggleDesc.Position = UDim2.new(0, 15, 0, 28)
-                ToggleDesc.Size = UDim2.new(1, -65, 0, 24)
+                ToggleDesc.Size = UDim2.new(1, -70, 0, 30) -- Adjusted from -65 to -70 and height from 24 to 30
                 ToggleDesc.Font = Enum.Font.Gotham
                 ToggleDesc.Text = ToggleSettings.Description
                 ToggleDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -815,7 +852,7 @@ function VexHub:CreateWindow(WindowSettings)
             ToggleSwitch.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
             ToggleSwitch.BackgroundTransparency = 1
             ToggleSwitch.BorderSizePixel = 0
-            ToggleSwitch.Position = UDim2.new(1, -45, 0.5, 0)
+            ToggleSwitch.Position = UDim2.new(1, -50, 0.5, 0) -- Adjusted from -45 to -50 for better alignment
             ToggleSwitch.AnchorPoint = Vector2.new(0, 0.5)
             ToggleSwitch.Size = UDim2.fromOffset(40, 20) -- Slightly larger toggle
             
