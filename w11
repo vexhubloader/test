@@ -9,9 +9,9 @@ Simplified UI Library with Windows, Tabs, Buttons, and Toggles
 local VexHub = { 
     Options = {}, 
     ThemeGradient = ColorSequence.new{
-        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(65, 79, 230)), 
-        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(99, 86, 233)), 
-        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(133, 93, 236))
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(88, 101, 242)), 
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(122, 137, 255)), 
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(147, 160, 255))
     } 
 }
 
@@ -513,7 +513,7 @@ function VexHub:CreateWindow(WindowSettings)
         local TabButton = Instance.new("Frame")
         TabButton.Name = TabSettings.Name
         TabButton.Parent = Navigation
-        TabButton.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
+        TabButton.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Base theme color
         TabButton.BorderSizePixel = 0
         TabButton.Size = UDim2.new(1, 0, 0, 38) -- Adjusted from 40 to 38 for better fit
         
@@ -797,7 +797,7 @@ function VexHub:CreateWindow(WindowSettings)
             local Button = Instance.new("Frame")
             Button.Name = ButtonSettings.Name
             Button.Parent = TabPage
-            Button.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
+            Button.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Base color matching theme
             Button.BackgroundTransparency = 0
             Button.BorderSizePixel = 0
             Button.Size = UDim2.new(1, -10, 0, 42) -- Fixed height for action buttons
@@ -807,13 +807,10 @@ function VexHub:CreateWindow(WindowSettings)
             ButtonCorner.CornerRadius = UDim.new(0, 20) -- Fully rounded corners
             ButtonCorner.Parent = Button
             
-            -- Use gradient for button
+            -- Use theme gradient for button
             local ButtonGradient = Instance.new("UIGradient")
             ButtonGradient.Rotation = 90
-            ButtonGradient.Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(42, 40, 48)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 30, 38))
-            }
+            ButtonGradient.Color = VexHub.ThemeGradient
             ButtonGradient.Parent = Button
             
             -- Center the text
@@ -860,7 +857,7 @@ function VexHub:CreateWindow(WindowSettings)
                     ButtonTitle.Text = "Callback Error"
                     wait(0.5)
                     ButtonTitle.Text = ButtonSettings.Name
-                    tween(Button, {BackgroundColor3 = Color3.fromRGB(32, 30, 38)})
+                    tween(Button, {BackgroundColor3 = Color3.fromRGB(88, 101, 242)})
                 else
                     -- Button press effect
                     tween(Button, {BackgroundTransparency = 0.2}, function()
@@ -872,12 +869,12 @@ function VexHub:CreateWindow(WindowSettings)
             -- Hover effects
             Button.MouseEnter:Connect(function()
                 ButtonV.Hover = true
-                tween(Button, {BackgroundColor3 = Color3.fromRGB(42, 40, 48)})
+                tween(Button, {BackgroundColor3 = Color3.fromRGB(122, 137, 255)})
             end)
             
             Button.MouseLeave:Connect(function()
                 ButtonV.Hover = false
-                tween(Button, {BackgroundColor3 = Color3.fromRGB(32, 30, 38)})
+                tween(Button, {BackgroundColor3 = Color3.fromRGB(88, 101, 242)})
             end)
             
             function ButtonV:Set(NewButtonSettings)
@@ -1036,6 +1033,7 @@ function VexHub:CreateWindow(WindowSettings)
                     if not ToggleSwitch:FindFirstChild("UIGradient") then
                         local gradient = Instance.new("UIGradient")
                         gradient.Color = VexHub.ThemeGradient
+                        gradient.Rotation = 90
                         gradient.Parent = ToggleSwitch
                     end
                 else
