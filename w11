@@ -674,41 +674,65 @@ function VexHub:CreateWindow(WindowSettings)
             Button.Name = ButtonSettings.Name
             Button.Parent = TabPage
             Button.BackgroundColor3 = Color3.fromRGB(32, 30, 38)
-            Button.BackgroundTransparency = 0.5
+            Button.BackgroundTransparency = 0
             Button.BorderSizePixel = 0
-            Button.Size = UDim2.new(1, -10, 0, ButtonSettings.Description and 65 or 45) -- Adjusted width and height
+            Button.Size = UDim2.new(1, -10, 0, ButtonSettings.Description and 65 or 42) -- Adjusted height
             Button.LayoutOrder = #TabPage:GetChildren() -- Set layout order for proper sorting
             
             local ButtonCorner = Instance.new("UICorner")
-            ButtonCorner.CornerRadius = UDim.new(0, 10) -- Increased from 8 to 10 for consistency
+            ButtonCorner.CornerRadius = UDim.new(0, 20) -- Fully rounded corners like in the image
             ButtonCorner.Parent = Button
             
-            local ButtonStroke = Instance.new("UIStroke")
-            ButtonStroke.Color = Color3.fromRGB(64, 61, 76)
-            ButtonStroke.Thickness = 1
-            ButtonStroke.Transparency = 0.5
-            ButtonStroke.Parent = Button
+            -- Remove stroke and use gradient instead
+            local ButtonGradient = Instance.new("UIGradient")
+            ButtonGradient.Rotation = 90
+            ButtonGradient.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(42, 40, 48)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 30, 38))
+            }
+            ButtonGradient.Parent = Button
             
+            -- Center the text
             local ButtonTitle = Instance.new("TextLabel")
             ButtonTitle.Name = "Title"
             ButtonTitle.Parent = Button
             ButtonTitle.BackgroundTransparency = 1
-            ButtonTitle.Position = UDim2.new(0, 15, 0, ButtonSettings.Description and 8 or 0)
-            ButtonTitle.Size = UDim2.new(1, -30, 0, ButtonSettings.Description and 20 or 45)
+            ButtonTitle.Position = UDim2.new(0, 0, 0, 0)
+            ButtonTitle.Size = UDim2.new(1, 0, 1, 0)
             ButtonTitle.Font = Enum.Font.GothamSemibold
             ButtonTitle.Text = ButtonSettings.Name
             ButtonTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
             ButtonTitle.TextSize = 14
-            ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
-            ButtonTitle.TextYAlignment = ButtonSettings.Description and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
+            ButtonTitle.TextXAlignment = Enum.TextXAlignment.Center
+            ButtonTitle.TextYAlignment = Enum.TextYAlignment.Center
+            
+            -- Add arrow icon if needed
+            local ArrowIcon = Instance.new("ImageLabel")
+            ArrowIcon.Name = "ArrowIcon"
+            ArrowIcon.Parent = Button
+            ArrowIcon.BackgroundTransparency = 1
+            ArrowIcon.Position = UDim2.new(1, -25, 0.5, 0)
+            ArrowIcon.AnchorPoint = Vector2.new(0, 0.5)
+            ArrowIcon.Size = UDim2.fromOffset(16, 16)
+            ArrowIcon.Image = "rbxassetid://7072706620" -- Right arrow icon
+            ArrowIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+            ArrowIcon.ImageTransparency = 0.4
+            ArrowIcon.Visible = false -- Hidden by default, can be enabled via settings
             
             if ButtonSettings.Description then
+                Button.Size = UDim2.new(1, -10, 0, 65)
+                
+                ButtonTitle.Position = UDim2.new(0, 15, 0, 8)
+                ButtonTitle.Size = UDim2.new(1, -30, 0, 20)
+                ButtonTitle.TextXAlignment = Enum.TextXAlignment.Left
+                ButtonTitle.TextYAlignment = Enum.TextYAlignment.Top
+                
                 local ButtonDesc = Instance.new("TextLabel")
                 ButtonDesc.Name = "Description"
                 ButtonDesc.Parent = Button
                 ButtonDesc.BackgroundTransparency = 1
                 ButtonDesc.Position = UDim2.new(0, 15, 0, 28)
-                ButtonDesc.Size = UDim2.new(1, -30, 0, 30) -- Adjusted height from 24 to 30
+                ButtonDesc.Size = UDim2.new(1, -30, 0, 30)
                 ButtonDesc.Font = Enum.Font.Gotham
                 ButtonDesc.Text = ButtonSettings.Description
                 ButtonDesc.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -736,25 +760,22 @@ function VexHub:CreateWindow(WindowSettings)
                     ButtonTitle.Text = ButtonSettings.Name
                     tween(Button, {BackgroundColor3 = Color3.fromRGB(32, 30, 38)})
                 else
-                    tween(ButtonStroke, {Color = Color3.fromRGB(136, 131, 163)})
-                    wait(0.2)
-                    if ButtonV.Hover then
-                        tween(ButtonStroke, {Color = Color3.fromRGB(87, 84, 104)})
-                    else
-                        tween(ButtonStroke, {Color = Color3.fromRGB(64, 61, 76)})
-                    end
+                    -- Button press effect
+                    tween(Button, {BackgroundTransparency = 0.2}, function()
+                        tween(Button, {BackgroundTransparency = 0})
+                    end, TweenInfo.new(0.2, Enum.EasingStyle.Quint))
                 end
             end)
             
             -- Hover effects
             Button.MouseEnter:Connect(function()
                 ButtonV.Hover = true
-                tween(ButtonStroke, {Color = Color3.fromRGB(87, 84, 104)})
+                tween(Button, {BackgroundColor3 = Color3.fromRGB(42, 40, 48)})
             end)
             
             Button.MouseLeave:Connect(function()
                 ButtonV.Hover = false
-                tween(ButtonStroke, {Color = Color3.fromRGB(64, 61, 76)})
+                tween(Button, {BackgroundColor3 = Color3.fromRGB(32, 30, 38)})
             end)
             
             function ButtonV:Set(NewButtonSettings)
@@ -768,7 +789,7 @@ function VexHub:CreateWindow(WindowSettings)
                 ButtonV.Settings = NewButtonSettings
                 
                 ButtonTitle.Text = ButtonSettings.Name
-                if ButtonSettings.Description and Button.Description then
+                if ButtonSettings.Description and Button:FindFirstChild("Description") then
                     Button.Description.Text = ButtonSettings.Description
                 end
             end
